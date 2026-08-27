@@ -3,7 +3,7 @@
 This is a fork of the original Ogame Infinity Extension, but extended and reworked to my own needs.
 All credits go to [Ogame Infinity](https://github.com/ogame-infinity/web-extension)
 
-This repository contains the monolithic code mess for the Ogame Infinity extension.
+This repository contains the monolithic code mess for the Ogame Beyond Infinity extension.
 
 Note: since version 2.3.7 the `src/` folder can no longer be loaded directly as an unpacked extension — it needs a build step first. See [Local development](#local-development).
 

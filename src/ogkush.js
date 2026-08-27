@@ -2099,8 +2099,8 @@ class OGInfinity {
               technoId == 22
                 ? resourcesBar.resources.metal.production
                 : technoId == 23
-                  ? resourcesBar.resources.crystal.production
-                  : resourcesBar.resources.deuterium.production;
+                ? resourcesBar.resources.crystal.production
+                : resourcesBar.resources.deuterium.production;
             let storageDiv =
               durationDiv.parentNode.querySelector(".narrow .storage_size") ||
               durationDiv.parentNode.insertBefore(
@@ -4623,7 +4623,7 @@ class OGInfinity {
     let head = container.appendChild(createDOM("div", { class: "ogk-header" }));
     head.appendChild(createDOM("h1", {}, "Welcome "));
     head.appendChild(createDOM("div", { class: "ogk-logo" }));
-    container.appendChild(createDOM("p", {}, "Ogame Infinity will hopefully bring some new joy playing OGame!"));
+    container.appendChild(createDOM("p", {}, "Ogame Beyond Infinity will hopefully bring some new joy playing OGame!"));
     container.appendChild(
       this.createDOM(
         "p",
@@ -10927,7 +10927,7 @@ class OGInfinity {
         }
       };
       const defaultKept = this.current.isMoon
-        ? (this.json.options.defaultKeptMoon ?? this.json.options.defaultKept)
+        ? this.json.options.defaultKeptMoon ?? this.json.options.defaultKept
         : this.json.options.defaultKept;
       let kept = this.json.options.kept[this.current.coords + (this.current.isMoon ? "M" : "P")] || defaultKept;
       $("#selectMostMetal").on("click", () => {
@@ -11376,7 +11376,7 @@ class OGInfinity {
 
   neededCargo() {
     const defaultKept = this.current.isMoon
-      ? (this.json.options.defaultKeptMoon ?? this.json.options.defaultKept)
+      ? this.json.options.defaultKeptMoon ?? this.json.options.defaultKept
       : this.json.options.defaultKept;
     let kept = this.json.options.kept[this.current.coords + (this.current.isMoon ? "M" : "P")] || defaultKept;
     if (this.page == "fleetdispatch" && document.querySelector("#shipChosen")) {
@@ -13655,7 +13655,7 @@ class OGInfinity {
   selectMostShips(reclickSelectedTargetType = true) {
     fleetDispatcher.shipsOnPlanet.forEach((ship) => {
       const defaultKept = this.current.isMoon
-        ? (this.json.options.defaultKeptMoon ?? this.json.options.defaultKept)
+        ? this.json.options.defaultKeptMoon ?? this.json.options.defaultKept
         : this.json.options.defaultKept;
       let kept = this.json.options.kept[this.current.coords + (this.current.isMoon ? "M" : "P")] || defaultKept;
       this.selectShips(ship.id, Math.max(0, ship.number - (kept[ship.id] || 0)));
@@ -15749,12 +15749,12 @@ class OGInfinity {
           this.json.options.customMissions[customMissionId].ship === "select-most"
             ? "select-most"
             : this.json.options.customMissions[customMissionId].ship === "sendall"
-              ? "sendall"
-              : this.json.options.customMissions[customMissionId].ship == 202
-                ? "smallCargo"
-                : this.json.options.customMissions[customMissionId].ship == 219
-                  ? "pathFinder"
-                  : "largeCargo";
+            ? "sendall"
+            : this.json.options.customMissions[customMissionId].ship == 202
+            ? "smallCargo"
+            : this.json.options.customMissions[customMissionId].ship == 219
+            ? "pathFinder"
+            : "largeCargo";
         return `${customMissionClass} ${missionClass} ${shipClass}`;
       };
 
@@ -17110,8 +17110,8 @@ class OGInfinity {
                   SUPPLIES_TECHID.includes(Number(elem.technoId))
                     ? "supplies"
                     : FACILITIES_TECHID.includes(Number(elem.technoId))
-                      ? "facilities"
-                      : "overview",
+                    ? "facilities"
+                    : "overview",
                   iconVisibility.shouldAddIconTooltip(regularConstructionsIconsDisplayMode),
                   iconVisibility.shouldAddIconRedirection(regularConstructionsIconsDisplayMode)
                 )
@@ -17217,8 +17217,8 @@ class OGInfinity {
                 SUPPLIES_TECHID.includes(Number(elem.technoId))
                   ? "supplies"
                   : FACILITIES_TECHID.includes(Number(elem.technoId))
-                    ? "facilities"
-                    : "overview",
+                  ? "facilities"
+                  : "overview",
                 iconVisibility.shouldAddIconTooltip(regularConstructionsIconsDisplayMode),
                 iconVisibility.shouldAddIconRedirection(regularConstructionsIconsDisplayMode)
               )
@@ -17678,8 +17678,8 @@ class OGInfinity {
             this.json.options.collect.ship == 202
               ? "smallCargo"
               : this.json.options.collect.ship == 219
-                ? "pathFinder"
-                : "largeCargo"
+              ? "pathFinder"
+              : "largeCargo"
           }`,
         })
       );
@@ -17740,8 +17740,8 @@ class OGInfinity {
           this.json.options.collect.ship == 202
             ? "smallCargo"
             : this.json.options.collect.ship == 219
-              ? "pathFinder"
-              : "largeCargo"
+            ? "pathFinder"
+            : "largeCargo"
         }`;
         document.querySelector(".ogk-collect-cargo .ogl-fleet-ship.highlight").classList.remove("highlight");
         document
@@ -17750,8 +17750,8 @@ class OGInfinity {
               this.json.options.collect.ship == 202
                 ? ".ogl-fleet-202"
                 : this.json.options.collect.ship == 219
-                  ? ".ogl-fleet-219"
-                  : ".ogl-fleet-203"
+                ? ".ogl-fleet-219"
+                : ".ogl-fleet-203"
             }`
           )
           .classList.add("highlight");
@@ -17765,8 +17765,8 @@ class OGInfinity {
           this.json.options.collect.ship == 202
             ? "smallCargo"
             : this.json.options.collect.ship == 219
-              ? "pathFinder"
-              : "largeCargo"
+            ? "pathFinder"
+            : "largeCargo"
         }`;
         document.querySelector(".ogk-collect-cargo .choice-mission-icon.highlight").classList.remove("highlight");
         document
@@ -17892,7 +17892,7 @@ class OGInfinity {
       //get the mirror id
       const mirrorId = this.current.isMoon
         ? OGIData.empire.find((p) => p.id == this.current.id) // if current is a moon => get planet id
-        : (OGIData.empire.find((p) => p.id == this.current.id).moon?.id ?? undefined); // if current is a planet having moon => get moon id, else get undefined
+        : OGIData.empire.find((p) => p.id == this.current.id).moon?.id ?? undefined; // if current is a planet having moon => get moon id, else get undefined
 
       //ensure everything is ready
       const everyThingIsReady = () => {
@@ -17940,12 +17940,12 @@ class OGInfinity {
             this.json.options.customMissions[customMissionId].ship === "select-most"
               ? "select-most"
               : this.json.options.customMissions[customMissionId].ship === "sendall"
-                ? "sendall"
-                : this.json.options.customMissions[customMissionId].ship == 202
-                  ? "smallCargo"
-                  : this.json.options.customMissions[customMissionId].ship == 219
-                    ? "pathFinder"
-                    : "largeCargo";
+              ? "sendall"
+              : this.json.options.customMissions[customMissionId].ship == 202
+              ? "smallCargo"
+              : this.json.options.customMissions[customMissionId].ship == 219
+              ? "pathFinder"
+              : "largeCargo";
 
           let optionsDiv = createDOM("div", { class: `${optionClass} ogk-customMission-options-3l` });
           const optionsDivFleet = optionsDiv.appendChild(createDOM("div", { class: "ogk-customMission-options-5c" }));
@@ -17965,8 +17965,8 @@ class OGInfinity {
               shipId == "select-most"
                 ? "ogl-option choice select-most"
                 : shipId == "sendall"
-                  ? "ogl-option choice sendall"
-                  : `ogl-option ogl-fleet-ship choice ogl-fleet-${shipId}`;
+                ? "ogl-option choice sendall"
+                : `ogl-option ogl-fleet-ship choice ogl-fleet-${shipId}`;
             return optionsDivFleet.appendChild(
               createDOM("div", {
                 class: `${shipClass} ${
@@ -18125,12 +18125,12 @@ class OGInfinity {
             shipId === "select-most"
               ? "select-most"
               : shipId === "sendall"
-                ? "sendall"
-                : shipId == 202
-                  ? "smallCargo"
-                  : shipId == 219
-                    ? "pathFinder"
-                    : "largeCargo";
+              ? "sendall"
+              : shipId == 202
+              ? "smallCargo"
+              : shipId == 219
+              ? "pathFinder"
+              : "largeCargo";
           const getShipClassSelector = (shipId) =>
             shipId === "select-most" ? ".select-most" : shipId === "sendall" ? ".sendall" : `.ogl-fleet-${shipId}`;
           const getMissionClassSelector = (mission) => `.ogl-mission-${mission}`;
@@ -18148,8 +18148,9 @@ class OGInfinity {
             const shipClass = getShipClass(shipId);
             const shipOptionClassSelector = getShipClassSelector(shipId);
 
-            document.querySelector(customMissionClassSelector).classList =
-              `${customMissionClass} ${missionClass} ${shipClass}`;
+            document.querySelector(
+              customMissionClassSelector
+            ).classList = `${customMissionClass} ${missionClass} ${shipClass}`;
 
             const oldHighlight = optionsDivFleet.querySelector(".highlight");
             if (oldHighlight) oldHighlight.classList.remove("highlight");
@@ -18168,8 +18169,9 @@ class OGInfinity {
             );
             const shipClass = getShipClass(this.json.options.customMissions[customMissionId].ship);
 
-            document.querySelector(customMissionClassSelector).classList =
-              `${customMissionClass} ${missionClass} ${shipClass}`;
+            document.querySelector(
+              customMissionClassSelector
+            ).classList = `${customMissionClass} ${missionClass} ${shipClass}`;
 
             const oldHighlight = optionsDivMission.querySelector(".highlight");
             if (oldHighlight) oldHighlight.classList.remove("highlight");
@@ -18711,7 +18713,7 @@ function versionInStatusBar() {
 }
 
 (async () => {
-  logger.info("Reveal OGame Infinity");
+  logger.info("Reveal Ogame Beyond Infinity");
 
   try {
     const rawURL = new URL(window.location.href);

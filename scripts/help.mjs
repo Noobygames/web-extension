@@ -10,7 +10,7 @@ const version =
 const chromeDir = process.env.OGI_CHROME_DIR || "dist/unpacked/chrome";
 const firefoxDir = process.env.OGI_FIREFOX_DIR || "dist/unpacked/firefox";
 
-console.log(`Ogame Infinity - make targets
+console.log(`Ogame Beyond Infinity - make targets
 
   make install        Install dev dependencies (prettier, eslint, terser, clean-css)
   make format         Format all sources with prettier (run before every commit)

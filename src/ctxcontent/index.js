@@ -172,7 +172,7 @@ document.addEventListener("ogi-notification-sync", function (e) {
 });
 
 export function main() {
-  mainLogger.log("Starting OGame Infinity");
+  mainLogger.log("Starting Ogame Beyond Infinity");
 
   if (!universes[UNIVERSE] || Object.keys(universes[UNIVERSE]).length === 0) {
     //chrome.storage.local.clear()

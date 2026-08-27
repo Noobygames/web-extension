@@ -1,4 +1,4 @@
-# Ogame Infinity - developer tasks
+# Ogame Beyond Infinity - developer tasks
 #
 # Works from PowerShell, cmd and Git Bash as long as node and npm are on PATH.
 # Recipes shell out to node scripts instead of using shell builtins so they

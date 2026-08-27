@@ -3,7 +3,7 @@
     "default_icon": {
       "32": "assets/images/logo128.png"
     },
-    "default_title": "Ogame Infinity"
+    "default_title": "Ogame Beyond Infinity"
   },
   "background": {
     "service_worker": "background.js"
@@ -34,7 +34,7 @@
     "32": "assets/images/logo128.png"
   },
   "manifest_version": 3,
-  "name": "Ogame Infinity",
+  "name": "Ogame Beyond Infinity",
   "permissions": ["storage", "alarms", "notifications"],
   "update_url": "https://clients2.google.com/service/update2/crx",
   "version": "0.0.0",

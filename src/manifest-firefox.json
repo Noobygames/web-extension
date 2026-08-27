@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Ogame Infinity",
+  "name": "Ogame Beyond Infinity",
   "version": "0.0.0",
   "description": "OGI - To Ogame's infinity and beyond!",
   "browser_specific_settings": {
@@ -44,7 +44,7 @@
     "default_icon": {
       "32": "assets/images/logo128.png"
     },
-    "default_title": "Ogame Infinity"
+    "default_title": "Ogame Beyond Infinity"
   },
   "web_accessible_resources": [
     {

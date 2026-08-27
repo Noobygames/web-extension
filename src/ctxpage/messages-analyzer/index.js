@@ -17,7 +17,6 @@ const logger = getLogger("message-analyzer");
  * @this {OGInfinity}
  */
 function analyzer() {
-  return;
   if (this.page !== "messages") return;
 
   let normalized = ["Metal", "Crystal", "Deuterium", "AM"];
