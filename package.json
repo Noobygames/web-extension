@@ -1,5 +1,5 @@
 {
-  "name": "ogame-infinity",
+  "name": "ogame-beyond-infinity",
   "version": "2.1.1",
   "description": "This extension provides a set additional features for OGame.",
   "main": "src/main.js",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/ogame-infinity/web-extension.git"
+    "url": "git+ssh://git@github.com/Noobygames/web-extension.git"
   },
   "keywords": [
     "ogame",
@@ -25,12 +25,12 @@
     "edge",
     "browser"
   ],
-  "author": "alexisfasquel",
+  "author": "Nerzal",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ogame-infinity/web-extension/issues"
+    "url": "https://github.com/Noobygames/web-extension/issues"
   },
-  "homepage": "https://github.com/ogame-infinity/web-extension#readme",
+  "homepage": "https://github.com/Noobygames/web-extension#readme",
   "devDependencies": {
     "clean-css": "^5.3.2",
     "clean-css-cli": "^5.6.2",

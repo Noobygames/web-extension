@@ -1,4 +1,7 @@
-# Ogame Infinity
+# Ogame Infinity Beyond
+
+This is a fork of the original Ogame Infinity Extension, but extended and reworked to my own needs.
+All credits go to [Ogame Infinity](https://github.com/ogame-infinity/web-extension)
 
 This repository contains the monolithic code mess for the Ogame Infinity extension.
 
@@ -58,7 +61,7 @@ Please add tests for the code you change, and run `make test` before opening a p
 
 This builds `dist/unpacked/chrome` and starts Brave with the extension loaded into a throwaway profile under `dist/.brave-dev-profile`, so it never interferes with your everyday browser profile. Use `make brave-main` to use your normal Brave profile instead (close Brave first, otherwise the running instance ignores the command line flags).
 
-**The Web Store version is switched off automatically.** Both builds match the same OGame hosts, both inject `ogkush.js` and both write the same `localStorage["ogk-data"]` key, so running them side by side gives you duplicated UI and corrupted data. The launcher therefore passes `--disable-extensions-except`, which disables every other extension *for that browser session only* — nothing is uninstalled, and a normal Brave start has all your extensions back. Pass `--keep-extensions` to `scripts/launch-brave.mjs` if you explicitly want them enabled.
+**The Web Store version is switched off automatically.** Both builds match the same OGame hosts, both inject `ogkush.js` and both write the same `localStorage["ogk-data"]` key, so running them side by side gives you duplicated UI and corrupted data. The launcher therefore passes `--disable-extensions-except`, which disables every other extension _for that browser session only_ — nothing is uninstalled, and a normal Brave start has all your extensions back. Pass `--keep-extensions` to `scripts/launch-brave.mjs` if you explicitly want them enabled.
 
 If you load the build by hand instead (see below) into a profile that already has OGI from the store, disable the store version yourself on `brave://extensions` first.
 
@@ -66,9 +69,9 @@ If Brave is not found automatically, point at it explicitly:
 
     make brave BRAVE_PATH="C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
-You can always load the build by hand: `brave://extensions` → enable *Developer mode* → *Load unpacked* → pick `dist/unpacked/chrome`. After changing something in `src/`, run `make dev` again and hit the reload button on the extension card.
+You can always load the build by hand: `brave://extensions` → enable _Developer mode_ → _Load unpacked_ → pick `dist/unpacked/chrome`. After changing something in `src/`, run `make dev` again and hit the reload button on the extension card.
 
-For Firefox: run `make dev-firefox`, then `about:debugging#/runtime/this-firefox` → *Load Temporary Add-on* → pick `dist/unpacked/firefox/manifest.json`.
+For Firefox: run `make dev-firefox`, then `about:debugging#/runtime/this-firefox` → _Load Temporary Add-on_ → pick `dist/unpacked/firefox/manifest.json`.
 
 The unpacked build stamps the version (defaults to the one in `package.json`, override with `make dev VERSION=9.9.9`) and drops two manifest keys that only apply to store releases: `update_url`, and the `extension_ids` whitelist in `web_accessible_resources` — a locally loaded build gets a different extension id, so that whitelist would lock out the build itself.
 
