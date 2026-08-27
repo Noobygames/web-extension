@@ -119,9 +119,16 @@ function generateGalaxyLink(coords, playerId = undefined) {
 }
 
 function getRemovedFromHistoricText(playerName) {
-  return Translator.translate(226).replace("{player}", playerName);
+  return Translator.translate(229).replace("{player}", playerName);
 }
 
+// Removal is committed to OGIData straight away and the undo row is pure UI on top of it, so a
+// page navigation inside the undo window simply leaves the player removed - there is no pending
+// state that could be silently lost the other way round. `index` is kept so restore puts the
+// player back where it was rather than at the end of the list.
+//
+// OGIData writes through on assignment but NOT on in-place mutation, hence copy -> splice ->
+// reassign; splicing OGIData.sideStalk directly would update the array in memory and never persist.
 function removeSideStalkPlayer(playerId) {
   playerId = parseInt(playerId);
   const sideStalk = OGIData.sideStalk.slice();
@@ -167,7 +174,7 @@ function removeHistoricEmptyState(list) {
 function ensureHistoricEmptyState(list) {
   if (OGIData.sideStalk.length || list.querySelector(".ogi-sideStalkUndo, .ogi-sideStalkEmpty")) return;
 
-  list.appendChild(createDOM("div", { class: "ogi-sideStalkEmpty" }, Translator.translate(228)));
+  list.appendChild(createDOM("div", { class: "ogi-sideStalkEmpty" }, Translator.translate(231)));
 }
 
 function removeExistingSideStalkUndo(sideStalk) {
@@ -202,7 +209,7 @@ function createSideStalkUndoRow(playerName) {
   const undo = createDOM("div", { class: "ogl-player ogi-sideStalkUndo" });
   undo.appendChild(createDOM("span", { class: "ogi-sideStalkUndoMessage" }, getRemovedFromHistoricText(playerName)));
   undo.appendChild(
-    createDOM("button", { class: "ogi-sideStalkUndoButton", type: "button" }, Translator.translate(227))
+    createDOM("button", { class: "ogi-sideStalkUndoButton", type: "button" }, Translator.translate(230))
   );
 
   return undo;
@@ -244,7 +251,7 @@ function renderHistoricList(sideStalk, undoRow = null) {
   }
 
   if (!OGIData.sideStalk.length) {
-    list.appendChild(createDOM("div", { class: "ogi-sideStalkEmpty" }, Translator.translate(228)));
+    list.appendChild(createDOM("div", { class: "ogi-sideStalkEmpty" }, Translator.translate(231)));
     return list;
   }
 

@@ -2249,7 +2249,7 @@ const translation = Object.freeze({
       tr: "Historic'ten kaldır",
       br: "Remover do Historic",
     },
-    226: {
+    229: {
       de: "{player} aus Historic entfernt",
       en: "{player} removed from Historic",
       es: "{player} quitado de Historic",
@@ -2257,7 +2257,7 @@ const translation = Object.freeze({
       tr: "{player} Historic'ten kaldırıldı",
       br: "{player} removido do Historic",
     },
-    227: {
+    230: {
       de: "Rückgängig",
       en: "Undo",
       es: "Deshacer",
@@ -2265,7 +2265,7 @@ const translation = Object.freeze({
       tr: "Geri al",
       br: "Desfazer",
     },
-    228: {
+    231: {
       de: "Keine Spieler in Historic",
       en: "No players in Historic",
       es: "No hay jugadores en Historic",
