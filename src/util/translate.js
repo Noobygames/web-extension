@@ -2538,6 +2538,22 @@ const translation = Object.freeze({
       tr: "Sınıf ve subaylar",
       br: "Classe e oficiais",
     },
+    249: {
+      de: "Bereits angeflogen von",
+      en: "Already farmed by",
+      es: "Ya atacado por",
+      fr: "Déjà farmé par",
+      tr: "Zaten saldırılmış",
+      br: "Já atacado por",
+    },
+    250: {
+      de: "einem Allianzmitglied",
+      en: "an alliance member",
+      es: "un miembro de la alianza",
+      fr: "un membre de l'alliance",
+      tr: "bir ittifak üyesi",
+      br: "um membro da aliança",
+    },
   },
 });
 

@@ -142,3 +142,40 @@ export function importSpy(teamKey, reportKey) {
       return Promise.resolve(data);
     });
 }
+
+/**
+ * Targets recently hit by the player's own alliance, for the galaxy-view claim colours
+ * (roadmap Feature E).
+ *
+ * Read-only, and gated on the team key the player entered themselves - no key, no call, so a
+ * player who has not opted into PTRE never talks to it. Call this ONLY when a galaxy page is
+ * loaded by the player; never on a timer or a loop (AGENTS.md section 4).
+ *
+ * @param {string} country
+ * @param {string|number} universe
+ * @param {string} teamKey
+ * @param {number} galaxy
+ * @param {number} system
+ * @return {Promise<PtreResponse & {targets?: Array<object>}>}
+ */
+export function getGalaxyTargets(country, universe, teamKey, galaxy, system) {
+  const url = new URL(PTRE_URL.concat("api_galaxy_get_infos.php"));
+  _buildQueryString(url.searchParams, {
+    country: country,
+    univers: universe,
+    team_key: teamKey,
+    galaxy: galaxy,
+    system: system,
+  });
+
+  return fetch(url, {
+    method: "GET",
+    signal: abortController.signal,
+    mode: "cors",
+  })
+    .then((response) => response.json())
+    .catch((reason) => {
+      logger.error(reason);
+      throw reason;
+    });
+}

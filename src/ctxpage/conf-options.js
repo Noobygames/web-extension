@@ -54,6 +54,8 @@ const _options = {
   showProgressIndicators: true,
   fleetActivity: true,
   spyFilter: "DATE",
+  // Feature E: how long an alliance target claim stays 'taken' before the target is fair game.
+  claimTtlMinutes: 120,
   ptreTK: "",
   pantryKey: "",
   simulator: "",

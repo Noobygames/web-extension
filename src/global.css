@@ -9652,3 +9652,16 @@ body.no-commander .contentBoxBody {
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   font-weight: bold;
 }
+
+/* Feature E - alliance target claims in galaxy view */
+.galaxyRow.ogl-claim-taken {
+  box-shadow: inset 3px 0 0 #b34a4a;
+}
+
+.galaxyRow.ogl-claim-mine {
+  box-shadow: inset 3px 0 0 #5e9c5e;
+}
+
+.galaxyRow.ogl-claim-stale {
+  box-shadow: inset 3px 0 0 rgba(179, 74, 74, 0.35);
+}

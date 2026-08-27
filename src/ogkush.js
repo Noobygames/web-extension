@@ -40,6 +40,7 @@ import RecyclingYieldCalculator from "./util/recyclingYieldCalculator.js";
 import { planHarvest, CARGO_SHIP_IDS } from "./util/harvestPlanner.js";
 import { planExpeditionFleets } from "./util/expeditionBalancer.js";
 import { productionBreakdown, effectiveCrawlers, crawlerBonus } from "./util/productionEngine.js";
+import { indexClaims, claimStatus, claimCssClass, CLAIM_FREE } from "./util/targetClaims.js";
 import Notifier from "./util/Notifier.js";
 
 const DISCORD_INVITATION_URL = "https://discord.gg/8Y4SWup";
@@ -3947,6 +3948,7 @@ class OGInfinity {
       this.addGalaxyTooltips();
       this.highlightTarget();
       this.scan();
+      this.applyTargetClaims(galaxy, system);
     };
 
     let dc = displayContentGalaxy;
@@ -3983,6 +3985,65 @@ class OGInfinity {
       if (!document.querySelector(".ogl-colors")) {
         callback(galaxy, system);
       }
+    });
+  }
+
+  /**
+   * Alliance target claims in galaxy view (roadmap Feature E).
+   *
+   * Colours rows a teammate has recently farmed so two members do not spend fuel on the same
+   * inactive. Purely a colour and a tooltip: no probe icon, no dispatch action is attached to any
+   * coordinate, so the player still goes through the game's own galaxy probe flow (AGENTS.md 1.5.1).
+   *
+   * Gated on the PTRE team key the player entered themselves - without a key nothing is requested,
+   * so a player who has not opted into PTRE never contacts it. Fires only when the player loads or
+   * changes a galaxy page: never on a timer, a loop or a refresh (AGENTS.md section 4).
+   */
+  applyTargetClaims(galaxy, system) {
+    const teamKey = this.json.options.ptreTK;
+    if (!teamKey) return;
+
+    const requestId = `${galaxy}:${system}`;
+    // Guards against a second call for a system already being fetched, so navigating quickly
+    // cannot stack requests.
+    if (this.pendingClaimRequest === requestId) return;
+    this.pendingClaimRequest = requestId;
+
+    ptreService
+      .getGalaxyTargets(OgamePageData.gameLang, this.universe, teamKey, galaxy, system)
+      .then((response) => {
+        const claims = indexClaims(response?.targets || response?.result || []);
+        this.renderTargetClaims(galaxy, system, claims);
+      })
+      .catch((error) => {
+        // A PTRE outage must never break galaxy view - the rows simply stay uncoloured.
+        console.warn("[OGI][PTRE] target claims unavailable", error);
+      })
+      .finally(() => {
+        if (this.pendingClaimRequest === requestId) this.pendingClaimRequest = null;
+      });
+  }
+
+  renderTargetClaims(galaxy, system, claims) {
+    document.querySelectorAll("#galaxyContent .galaxyRow.ctContentRow").forEach((row, index) => {
+      ["ogl-claim-mine", "ogl-claim-taken", "ogl-claim-stale"].forEach((className) => row.classList.remove(className));
+
+      const coordinates = `${galaxy}:${system}:${index + 1}`;
+      const result = claimStatus({
+        coordinates,
+        claims,
+        ownPlayerId: this.playerId,
+        ttlMinutes: Number(this.json.options.claimTtlMinutes) || undefined,
+      });
+
+      if (result.status === CLAIM_FREE) return;
+
+      const className = claimCssClass(result.status);
+      if (className) row.classList.add(className);
+
+      const who = result.claim?.playerName || this.getTranslatedText(250);
+      const age = result.ageMinutes === null ? "" : ` (${Math.round(result.ageMinutes)}min)`;
+      row.setAttribute("data-ogl-claim", `${this.getTranslatedText(249)}: ${who}${age}`);
     });
   }
 
