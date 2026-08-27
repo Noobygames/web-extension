@@ -22,6 +22,16 @@ function sed_version {
   sed -i "s/__VERSION__/$VERSION/g" "${DIST_MODULE}/${VERSION_JS_FILE_NAME}"
 }
 
+##
+## Collapses the ES module graph into one file per context (rollup, no
+## minification - see scripts/bundle.mjs). Must run after sed_version, or the
+## stamped util/version.js is not the one that ends up in the bundle.
+##
+function bundle_modules {
+  echo "Bundling modules"
+  node scripts/bundle.mjs "${DIST_MODULE}"
+}
+
 function minified() {
   for v in "$@"; do
     npx terser "$v" -o "$v"
@@ -51,6 +61,7 @@ sed_version
 
 ## Modifing chrome-extension:// to moz-extension://
 sed -i "s/chrome/moz/g" "${DIST_MODULE}/${CSS_BUNDLE_FILE}"
+bundle_modules
 (cd "${DIST_MODULE}" && \
   zip -qr -X "../ogi-firefox.zip" .)
 echo "Packing zip for firefox complete!"
@@ -66,6 +77,7 @@ mkdir "${DIST_MODULE}"
 cp -r src/* "${DIST_MODULE}"
 sed_version
 rm "${DIST_MODULE}/${MANIFEST_FIREFOX_NAME}"
+bundle_modules
 
 <<'REMOVE_MINIFYING'
 find "${DIST_MODULE}" \

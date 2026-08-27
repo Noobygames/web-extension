@@ -13778,6 +13778,10 @@ class OGInfinity {
     if (!pantryKey || !this.json.needSync || (lastLocalSync && Date.now() - lastLocalSync < 60000)) {
       return;
     }
+    // Pantry sync is the only consumer of LZString, and most sessions never
+    // reach this line. Loading it here instead of on every page load keeps one
+    // more request off the boot path - same treatment chart.min.js already got.
+    await ensureLZString();
     let syncRequest = await fetch(
       `https://getpantry.cloud/apiv1/pantry/${pantryKey}/basket/${this.universe}-${OgamePageData.gameLang}-full`,
       { priority: "high", method: "GET" }
@@ -18746,6 +18750,24 @@ class AutoQueue extends Queue {
 
     return true;
   }
+}
+
+/**
+ * Loads `libs/lz-string.min.js` on first use and resolves once `LZString` is a
+ * page global.
+ *
+ * The content script owns `chrome.runtime.getURL`, so the actual injection
+ * happens over the `ogi-lzstring` event, the same way `ogi-chart` pulls in
+ * Chart.js. Repeated calls are cheap: `waitForDefinition` checks synchronously
+ * before it starts polling.
+ *
+ * @returns {Promise<boolean>}
+ */
+function ensureLZString() {
+  if (typeof LZString === "undefined") {
+    document.dispatchEvent(new CustomEvent("ogi-lzstring"));
+  }
+  return wait.waitForDefinition(window, "LZString");
 }
 
 function versionInStatusBar() {

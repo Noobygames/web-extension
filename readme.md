@@ -104,6 +104,15 @@ For Firefox: run `make dev-firefox`, then `about:debugging#/runtime/this-firefox
 
 The unpacked build stamps the version (defaults to the one in `package.json`, override with `make dev VERSION=9.9.9`) and drops two manifest keys that only apply to store releases: `update_url`, and the `extension_ids` whitelist in `web_accessible_resources` — a locally loaded build gets a different extension id, so that whitelist would lock out the build itself.
 
+The build also bundles the ES modules: `src/` stays one file per module, but the
+browser is handed one file per execution context — `ogkush.js` (69 modules,
+1.15 MB, seven levels of imports deep) and `ctxcontent/index.js`. That module
+graph was a request waterfall in front of every single page load, and OGame
+reloads on every view change. It is a plain concatenation with the imports
+resolved: **no minification, no obfuscation**, all comments intact. Run
+`OGI_NO_BUNDLE=1 make dev` to load the raw per-file graph instead, which is
+easier to step through in a debugger.
+
 ## Code formatting
 
 Please install the tools once by running: `npm install`

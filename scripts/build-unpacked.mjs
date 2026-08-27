@@ -15,12 +15,16 @@
  *
  * Pass --stable-id to pin the extension id with a local key, so a permanently installed build
  * keeps its chrome.storage.local data across rebuilds and moves. See scripts/dev-key.mjs.
+ *
+ * Pass --no-bundle to skip the rollup step and load the raw module graph, which
+ * is slower to boot but puts real per-file paths in the debugger.
  */
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
+import { bundle } from "./bundle.mjs";
 import { devManifestKey, devExtensionId } from "./dev-key.mjs";
 
 const args = Object.fromEntries(
@@ -97,6 +101,17 @@ if (target === "firefox") {
   fs.writeFileSync(cssPath, fs.readFileSync(cssPath, "utf8").replaceAll("chrome", "moz"));
 }
 
+// 6. Collapse the module graph into one file per context. Last, so it picks up
+//    the stamped version and the Firefox CSS rewrite. The per-file sources stay
+//    in the directory: nothing loads them any more, but they are what a
+//    sourcemap-less debugger and a reviewer want to read.
+let bundles = [];
+if (args["no-bundle"]) {
+  console.log("Skipping the bundle step (--no-bundle): the raw module graph will be loaded.");
+} else {
+  bundles = await bundle(outDir);
+}
+
 const loadHint =
   target === "firefox"
     ? `about:debugging#/runtime/this-firefox -> "Load Temporary Add-on" -> pick ${path.join(outDir, "manifest.json")}`
@@ -104,5 +119,6 @@ const loadHint =
 
 console.log(`Built unpacked ${target} extension v${version}`);
 console.log(`  ${outDir}`);
+for (const { file, bytes } of bundles) console.log(`  bundled ${file} (${(bytes / 1024).toFixed(0)} KB)`);
 if (stableId) console.log(`  extension id: ${stableId} (pinned by .local-extension-key.pem)`);
 console.log(`  ${loadHint}`);

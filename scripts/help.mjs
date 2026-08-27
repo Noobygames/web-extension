@@ -12,7 +12,7 @@ const firefoxDir = process.env.OGI_FIREFOX_DIR || "dist/unpacked/firefox";
 
 console.log(`Ogame Beyond Infinity - make targets
 
-  make install        Install dev dependencies (prettier, eslint, terser, clean-css)
+  make install        Install dev dependencies (prettier, eslint, rollup, terser, clean-css)
   make format         Format all sources with prettier (run before every commit)
   make check          Run eslint
   make test           Run the unit test suite (node:test + jsdom)
@@ -26,6 +26,9 @@ console.log(`Ogame Beyond Infinity - make targets
 
   make dev            Build unpacked Chromium/Brave extension into ${chromeDir}
   make dev-firefox    Build unpacked Firefox extension into ${firefoxDir}
+                      Both bundle the ~70 module files into one per context
+                      (rollup, no minification). Add OGI_NO_BUNDLE=1 to skip it
+                      and debug against the real per-file module graph.
   make brave          Build + launch Brave with the extension loaded (throwaway dev profile)
   make brave-main     Same, but using your normal Brave profile (close Brave first)
   make brave-open     Build + launch Brave straight to brave://extensions

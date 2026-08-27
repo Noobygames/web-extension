@@ -11,46 +11,6 @@ const mainLogger = getLogger();
 // Pushed in from the page via `ptre.setTeamKey`; never persisted here.
 let pendingPtreKey = "";
 
-contentContextInit({
-  ptre: {
-    galaxy: function (galaxy, system, positions, additionnal, ptreKey = null, serverTime = null) {
-      return dataHelper.scan(galaxy, system, positions, additionnal, ptreKey, serverTime);
-    },
-    setTeamKey: function (key) {
-      pendingPtreKey = typeof key === "string" ? key : "";
-      if (pendingPtreKey && dataHelper && dataHelper._galaxySnapshot) {
-        dataHelper.rebuildGalaxyStorage(pendingPtreKey);
-      }
-    },
-    galaxyInfo: function () {
-      if (!dataHelper || !dataHelper.galaxyStorage) {
-        return Promise.resolve({ systemCount: 0, lastGalaxyUpdateTS: -1, storageBytes: 0 });
-      }
-      let systemCount = 0;
-      for (const g in dataHelper.galaxyStorage) {
-        systemCount += Object.keys(dataHelper.galaxyStorage[g]).length;
-      }
-      const lastGalaxyUpdateTS = dataHelper.lastGalaxyUpdateTS ?? -1;
-      const key = `ogi-galaxy-${UNIVERSE}`;
-      return new Promise((resolve) => {
-        try {
-          chrome.storage.local.get([key], (result) => {
-            let storageBytes = 0;
-            const raw = result?.[key];
-            if (typeof raw === "string") storageBytes = new Blob([raw]).size;
-            resolve({ systemCount, lastGalaxyUpdateTS, storageBytes });
-          });
-        } catch (_) {
-          resolve({ systemCount, lastGalaxyUpdateTS, storageBytes: 0 });
-        }
-      });
-    },
-  },
-  messages: {
-    expeditionType: getExpeditionType,
-  },
-});
-
 const UNIVERSE = window.location.host.split(".")[0];
 let universes = {};
 let currentUniverse = null;
@@ -96,6 +56,16 @@ document.addEventListener("ogi-chart", function (e) {
   injectScript("libs/chart.min.js", () => {
     injectScript("libs/chartjs-plugin-labels.js");
   });
+});
+
+// LZString is only used by the pantry sync, which most sessions never run.
+// Injected on demand rather than on every page load - see ensureLZString() in
+// ogkush.js.
+let lzStringInjected = false;
+document.addEventListener("ogi-lzstring", function (e) {
+  if (lzStringInjected) return;
+  lzStringInjected = true;
+  injectScript("libs/lz-string.min.js");
 });
 
 window.addEventListener(
@@ -172,14 +142,66 @@ document.addEventListener("ogi-notification-sync", function (e) {
 });
 
 /**
- * Hydrates the universe DataHelper from `chrome.storage.local` and refreshes it.
+ * Registers the cross-context callbacks, then hydrates the universe DataHelper
+ * from `chrome.storage.local` and refreshes it.
  *
  * Injection of the page-context scripts used to live at the bottom of this
  * function. It now happens in `main.js` at `document_start`, before this module
- * is even imported, so `ogkush.js` can load in parallel with the game page.
+ * is even imported, so `ogkush.js` loads in parallel with this one instead of
+ * behind it.
+ *
+ * @param {string} callbackToken the handshake token `main.js` minted and put on
+ *   `<html>` before injecting the page script
  */
-export function main() {
+export function main(callbackToken) {
   mainLogger.log("Starting Ogame Beyond Infinity");
+
+  // Registered here rather than at module evaluation because `main.js` mints
+  // the token and publishes it at document_start, then injects ogkush.js
+  // without waiting for this module - so the token has to come in as an
+  // argument, and an argument is only available once main() is called.
+  contentContextInit(
+    {
+      ptre: {
+        galaxy: function (galaxy, system, positions, additionnal, ptreKey = null, serverTime = null) {
+          return dataHelper.scan(galaxy, system, positions, additionnal, ptreKey, serverTime);
+        },
+        setTeamKey: function (key) {
+          pendingPtreKey = typeof key === "string" ? key : "";
+          if (pendingPtreKey && dataHelper && dataHelper._galaxySnapshot) {
+            dataHelper.rebuildGalaxyStorage(pendingPtreKey);
+          }
+        },
+        galaxyInfo: function () {
+          if (!dataHelper || !dataHelper.galaxyStorage) {
+            return Promise.resolve({ systemCount: 0, lastGalaxyUpdateTS: -1, storageBytes: 0 });
+          }
+          let systemCount = 0;
+          for (const g in dataHelper.galaxyStorage) {
+            systemCount += Object.keys(dataHelper.galaxyStorage[g]).length;
+          }
+          const lastGalaxyUpdateTS = dataHelper.lastGalaxyUpdateTS ?? -1;
+          const key = `ogi-galaxy-${UNIVERSE}`;
+          return new Promise((resolve) => {
+            try {
+              chrome.storage.local.get([key], (result) => {
+                let storageBytes = 0;
+                const raw = result?.[key];
+                if (typeof raw === "string") storageBytes = new Blob([raw]).size;
+                resolve({ systemCount, lastGalaxyUpdateTS, storageBytes });
+              });
+            } catch (_) {
+              resolve({ systemCount, lastGalaxyUpdateTS, storageBytes: 0 });
+            }
+          });
+        },
+      },
+      messages: {
+        expeditionType: getExpeditionType,
+      },
+    },
+    callbackToken
+  );
 
   if (!universes[UNIVERSE] || Object.keys(universes[UNIVERSE]).length === 0) {
     //chrome.storage.local.clear()
@@ -200,10 +222,4 @@ export function main() {
       processData();
     });
   }
-
-  // Last step on purpose: `pageContextInit()` inside ogkush.js throws unless
-  // `contentContextInit()` above has already published its callback token, and
-  // that runs when this module is evaluated. The two small libraries are
-  // injected earlier, straight from main.js at document_start.
-  injectScript("ogkush.js", null, true);
 }

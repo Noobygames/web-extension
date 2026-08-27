@@ -4,13 +4,15 @@
  * Both halves of the extension start here, as early as the browser lets them,
  * instead of waiting for `DOMContentLoaded` the way this file used to:
  *
+ * - All three page-context scripts are injected immediately, so the browser
+ *   fetches, parses and compiles `ogkush.js` in parallel with the game's own
+ *   page load instead of doing it afterwards. A dynamically inserted `<script>`
+ *   is async, so `ogkush.js` waits for DOMContentLoaded itself before it
+ *   touches the DOM.
  * - `ctxcontent/index.js` only talks to `chrome.*` and the universe API and
- *   never reads the game DOM, so waiting for the DOM only delayed it. It
- *   injects the page-context scripts as its last step, so the browser fetches,
- *   parses and compiles `ogkush.js` plus its ~70 module files in parallel with
- *   the game's own page load instead of doing all of it afterwards. A
- *   dynamically inserted `<script>` is async, so `ogkush.js` waits for
- *   DOMContentLoaded itself before it touches the DOM.
+ *   never reads the game DOM, so waiting for the DOM only delayed it. It loads
+ *   next to `ogkush.js` rather than in front of it: the handshake token both
+ *   halves need is minted here and published before either is started.
  * - The wide-layout classes are put on <html> from a small cached mirror of the
  *   options, before the game paints, so changing pages no longer shows the
  *   vanilla layout first and the wide one a moment later.
@@ -24,6 +26,24 @@
  * the injection through the dynamic import below would put a module round trip
  * back in front of the thing we are trying to start early.
  */
+
+/**
+ * Token for the page <-> content-script bridge, published on `<html>` before
+ * anything else runs.
+ *
+ * `util/service.callbackEvent.js` used to mint this when the content module was
+ * evaluated, which forced `ogkush.js` to be injected *after* that module had
+ * loaded - `pageContextInit()` throws without a token. Minting it here breaks
+ * that dependency, so the 1.1 MB page bundle and the content bundle download at
+ * the same time instead of one behind the other. Keep the generator in step
+ * with `createCallbackToken()` there; this file is a classic content script and
+ * cannot import.
+ *
+ * @returns {string} 12 hex characters
+ */
+function createCallbackToken() {
+  return (Math.floor(Math.random() * 0xffffffffffff) + 1e6).toString(16).padStart(12, "0");
+}
 
 /**
  * @param {string} path extension-relative resource path
@@ -85,15 +105,15 @@ function applyCachedLayout() {
 
 applyCachedLayout();
 
-// The two page-context libraries have no ordering constraint, so they go out
-// immediately. `ogkush.js` does not: `pageContextInit()` throws unless the
-// content context has already put its callback token on <html>, which happens
-// when the module below is evaluated. It is therefore injected at the end of
-// `ctxcontent/index.js#main()`, one module round trip from now instead of a
-// whole DOMContentLoaded away.
-injectScript("libs/lz-string.min.js");
+const callbackToken = createCallbackToken();
+document.documentElement.dataset.ogiCallbackEventToken = callbackToken;
+
+// DOMPurify is needed as soon as the start-up sequence runs; LZString is not -
+// only the pantry sync uses it, and ogkush.js pulls it in on demand over the
+// `ogi-lzstring` event.
 injectScript("libs/purify.min.js");
+injectScript("ogkush.js", true);
 
 import(chrome.runtime.getURL("./ctxcontent/index.js"))
-  .then((contentScript) => contentScript.main())
+  .then((contentScript) => contentScript.main(callbackToken))
   .catch((error) => console.error("OGI: content context failed to start", error));

@@ -96,6 +96,82 @@ own listeners and the old ordering always ran after the whole dispatch.
   full `checkIntervals` (10 ms by default) even when the condition already held — `DOMPurify` and
   `#eventContent` both sit on the start-up path.
 
+### 6. The module graph itself: 69 files, seven levels deep, on every page load
+
+Starting the load early (§4) fixed _when_ the graph was fetched. It did not
+change _what_ was fetched: 69 files, 1.15 MB, and a dependency chain seven
+levels deep. The browser cannot know it needs level 7 until it has fetched and
+parsed levels 1 to 6, so this is a request waterfall in front of every page - and
+OGame is not a single-page app, so it is paid again on every view change.
+
+`scripts/bundle.mjs` collapses it, at build time, to one file per execution
+context:
+
+| loaded on boot                     | before              | after               |
+| :--------------------------------- | :------------------ | :------------------ |
+| page context (`ogkush.js` + graph) | 69 requests, 7 deep | 1 request, 1.13 MB  |
+| content context (`ctxcontent/`)    | 18 requests         | 1 request, 61 KB    |
+| vendored libs                      | 2, in parallel      | 1, in parallel (§8) |
+| content script (`main.js`)         | 1                   | 1                   |
+
+**Rollup, and no minification.** AGENTS.md §0 requires reviewable code, and
+`packaging.sh` keeps its terser pass deliberately disabled. Rollup was chosen
+over faster bundlers precisely because its output _is_ the source: identifiers,
+formatting and every JSDoc block survive, in module evaluation order. esbuild
+was tried first and rejected - it strips all non-legal comments and writes the
+build machine's absolute paths into the output. The per-file sources ship
+alongside the bundles, so a reviewer can diff one against the other.
+
+`treeshake` is off. Measured on this graph it saves 9 KB of 1126 (0.8%), which
+does not pay for the risk of a bundler deciding a module with top-level side
+effects is unused.
+
+`test/bundle.test.js` builds the real bundles and evaluates the page one under
+jsdom. That test exists because bundling fails silently: the file still parses,
+it just evaluates in a different order, or a name collides, or an import cycle
+that native ESM resolved with live bindings becomes a temporal dead zone. The
+unit suite imports `src/` directly and would never see it.
+
+### 7. `ogkush.js` was injected one round trip behind the content module
+
+`pageContextInit()` throws unless the content script has published a handshake
+token on `<html>`, so the 1.1 MB page bundle could not even start downloading
+until the content bundle had loaded and evaluated. `main.js` now mints that
+token itself and publishes it before injecting anything, and passes it into
+`contentContextInit(map, token)`. Both bundles now download side by side, and
+either half may initialise first.
+
+### 8. LZString was loaded on every page for a feature almost nobody runs
+
+`libs/lz-string.min.js` was injected on every page load. Its only two call sites
+are inside `checkPantrySync()`, which returns immediately unless the user has
+configured a pantry key _and_ there is something to sync. It now loads on demand
+over an `ogi-lzstring` event, the same way `chart.min.js` already did.
+
+That leaves the boot path at four requests, two of which are ours:
+
+| file                  | context | when                     |
+| :-------------------- | :------ | :----------------------- |
+| `main.js`             | content | manifest, document_start |
+| `ctxcontent/index.js` | content | bundle, document_start   |
+| `ogkush.js`           | page    | bundle, document_start   |
+| `libs/purify.min.js`  | page    | document_start           |
+
+`purify.min.js` is 22 KB of vendored, already-minified third party. Folding it
+into the page bundle would need a CommonJS plugin to unwrap its UMD header and
+would put minified code inside an otherwise readable file - not worth it for one
+request that runs in parallel with a bundle fifty times its size.
+
+### What is left
+
+After this, the boot path is: one classic content script, two bundles and two
+small vendored libraries, all requested in the same tick at `document_start`.
+The remaining cost is `src/ogkush.js` itself - 740 KB of the 1.13 MB bundle,
+65% of it - plus whatever `start()` does synchronously once the DOM is ready.
+Cutting that further means splitting the monolith so page-specific code is
+`import()`ed only on the pages that need it. That is a refactor, not a
+performance tweak, and it wants the profiler numbers below first.
+
 ### Measuring it
 
 `src/util/perf.js` is a profiler that costs one `localStorage.getItem` when off. Turn it on with

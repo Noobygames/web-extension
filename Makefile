@@ -49,8 +49,12 @@ bench:
 	npm run bench
 
 # Unpacked builds - loadable via "Load unpacked" / "Load Temporary Add-on".
+# Both bundle the module graph into one file per context. OGI_NO_BUNDLE=1 skips
+# that, for debugging against the real per-file paths.
+NO_BUNDLE := $(if $(OGI_NO_BUNDLE),--no-bundle,)
+
 dev:
-	node scripts/build-unpacked.mjs --target=chrome --version=$(VERSION) --out=$(CHROME_DIR)
+	node scripts/build-unpacked.mjs --target=chrome --version=$(VERSION) --out=$(CHROME_DIR) $(NO_BUNDLE)
 
 install-brave:
 	node scripts/install-local.mjs
@@ -59,7 +63,7 @@ install-brave-id:
 	node scripts/dev-key.mjs
 
 dev-firefox:
-	node scripts/build-unpacked.mjs --target=firefox --version=$(VERSION) --out=$(FIREFOX_DIR)
+	node scripts/build-unpacked.mjs --target=firefox --version=$(VERSION) --out=$(FIREFOX_DIR) $(NO_BUNDLE)
 
 brave: dev
 	node scripts/launch-brave.mjs --dir=$(CHROME_DIR) --profile=$(BRAVE_PROFILE)

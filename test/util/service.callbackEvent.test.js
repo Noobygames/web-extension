@@ -385,3 +385,91 @@ test("KNOWN BUG: a request for an unregistered token never settles", async () =>
     browser.cleanup();
   }
 });
+
+/**
+ * The preset-token path.
+ *
+ * `main.js` mints the token at `document_start` and publishes it before it
+ * injects anything, so `ogkush.js` and the content bundle download in parallel
+ * instead of one behind the other. That only works if `contentContextInit()`
+ * accepts a token it did not create - and, critically, if it still works when
+ * the page context got there first and replaced the published token with the
+ * "1" placeholder.
+ */
+test("contentContextInit accepts a token minted by the caller", async () => {
+  const browser = setupBrowser({ chrome: true });
+  try {
+    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const token = bridge.createCallbackToken();
+    browser.document.documentElement.dataset[DATASET_NAME] = token;
+
+    // No throw, even though the dataset is already populated.
+    bridge.contentContextInit({}, token);
+
+    assert.equal(browser.document.documentElement.dataset[DATASET_NAME], token, "the caller's token must survive");
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("a preset token still routes a request end to end", async () => {
+  const browser = setupBrowser({ chrome: true });
+  try {
+    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const token = bridge.createCallbackToken();
+    browser.document.documentElement.dataset[DATASET_NAME] = token;
+    bridge.contentContextInit({ ptre: { galaxy: () => "routed" } }, token);
+
+    delete globalThis.chrome;
+    delete browser.window.chrome;
+    bridge.pageContextInit();
+
+    const response = await bridge.pageContextRequest("ptre", "galaxy");
+    assert.equal(response.response, "routed");
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("the page context may consume the token before the content script registers", async () => {
+  // The real race: ogkush.js is injected first, so pageContextInit() can run -
+  // and overwrite the dataset with "1" - before ctxcontent/index.js has been
+  // evaluated. contentContextInit() must not read the dataset in that case.
+  const browser = setupBrowser({ chrome: true });
+  try {
+    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const token = bridge.createCallbackToken();
+    browser.document.documentElement.dataset[DATASET_NAME] = token;
+
+    // Page context first.
+    const savedChrome = globalThis.chrome;
+    delete globalThis.chrome;
+    delete browser.window.chrome;
+    bridge.pageContextInit();
+    assert.equal(browser.document.documentElement.dataset[DATASET_NAME], "1", "precondition: token was consumed");
+
+    // Content context second, with the token it kept in hand.
+    globalThis.chrome = savedChrome;
+    browser.window.chrome = savedChrome;
+    assert.doesNotThrow(() => bridge.contentContextInit({ ptre: { galaxy: () => "late" } }, token));
+
+    delete globalThis.chrome;
+    delete browser.window.chrome;
+    const response = await bridge.pageContextRequest("ptre", "galaxy");
+    assert.equal(response.response, "late");
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("a second contentContextInit is refused even with a preset token", async () => {
+  const browser = setupBrowser({ chrome: true });
+  try {
+    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const token = bridge.createCallbackToken();
+    bridge.contentContextInit({}, token);
+    assert.throws(() => bridge.contentContextInit({}, token), /already initialized/);
+  } finally {
+    browser.cleanup();
+  }
+});

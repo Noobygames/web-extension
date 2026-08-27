@@ -86,22 +86,50 @@ class CallbackRouter {
   }
 }
 
+/** Guards against a second initialisation in this realm. */
+let contentInitialized = false;
+
+/**
+ * Mints a token for the page <-> content handshake.
+ *
+ * Exported so `main.js` can publish the token at `document_start` and inject
+ * `ogkush.js` immediately, instead of waiting for this module to load first.
+ * `main.js` is a classic content script and cannot import, so it carries its
+ * own copy of this one-liner - keep the two in step.
+ *
+ * @returns {string} 12 hex characters
+ */
+export function createCallbackToken() {
+  return _createToken();
+}
+
 /**
  * @param {CallbackCommandMap} callbackCommandMap
+ * @param {string} [presetToken] a token already published on `<html>` by the
+ *   caller. Without it this function mints one and publishes it itself, which
+ *   forces whoever injects the page script to wait for this module to load.
+ *   With it, the injection and this module can load in parallel.
  */
-export function contentContextInit(callbackCommandMap) {
+export function contentContextInit(callbackCommandMap, presetToken = undefined) {
   if (!chrome.runtime) {
     throw new Error("Invalid context execution");
   }
 
-  if (Boolean(document.documentElement.dataset[DATASET_NAME]) === true) {
+  if (contentInitialized) {
+    throw new Error("service callback event is already initialized");
+  }
+
+  // Only meaningful without a preset token: with one, the dataset already holds
+  // it - or the placeholder "1", if the page context got there first.
+  if (presetToken === undefined && Boolean(document.documentElement.dataset[DATASET_NAME]) === true) {
     throw new Error("service callback event is already initialized");
   }
 
   const router = new CallbackRouter(callbackCommandMap);
 
-  callbackToken = _createToken();
-  document.documentElement.dataset[DATASET_NAME] = callbackToken;
+  callbackToken = presetToken ?? _createToken();
+  contentInitialized = true;
+  if (presetToken === undefined) document.documentElement.dataset[DATASET_NAME] = callbackToken;
   document.addEventListener(DATASET_NAME.concat(callbackToken), (eRequest) => {
     router.resolve(eRequest.detail).then((response) => {
       let clone = response;
