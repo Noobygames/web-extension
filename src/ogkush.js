@@ -37,6 +37,7 @@ import OverviewPage from "./ctxpage/overview/OverviewPage.js";
 import TraderImportExportPage from "./ctxpage/traderOverview/TraderImportExportPage.js";
 import { addTemplateSelector } from "./ctxpage/fleetdispatch/templates.js";
 import RecyclingYieldCalculator from "./util/recyclingYieldCalculator.js";
+import { planHarvest, CARGO_SHIP_IDS } from "./util/harvestPlanner.js";
 import Notifier from "./util/Notifier.js";
 
 const DISCORD_INVITATION_URL = "https://discord.gg/8Y4SWup";
@@ -5671,6 +5672,7 @@ class OGInfinity {
     let minesBtn = header.appendChild(createDOM("span", { class: "ogl-tab ogl-active" }, this.getTranslatedText(90)));
     let fleetBtn = header.appendChild(createDOM("span", { class: "ogl-tab" }, this.getTranslatedText(63)));
     let defBtn = header.appendChild(createDOM("span", { class: "ogl-tab" }, this.getTranslatedText(54)));
+    let harvestBtn = header.appendChild(createDOM("span", { class: "ogl-tab" }, this.getTranslatedText(235)));
     let body = createDOM("div");
     body.appendChild(header);
     body.appendChild(this.minesOverview());
@@ -5678,6 +5680,7 @@ class OGInfinity {
       minesBtn.classList.remove("ogl-active");
       fleetBtn.classList.remove("ogl-active");
       defBtn.classList.remove("ogl-active");
+      harvestBtn.classList.remove("ogl-active");
       body.children[1].remove();
       if (e.target.textContent == this.getTranslatedText(63)) {
         fleetBtn.classList.add("ogl-active");
@@ -5685,6 +5688,9 @@ class OGInfinity {
       } else if (e.target.textContent == this.getTranslatedText(54)) {
         defBtn.classList.add("ogl-active");
         body.appendChild(this.defenseOverview());
+      } else if (e.target.textContent == this.getTranslatedText(235)) {
+        harvestBtn.classList.add("ogl-active");
+        body.appendChild(this.harvestOverview());
       } else {
         minesBtn.classList.add("ogl-active");
         body.appendChild(this.minesOverview());
@@ -5693,7 +5699,114 @@ class OGInfinity {
     minesBtn.addEventListener("click", tabListener);
     fleetBtn.addEventListener("click", tabListener);
     defBtn.addEventListener("click", tabListener);
+    harvestBtn.addEventListener("click", tabListener);
     this.popup(null, body);
+  }
+
+  /**
+   * Save-flight overview: per planet, what is worth moving to the bank, how many cargos that
+   * needs, and how much hold would fly empty.
+   *
+   * Each row links to that planet's own fleetdispatch page with the bank preselected - one click,
+   * one planet, and the player still presses the game's own send button. There is deliberately no
+   * "harvest everything" button: that would be one click triggering many fleet dispatches.
+   */
+  harvestOverview() {
+    const content = createDOM("div", { class: "ogl-harvest-content" });
+
+    const bank = this.json.options.collect.target;
+    const bankCoordinates = `[${bank.galaxy}:${bank.system}:${bank.position}]`;
+
+    const capacities = {};
+    CARGO_SHIP_IDS.forEach((id) => {
+      capacities[id] = Number(this.json.ships?.[id]?.cargoCapacity) || 0;
+    });
+
+    const keptForCurrent = this.json.options.defaultKept || {};
+    const keep = {
+      metal: Number(keptForCurrent[1]) || 0,
+      crystal: Number(keptForCurrent[2]) || 0,
+      deuterium: Number(keptForCurrent[3]) || 0,
+    };
+
+    const planets = OGIData.empire.map((planet) => ({
+      id: planet.id,
+      name: planet.name,
+      coordinates: planet.coordinates,
+      resources: { metal: planet.metal, crystal: planet.crystal, deuterium: planet.deuterium },
+      ships: CARGO_SHIP_IDS.reduce((ships, id) => ({ ...ships, [id]: Number(planet[id]) || 0 }), {}),
+    }));
+
+    const { plans, totals } = planHarvest({ planets, bankCoordinates, capacities, keep });
+
+    const bankLine = createDOM(
+      "div",
+      { class: "ogl-harvest-bank" },
+      `${this.getTranslatedText(236)}: ${bankCoordinates}`
+    );
+    content.appendChild(bankLine);
+
+    if (plans.length === 0) {
+      content.appendChild(createDOM("div", { class: "ogl-harvest-empty" }, this.getTranslatedText(239)));
+      return content;
+    }
+
+    const table = createDOM("table", { class: "ogl-harvest-table" });
+    const head = createDOM("tr");
+    [
+      this.getTranslatedText(90),
+      this.getTranslatedText(237),
+      this.getTranslatedText(63),
+      this.getTranslatedText(238),
+    ].forEach((label) => head.appendChild(createDOM("th", {}, label)));
+    table.appendChild(head);
+
+    plans.forEach((plan) => {
+      const row = createDOM("tr", plan.feasible ? {} : { class: "ogl-harvest-short" });
+
+      const link = `?page=ingame&component=fleetdispatch&cp=${plan.planet.id}&galaxy=${bank.galaxy}&system=${bank.system}&position=${bank.position}&type=${bank.type}&mission=${this.json.options.collect.mission}&oglMode=0`;
+      row.appendChild(
+        this.createDOM(
+          "td",
+          {},
+          `<a href="${link}">${plan.planet.name}</a> <span class="ogl-harvest-coords">${plan.planet.coordinates}</span>`
+        )
+      );
+
+      row.appendChild(createDOM("td", {}, toFormatedNumber(plan.send.total, null, true)));
+
+      const shipCell = createDOM("td");
+      CARGO_SHIP_IDS.forEach((id) => {
+        if (!plan.ships[id]) return;
+        const shipSpan = createDOM("span", { class: `ogl-option ogl-fleet-ship ogl-fleet-${id}` });
+        shipCell.appendChild(shipSpan);
+        shipCell.appendChild(createDOM("span", {}, ` ${toFormatedNumber(plan.ships[id], null, true)} `));
+      });
+      if (plan.shortfall > 0) {
+        shipCell.appendChild(
+          createDOM("span", { class: "ogl-danger" }, ` -${toFormatedNumber(plan.shortfall, null, true)}`)
+        );
+      }
+      row.appendChild(shipCell);
+
+      // The waste warning: hold that would fly empty if this fleet left as planned.
+      const wasteCell = createDOM("td", plan.wastedCapacity > 0 ? { class: "ogl-care" } : {});
+      wasteCell.textContent = plan.wastedCapacity > 0 ? toFormatedNumber(plan.wastedCapacity, null, true) : "-";
+      row.appendChild(wasteCell);
+
+      table.appendChild(row);
+    });
+
+    const sumRow = createDOM("tr", { class: "ogl-harvest-sum" });
+    sumRow.appendChild(createDOM("th", {}, "Σ"));
+    sumRow.appendChild(createDOM("th", {}, toFormatedNumber(totals.resources, null, true)));
+    sumRow.appendChild(createDOM("th", {}, toFormatedNumber(totals.ships, null, true)));
+    sumRow.appendChild(createDOM("th", {}, toFormatedNumber(totals.wastedCapacity, null, true)));
+    table.appendChild(sumRow);
+
+    content.appendChild(table);
+
+    return content;
   }
 
   fetchAndConvertRC(messageId) {

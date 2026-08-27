@@ -1270,10 +1270,11 @@ input[type="password"]::selection {
   filter: sepia(70%) hue-rotate(-50deg) saturate(11) brightness(0.8);
 }
 /* Hide system input buttons minus and plus, if custom mission with spy mission is not active */
-.ogl-dest:not(:has(.ogk-customMission.ogl-active)):not(:has(.ogl-mission-icon.ogl-active[mission="6"])) .ogl-system-buttons {
+.ogl-dest:not(:has(.ogk-customMission.ogl-active)):not(:has(.ogl-mission-icon.ogl-active[mission="6"]))
+  .ogl-system-buttons {
   display: none;
 }
-.ogl-dest .ogl-system-buttons{
+.ogl-dest .ogl-system-buttons {
   position: relative;
 }
 .ogl-dest .ogl-system-input-minus,
@@ -1293,20 +1294,18 @@ input[type="password"]::selection {
   text-align: center;
   font-weight: bolder;
 }
-.ogl-dest .ogl-system-input-minus{
+.ogl-dest .ogl-system-input-minus {
   left: 51px;
 }
-.ogl-dest .ogl-system-input-minus::before{
+.ogl-dest .ogl-system-input-minus::before {
   content: "-";
 }
-.ogl-dest .ogl-system-input-plus{
+.ogl-dest .ogl-system-input-plus {
   left: 92.5px;
 }
-.ogl-dest .ogl-system-input-plus::before{
+.ogl-dest .ogl-system-input-plus::before {
   content: "+";
 }
-
-
 
 .ogl-dest .ogl-coords .ogl-homes {
   height: auto;
@@ -3876,7 +3875,9 @@ div[data-raw-depletion="4"] + .msgHead a.txt_link {
   color: #d9b0b0;
   cursor: default;
   opacity: 1;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 
 .ogl-sideStalk .ogi-sideStalkUndo.ogi-removing {
@@ -9576,4 +9577,51 @@ div.ogi-movement .ogi-movement-target > div:nth-child(1) {
 
 body.no-commander .contentBoxBody {
   top: 32px !important;
+}
+
+/* Feature B - save-flight harvest overview (Empire view tab) */
+.ogl-harvest-content {
+  padding: 8px 4px;
+}
+
+.ogl-harvest-bank {
+  margin-bottom: 8px;
+  color: #9099a3;
+}
+
+.ogl-harvest-empty {
+  padding: 12px;
+  text-align: center;
+  color: #9099a3;
+}
+
+.ogl-harvest-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ogl-harvest-table th,
+.ogl-harvest-table td {
+  padding: 3px 6px;
+  text-align: right;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.ogl-harvest-table th:first-child,
+.ogl-harvest-table td:first-child {
+  text-align: left;
+}
+
+.ogl-harvest-coords {
+  color: #9099a3;
+  font-size: 11px;
+}
+
+.ogl-harvest-short td {
+  opacity: 0.75;
+}
+
+.ogl-harvest-sum th {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: none;
 }
