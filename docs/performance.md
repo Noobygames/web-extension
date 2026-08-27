@@ -162,6 +162,72 @@ into the page bundle would need a CommonJS plugin to unwrap its UMD header and
 would put minified code inside an otherwise readable file - not worth it for one
 request that runs in parallel with a bundle fifty times its size.
 
+### 9. `start()` was one long synchronous task, so the planet bar painted last
+
+§4 to §8 fixed _when_ the code arrived. This one is about when the user sees it.
+
+`start()` ran ~50 steps in a single synchronous task. A browser cannot paint
+anything a task writes to the DOM until that task ends, so the order of the
+calls inside it made no visible difference on its own - everything OGI drew
+appeared at once, when the last step had finished. And the right planet bar, the
+one piece of OGI UI that is on screen on every page, had half its work at the
+very bottom of that list: `updateProductionProgress`, `updateSpaceShipsPresence`
+and `markLifeforms` ran after `spyTable()`, `betterHighscore()`,
+`technoDetail()`, `betterFleetDispatcher()` and two dozen other page-specific
+steps. `jumpGate()` and `needsUtil.display()` sat two thirds of the way down.
+
+The bar now has its own method, `renderPlanetBar()`, called first - before
+`#migrations()` and the `saveData()` that serialises the whole blob - and
+`start()` yields once right after it (`nextPaint()`: `requestAnimationFrame`
+then `setTimeout`). The page-specific work resumes in the next task, so the bar
+is on screen a frame after DOM ready rather than after all of it.
+
+`start()` is therefore `async` now, and the boot IIFE awaits it so `perf.report()`
+still sees the steps that run after the yield.
+
+The planet-bar observer used to hold a second, hand-kept copy of the same call
+list; both now go through `renderPlanetBar()`. They had already drifted -
+`harvest()`, `activitytimers()` and `quickPlanetList()` were in one and not the
+other.
+
+**Also fixed here: an interval leak in `activitytimers()`.** It registered two
+`setInterval`s per planet, and the observer re-ran it on every planet-bar
+re-render, so a long session accumulated dozens of one-minute timers, each
+pinning a detached element the game had already replaced. It is now one ticker
+for the whole bar, registered once, walking `#planetList .ogl-timer[data-timer]`.
+
+### 10. The empire refresh only started after the game page had finished loading
+
+The planet bar draws its resource numbers from the cached empire snapshot and
+redraws them when the refresh lands (`updateInfo()` → `updateresourceDetail()`).
+That refresh was requested from `start()`, i.e. after `DOMContentLoaded`, so the
+request left the browser at the moment the game's own page load was already
+over. The entire page load was dead time it could have spent in flight, and the
+redraw showed up as the planet bar's numbers changing a beat after everything
+else.
+
+`startEmpirePrefetch()` now issues it at `document_start`, from the boot IIFE,
+before `await domReady()`. `getEmpireInfo()` consumes that promise instead of
+issuing its own request.
+
+It is the **same single request**, moved earlier inside the same page load - not
+an extra one, which matters for AGENTS.md §4:
+
+- it only fires when the throttle says this page load would refresh anyway. That
+  throttle is now one function, `empireRefreshDue()`, shared by the prefetch and
+  by `updateEmpireData()`, because two copies of that rule would drift;
+- the condition is monotone in time, so "due at `document_start`" still holds at
+  `start()` - the prefetch cannot end up unused;
+- `takeEmpirePrefetch()` hands it over once, so a later refresh in the same page
+  load (the empire and statistics buttons) issues its own request;
+- the excluded-page check moved above it, so nothing is requested on the pages
+  OGI does not run on;
+- no timer, no loop, no auto-refresh, no `cp`, no `accountInfo`.
+
+Only the planets half is prefetched. The moons half needs `a.moonlink` to know
+whether the account has a moon at all, and guessing that from the stale cache
+would drop moon data for a page load after a moon is built.
+
 ### What is left
 
 After this, the boot path is: one classic content script, two bundles and two

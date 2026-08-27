@@ -1382,6 +1382,100 @@ const isOwnPlanet = (coords) => {
   return found;
 };
 
+const EMPIRE_PLANETS_PARAMS = new URLSearchParams({ page: "standalone", component: "empire" });
+const EMPIRE_MOONS_PARAMS = new URLSearchParams({ page: "standalone", component: "empire", planetType: "1" });
+
+/**
+ * One request for the standalone empire page, parsed out of the inline
+ * `createImperiumHtml` call the page carries.
+ *
+ * @param {URLSearchParams} href
+ * @returns {Promise<object>}
+ */
+const empireRequest = (href) =>
+  fetch(`?${href.toString()}`, { signal: pageSignal() })
+    .then((response) => response.text())
+    .then((string) =>
+      JSON.parse(
+        string.substring(string.indexOf("createImperiumHtml") + 47, string.indexOf("initEmpire") - 16),
+        (key, value) => {
+          if (value === "0") return 0;
+          return value;
+        }
+      )
+    );
+
+/**
+ * Whether this page load refreshes the cached empire snapshot.
+ *
+ * Lives outside the class because the prefetch below has to answer the same
+ * question at document_start, before there is an `OGInfinity` - and two copies
+ * of this rule would drift apart.
+ *
+ * @param {object} json the `ogk-data` blob
+ * @param {string} mode value of the `oglMode` URL parameter
+ * @param {boolean} [force]
+ * @returns {boolean}
+ */
+function empireRefreshDue(json, mode, force = false) {
+  const timeSinceLastUpdate = new Date() - new Date(json?.lastEmpireUpdate);
+  return !!(
+    force ||
+    isNaN(new Date(json?.lastEmpireUpdate)) ||
+    (mode == ogiMode.DEFAULT &&
+      ((timeSinceLastUpdate > 5 * 60 * 1e3 && json.needsUpdate) ||
+        (timeSinceLastUpdate > 1 * 60 * 1e3 && !json.options?.lessAggressiveEmpireAutomaticUpdate)))
+  );
+}
+
+/** @type {Promise<object>|null} in-flight prefetch of the empire planets page */
+let empirePrefetch = null;
+
+/**
+ * Starts the empire refresh at document_start instead of after
+ * DOMContentLoaded.
+ *
+ * The planet bar renders its resource numbers from the cached empire snapshot
+ * and rewrites them when the refresh lands. That refresh used to be requested
+ * from `start()`, so it only left the browser once the game's own page load had
+ * finished - the whole page load was dead time the request could have spent in
+ * flight, and the rewrite showed up as the planet bar visibly changing a beat
+ * after everything else.
+ *
+ * Compliance (AGENTS.md §4): this is the SAME single background call the tool
+ * already made, moved earlier within the same page load. `getEmpireInfo()`
+ * consumes this promise rather than issuing a second request, and nothing here
+ * is triggered by a timer, a loop or an auto-refresh. It is skipped entirely
+ * when the throttle says this page load would not have refreshed anyway, and on
+ * the pages OGI does not run on. No `cp`, no `accountInfo`.
+ *
+ * @param {URL} rawURL
+ */
+function startEmpirePrefetch(rawURL) {
+  if (empirePrefetch) return;
+  const mode = rawURL.searchParams.get("oglMode") || ogiMode.DEFAULT;
+  // Only the moon half of the refresh needs the DOM, and that half stays in
+  // getEmpireInfo(). The planets page is the one carrying every planet's
+  // resources, i.e. the numbers the user sees arrive late.
+  if (!empireRefreshDue(OGIData.json, mode)) return;
+  empirePrefetch = empireRequest(EMPIRE_PLANETS_PARAMS);
+  // Nothing awaits it yet; without this the rejection of an aborted page load
+  // surfaces as an unhandled one.
+  empirePrefetch.catch(() => {});
+}
+
+/**
+ * Hands the prefetched empire page over, once. A later refresh in the same page
+ * load (the empire/statistics buttons) has to issue its own request.
+ *
+ * @returns {Promise<object>|null}
+ */
+function takeEmpirePrefetch() {
+  const pending = empirePrefetch;
+  empirePrefetch = null;
+  return pending;
+}
+
 class OGInfinity {
   OverviewPage = new OverviewPage();
   TraderImportExportPage = new TraderImportExportPage();
@@ -1566,7 +1660,7 @@ class OGInfinity {
     );
   }
 
-  start() {
+  async start() {
     // Wide-screen layout/zoom switches: pure CSS class toggles on <html>.
     applyWideLayout();
     this.hasLifeforms = document.querySelector(".lifeform") != null;
@@ -1625,61 +1719,27 @@ class OGInfinity {
       ["metal", "crystal", "deuterium"].forEach((res) => (place[res] = Math.floor(resourcesBar.resources[res].amount)));
     }
 
+    document.querySelector("#pageContent").style.width = "1200px";
+
+    // The right planet bar is drawn first, before any page-specific work. It is
+    // the part of the UI the user looks at on every single page, and everything
+    // below used to run ahead of most of it.
+    this.renderPlanetBar();
+    // Registered before the yield below: the game may re-render the bar while we
+    // are off the stack, and a missed re-render leaves the bar without OGI data
+    // until the next page change.
+    this.observePlanetBar();
+
+    // Hand the frame back to the browser so the planet bar actually paints.
+    // start() is one long synchronous task, so *nothing* it writes to the DOM
+    // became visible until its very last statement had run - the planet bar
+    // included, however early it was built. Everything after this point is
+    // page-specific work that is not on screen yet anyway.
+    await nextPaint();
+
     this.#migrations();
     this.saveData();
-    document.querySelector("#pageContent").style.width = "1200px";
     this.listenKeyboard();
-    this.sideOptions();
-    this.minesLevel();
-    this.resourceDetail();
-
-    // refresh right planet list, after ogame resets it when something ends and there is no page reload
-    const rightObserver = new OGIObserver();
-    const ogkush = this;
-
-    const rightId = OgamePageData.isAtLeast_13_0_0 ? "planetbarcomponent" : "right";
-    // subtree is off on purpose: the callback only ever acted on mutations whose target IS this
-    // element, so every descendant mutation was delivered just to be filtered out - on a planet-bar
-    // re-render that was ~72 deliveries for the 12 that mattered.
-    //
-    // The refresh below also used to run once PER matching mutation, so re-rendering 12 planets ran
-    // the whole ~15-method refresh 12 times. It is idempotent, so once per batch is enough.
-    rightObserver(
-      document.getElementById(rightId),
-      (mutations) => {
-        if (!mutations.some((mutation) => mutation.target.id === rightId)) return;
-
-        ogkush.planetList = document.querySelectorAll(".smallplanet");
-        ogkush.current.planet = (
-          document.querySelector("#planetList .active") ?? document.querySelector("#planetList .planetlink")
-        ).parentNode;
-        document
-          .querySelectorAll(".planet-koords")
-          .forEach((elem) => (elem.textContent = elem.textContent.slice(1, -1)));
-        document.querySelectorAll(".moonlink").forEach((elem) => {
-          elem.classList.add("tooltipRight");
-          elem.classList.remove("tooltipLeft");
-        });
-        document.querySelectorAll(".planetlink").forEach((elem) => {
-          elem.classList.add("tooltipLeft");
-          elem.classList.remove("tooltipRight");
-        });
-        ogkush.sideOptions();
-        ogkush.minesLevel();
-        ogkush.resourceDetail();
-        ogkush.harvest();
-        ogkush.activitytimers();
-        needsUtil.display();
-        ogkush.jumpGate();
-        ogkush.updateFlyings();
-        ogkush.updatePlanets_IncomingHostileFleet();
-        ogkush.updatePlanets_FleetActivity();
-        ogkush.updateProductionProgress(false); //We haven't refreshed the empire data recently => false
-        ogkush.updateSpaceShipsPresence();
-        ogkush.markLifeforms();
-      },
-      { subtree: false, childList: true }
-    );
 
     wait.waitForQuerySelector("#eventContent").then(() => {
       this.eventBox();
@@ -1690,14 +1750,12 @@ class OGInfinity {
     });
     this.neededCargo();
     this.preselectShips();
-    this.harvest();
     this.expedition();
     this.collect();
     this.customMissions();
     this.messagesAnalyzer();
     this.cleanupMessages();
     this.quickPlanetList();
-    this.activitytimers();
     this.sideStalk();
     this.checkDebris();
     this.spyTable();
@@ -1712,8 +1770,6 @@ class OGInfinity {
     this.TraderImportExportPage.RemindMeImportExport(this.page);
     this.betterHighscore();
     this.overviewDates();
-    needsUtil.display();
-    this.jumpGate();
     this.topBarUtilities();
     this.fleetDispatcher();
     this.betterFleetDispatcher();
@@ -1721,12 +1777,9 @@ class OGInfinity {
     this.onGalaxyUpdate();
     this.timeZone();
     this.checkRedirect();
-    this.updateProductionProgress(false); //We haven't refreshed the empire data recently => false
-    this.updateSpaceShipsPresence();
     this.showStorageTimers();
     this.realProductionTooltip();
     // this.showTabTimer(); TODO: enable when timer is moved to the clock area
-    this.markLifeforms();
     this.navigationArrows();
     this.expedition = false;
     this.collect = false;
@@ -1758,6 +1811,78 @@ class OGInfinity {
     /*Fix banner styles for messages, premium and shop page*/
     if (this.page == "messages" || this.page == "premium" || this.page == "shop")
       document.querySelector("#banner_skyscraper").classList.add("fix-banner");
+  }
+
+  /**
+   * Everything OGI draws into the right planet bar, in one place.
+   *
+   * Two reasons it is a method and not a run of calls inside `start()`:
+   *  - the boot path and the planet-bar observer used to keep two hand-kept
+   *    copies of this list, and they had already drifted apart;
+   *  - `start()` is one long synchronous task, so nothing it writes becomes
+   *    visible until the last statement has run. Half of this list used to sit
+   *    behind `spyTable()`, `betterHighscore()`, `technoDetail()` and two dozen
+   *    other page-specific steps. It now runs first and paints on its own.
+   *
+   * Everything in here has to stay renderable from the cached `OGIData.empire`
+   * alone: the refresh that replaces it is still in flight at this point, and
+   * `updateresourceDetail()` redraws the numbers when it lands.
+   */
+  renderPlanetBar() {
+    this.sideOptions();
+    this.minesLevel();
+    this.resourceDetail();
+    this.harvest();
+    this.activitytimers();
+    needsUtil.display();
+    this.jumpGate();
+    this.updateProductionProgress(false); //We haven't refreshed the empire data recently => false
+    this.updateSpaceShipsPresence();
+    this.markLifeforms();
+  }
+
+  /**
+   * Re-runs the planet bar rendering after OGame rebuilds it, which it does
+   * whenever something finishes without a page reload.
+   */
+  observePlanetBar() {
+    const rightObserver = new OGIObserver();
+    const ogkush = this;
+
+    const rightId = OgamePageData.isAtLeast_13_0_0 ? "planetbarcomponent" : "right";
+    // subtree is off on purpose: the callback only ever acted on mutations whose target IS this
+    // element, so every descendant mutation was delivered just to be filtered out - on a planet-bar
+    // re-render that was ~72 deliveries for the 12 that mattered.
+    //
+    // The refresh below also used to run once PER matching mutation, so re-rendering 12 planets ran
+    // the whole ~15-method refresh 12 times. It is idempotent, so once per batch is enough.
+    rightObserver(
+      document.getElementById(rightId),
+      (mutations) => {
+        if (!mutations.some((mutation) => mutation.target.id === rightId)) return;
+
+        ogkush.planetList = document.querySelectorAll(".smallplanet");
+        ogkush.current.planet = (
+          document.querySelector("#planetList .active") ?? document.querySelector("#planetList .planetlink")
+        ).parentNode;
+        document
+          .querySelectorAll(".planet-koords")
+          .forEach((elem) => (elem.textContent = elem.textContent.slice(1, -1)));
+        document.querySelectorAll(".moonlink").forEach((elem) => {
+          elem.classList.add("tooltipRight");
+          elem.classList.remove("tooltipLeft");
+        });
+        document.querySelectorAll(".planetlink").forEach((elem) => {
+          elem.classList.add("tooltipLeft");
+          elem.classList.remove("tooltipRight");
+        });
+        ogkush.renderPlanetBar();
+        ogkush.updateFlyings();
+        ogkush.updatePlanets_IncomingHostileFleet();
+        ogkush.updatePlanets_FleetActivity();
+      },
+      { subtree: false, childList: true }
+    );
   }
 
   // remove when complete removal of direct probin in stalks and target list or GF start to wake up
@@ -1803,14 +1928,7 @@ class OGInfinity {
   }
 
   async updateEmpireData(force = false) {
-    let timeSinceLastUpdate = new Date() - new Date(this.json?.lastEmpireUpdate);
-    if (
-      force ||
-      isNaN(new Date(this.json.lastEmpireUpdate)) ||
-      (this.mode == ogiMode.DEFAULT &&
-        ((timeSinceLastUpdate > 5 * 60 * 1e3 && this.json.needsUpdate) ||
-          (timeSinceLastUpdate > 1 * 60 * 1e3 && !this.json.options.lessAggressiveEmpireAutomaticUpdate)))
-    ) {
+    if (empireRefreshDue(this.json, this.mode, force)) {
       await this.updateInfo();
     }
     let stageForUpdate = () => {
@@ -12061,7 +12179,6 @@ class OGInfinity {
         planet.querySelector(".planetlink").appendChild(createDOM("div", { class: "activity showMinutes" }, value));
       }
       this.updateTimer(pTimer);
-      setInterval(() => this.updateTimer(pTimer, true), 6e4);
       value = Math.min(Math.round((now - timers[1]) / 6e4), 60);
       if (planet.querySelector(".moonlink")) {
         let mTimer = planet.querySelector(".moonlink").appendChild(
@@ -12074,9 +12191,20 @@ class OGInfinity {
           planet.querySelector(".moonlink").appendChild(createDOM("div", { class: "activity showMinutes" }, value));
         }
         this.updateTimer(mTimer);
-        setInterval(() => this.updateTimer(mTimer, true), 6e4);
       }
     });
+
+    // One ticker for the whole bar, registered once. It used to be two
+    // setIntervals per planet, re-registered on every planet-bar re-render, so a
+    // long session accumulated dozens of them - each one pinning a detached
+    // element the game had already thrown away.
+    if (!this.activityTicker) {
+      this.activityTicker = setInterval(() => {
+        document.querySelectorAll("#planetList .ogl-timer[data-timer]").forEach((timer) => {
+          this.updateTimer(timer, true);
+        });
+      }, 6e4);
+    }
   }
 
   updateTimer(element, increment) {
@@ -12294,24 +12422,12 @@ class OGInfinity {
   getEmpireInfo() {
     const hasMoon = document.querySelector("a.moonlink") !== null;
 
-    const empireRequest = (href) =>
-      fetch(`?${href.toString()}`, { signal: pageSignal() })
-        .then((response) => response.text())
-        .then((string) =>
-          JSON.parse(
-            string.substring(string.indexOf("createImperiumHtml") + 47, string.indexOf("initEmpire") - 16),
-            (key, value) => {
-              if (value === "0") return 0;
-              return value;
-            }
-          )
-        );
-    const empireRequestPlanets = empireRequest(new URLSearchParams({ page: "standalone", component: "empire" }));
-    const empireRequestMoons = hasMoon
-      ? wait
-          .delay(10)
-          .then(() => empireRequest(new URLSearchParams({ page: "standalone", component: "empire", planetType: "1" })))
-      : null;
+    // Started at document_start when this page load was going to refresh anyway,
+    // so it has usually been in flight for the whole of the game's own page load
+    // by the time we get here. Same single request either way - see
+    // `startEmpirePrefetch()`.
+    const empireRequestPlanets = takeEmpirePrefetch() ?? empireRequest(EMPIRE_PLANETS_PARAMS);
+    const empireRequestMoons = hasMoon ? wait.delay(10).then(() => empireRequest(EMPIRE_MOONS_PARAMS)) : null;
 
     const getWorkinProgressGroupsAndPatterns = (groups) => {
       //create a list of patterns to match the groups ('?' is a wildcard for lifeform groups)
@@ -18827,19 +18943,45 @@ function domReady() {
   );
 }
 
+/**
+ * Yields until the browser has had a chance to paint what has been written to
+ * the DOM so far.
+ *
+ * `start()` is one long synchronous task: the browser cannot paint anything it
+ * builds until the whole task ends, so the order of the calls inside it made no
+ * visible difference on its own. One yield after the right planet bar is drawn
+ * is what actually puts it on screen ahead of the page-specific work.
+ *
+ * `requestAnimationFrame` runs just before the next paint, the `setTimeout`
+ * inside it resumes just after it - so the work that follows never lands in the
+ * same frame as the bar.
+ *
+ * @returns {Promise<void>}
+ */
+function nextPaint() {
+  if (typeof requestAnimationFrame !== "function") return new Promise((resolve) => setTimeout(resolve, 0));
+  return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+}
+
 (async () => {
   logger.info("Reveal Ogame Beyond Infinity");
 
   try {
-    await domReady();
-    perf.mark("DOM ready");
-
+    // Both of these are answered from the URL alone, so they happen at
+    // document_start rather than after the game page has finished loading: the
+    // excluded pages bail out without waiting, and on every other page the
+    // empire refresh spends the whole page load in flight instead of starting
+    // after it.
     const rawURL = new URL(window.location.href);
     const page = rawURL.searchParams.get("component") || rawURL.searchParams.get("page");
     if (["intro", "empire", "combatsim"].includes(page)) {
       logger.info("Excluded page: " + page);
       return;
     }
+    perf.time("startEmpirePrefetch()", () => startEmpirePrefetch(rawURL));
+
+    await domReady();
+    perf.mark("DOM ready");
 
     if (page === "messages") {
       const obs = new OGIObserver();
@@ -18872,7 +19014,9 @@ function domReady() {
 
     // No-op unless profiling is on (localStorage["ogi-perf"] = "1").
     perf.instrumentMethods(ogKush, "start > ");
-    perf.time("OGInfinity.start()", () => ogKush.start());
+    // start() yields once, after the planet bar is drawn, so it has to be awaited
+    // for perf.report() to see the steps that run after that yield.
+    await perf.timeAsync("OGInfinity.start()", () => ogKush.start());
     perf.report();
   } catch (ex) {
     logger.error(ex);
