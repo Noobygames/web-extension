@@ -23,6 +23,28 @@
 
 _These features address current pain points in existing extensions. Use these descriptions as implementation guidelines for the codebase._
 
+**Status: all five implemented**, one commit each. Each feature keeps its arithmetic in a
+DOM-free module under `src/util/` with unit tests, and wires that module into the page separately.
+
+| Feature | Module | Wired into | Tests |
+| :------ | :----- | :--------- | :---- |
+| A | `util/fleetFlight.js`, `util/farmEvaluator.js` | spy-report table (`PER_HOUR` column) | 29 |
+| B | `util/harvestPlanner.js` | Empire view, Harvest tab | 23 |
+| C | `util/expeditionBalancer.js` | fleetdispatch, opt-in setting | 20 |
+| D | `util/productionEngine.js` | overview resource-bar tooltip | 27 |
+| E | `util/targetClaims.js`, `service.ptre.js` | galaxy-view row colours | 20 |
+
+Compliance notes that constrained the implementations:
+
+- **B** has no "harvest everything" button. One click reaching many dispatches breaks the
+  1 click = 1 action rule, so each planet links to its own prefilled dispatch form.
+- **C** only pre-fills a number. It does not send, queue or schedule.
+- **E** attaches no probe or dispatch action to any coordinate - it is a colour and a tooltip, so
+  probing a new target still goes through the game's own galaxy flow. Its one network call is
+  gated on the player's own PTRE team key and fires only on a galaxy page the player loaded,
+  never on a timer.
+- **A** and **D** are read-only over data already on the page, so neither produces activity.
+
 ### Feature A: Advanced Espionage & Farm Evaluator
 
 - **Goal:** Allow players to sort espionage reports by "Profit per Hour" rather than just absolute loot.
