@@ -14615,6 +14615,33 @@ class OGInfinity {
           lastFleetId = id;
           lastFleetBtn = fleet.querySelector(".reversal a");
         }
+
+        // The game prints .absTime / .nextabsTime in the server timezone. When the OGI timezone
+        // option is on the user wants their own local timezone, so re-render both from the epoch
+        // attributes -- getFormatedDate() formats a unix timestamp in the browser's local timezone.
+        // No timezoneDiff is added here on purpose: data-arrival-time / data-end-time are unix
+        // timestamps and therefore already carry the correct instant. Adding the diff on top
+        // double-corrects and pushes the display one offset too far (review of PR #485).
+        if (this.json.options.timeZone) {
+          const absTime = fleet.querySelector(".absTime");
+          const nextAbsTime = fleet.querySelector(".nextabsTime");
+          const openCloseDetails = fleet.querySelector(".openCloseDetails");
+
+          if (absTime && openCloseDetails) {
+            const arrivalTime = fleet.getAttribute("data-arrival-time") * 1e3;
+            const endTime = openCloseDetails.getAttribute("data-end-time") * 1e3;
+
+            if (nextAbsTime) {
+              // Outgoing leg: .absTime is the next event, .nextabsTime the return
+              absTime.textContent = getFormatedDate(endTime, "[G]:[i]:[s] ");
+              nextAbsTime.textContent = getFormatedDate(arrivalTime, "[G]:[i]:[s] ");
+            } else {
+              // Return flight: only one time left to show
+              absTime.textContent = getFormatedDate(arrivalTime, "[G]:[i]:[s] ");
+            }
+          }
+        }
+
         let type = fleet.getAttribute("data-mission-type");
         let originCoords = fleet.querySelector(".originCoords").textContent;
         OGIData.empire.forEach((planet) => {
@@ -14660,23 +14687,31 @@ class OGInfinity {
           m: splitted[4],
           s: splitted[5],
         };
-        let lastTimer = new Date(
-          backDate.year,
-          backDate.month - 1,
-          backDate.day,
-          backDate.h,
-          backDate.m,
-          backDate.s
-        ).getTime();
+
+        // Unlike the .absTime attributes above, these components come from the reversal tooltip as
+        // wall-clock text in the *server* timezone. new Date(y, m, d, ...) reads them as browser-local,
+        // so the resulting instant is off by timezoneDiff whenever the two zones differ. With the OGI
+        // timezone option on the user wants local time, so the diff has to be added back here.
+        const timeZoneChangeReverse = this.json.options.timeZone ? this.json.timezoneDiff : 0;
+        const baseTime =
+          new Date(backDate.year, backDate.month - 1, backDate.day, backDate.h, backDate.m, backDate.s).getTime() +
+          timeZoneChangeReverse * 1e3;
+
         let content = details.appendChild(createDOM("div", { class: "ogl-date" }));
-        let date;
-        let updateTimer = () => {
-          lastTimer += 1e3;
-          date = new Date(lastTimer);
-          content.textContent = getFormatedDate(date.getTime(), "[d].[m].[y] - [G]:[i]:[s] ");
+
+        // The tooltip states when the fleet would be home if it reversed *now*. Every second spent
+        // flying outbound adds one more second of flight back, so the reversal ETA moves 2s per 1s of
+        // real time. Recomputed from wall-clock rather than incremented per tick, so a throttled
+        // background tab (which drops setInterval firings) no longer makes the display drift behind.
+        const realStart = Date.now();
+
+        const updateTimer = () => {
+          const virtualElapsed = (Date.now() - realStart) * 2;
+          content.textContent = getFormatedDate(baseTime + virtualElapsed, "[d].[m].[y] - [G]:[i]:[s] ");
         };
+
         updateTimer();
-        setInterval(() => updateTimer(), 500);
+        setInterval(updateTimer, 500);
       });
       if (lastFleetBtn) {
         lastFleetBtn.style.filter = "hue-rotate(180deg) saturate(150%)";
