@@ -1,4 +1,4 @@
-# Ogame Infinity Beyond
+# Ogame Beyond Infinity
 
 This is a fork of the original Ogame Infinity Extension, but extended and reworked to my own needs.
 All credits go to [Ogame Infinity](https://github.com/ogame-infinity/web-extension)
