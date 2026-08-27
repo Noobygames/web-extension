@@ -64,7 +64,8 @@ const ALLIANCES_XML =
 test("planets are grouped by player id", async () => {
   await withUniverse(PLANETS_XML, async () => {
     const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
-    const planets = await getPlanets("s101-en");
+    const snapshot = await getPlanets("s101-en");
+    const planets = snapshot.planets;
 
     assert.ok(planets instanceof Map);
     assert.deepEqual([...planets.keys()], [101, 102]);
@@ -76,7 +77,7 @@ test("planets are grouped by player id", async () => {
 test("planet fields are parsed with the right types", async () => {
   await withUniverse(PLANETS_XML, async () => {
     const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
-    const [homeworld, colony] = (await getPlanets("s101-en")).get(101);
+    const [homeworld, colony] = (await getPlanets("s101-en")).planets.get(101);
 
     assert.deepEqual(homeworld, {
       id: 33701001,
@@ -105,7 +106,34 @@ test("the planets request targets the universe API of the right universe", async
 test("an empty universe yields an empty map", async () => {
   await withUniverse('<?xml version="1.0"?><universe timestamp="1"/>', async () => {
     const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
-    assert.equal((await getPlanets("s101-en")).size, 0);
+    assert.equal((await getPlanets("s101-en")).planets.size, 0);
+  });
+});
+
+test("the snapshot exposes a flat planet list and the universe.xml timestamp", async () => {
+  await withUniverse(PLANETS_XML, async () => {
+    const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+    const snapshot = await getPlanets("s101-en");
+
+    // galaxyStorage is built from the flat list, not from the per-player map
+    assert.ok(Array.isArray(snapshot.planetList));
+    assert.equal(snapshot.planetList.length, 3);
+    assert.deepEqual(
+      snapshot.planetList.map((planet) => planet.coords),
+      ["1:2:3", "1:2:4", "4:250:8"]
+    );
+    // rebuildGalaxyStorage() gates on this timestamp, so it must survive parsing
+    assert.equal(snapshot.timestamp, 1700000000);
+  });
+});
+
+test("a universe.xml without a timestamp reports -1 rather than NaN", async () => {
+  await withUniverse('<?xml version="1.0"?><universe/>', async () => {
+    const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+    const snapshot = await getPlanets("s101-en");
+
+    // -1 keeps the `newTs <= previousTs` guard in rebuildGalaxyStorage() meaningful
+    assert.equal(snapshot.timestamp, -1);
   });
 });
 
