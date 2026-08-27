@@ -54,6 +54,62 @@ refresh **12 times**. It is idempotent, so it now runs once per batch.
 
 Both fixed in `perf(page): replace a permanent 100ms DOM poll and stop redundant observer work`.
 
+### 4. The whole extension waited for `DOMContentLoaded` before it started loading
+
+`main.js` registered a `DOMContentLoaded` listener and did nothing until it fired. Only then did it
+dynamically import the content module, and only then did that module inject `ogkush.js`. So the
+browser began fetching, parsing and compiling **69 module files, 1.15 MB** at the moment the game
+page was already finished — all of it serial, in front of the first OGI pixel. That is the "vanilla
+UI is done, then a second or two of nothing, then the extension appears" the users describe.
+
+Now `main.js` runs its work at `document_start`:
+
+| step                      | before                          | after                                          |
+| :------------------------ | :------------------------------ | :--------------------------------------------- |
+| wide-layout classes       | in `start()`, after module load | `document_start`, from the `ogi-layout` mirror |
+| `lz-string` + `DOMPurify` | after DOMContentLoaded          | `document_start`                               |
+| content module import     | after DOMContentLoaded          | `document_start`                               |
+| `ogkush.js` + 69 modules  | after DOMContentLoaded          | one module round trip after `document_start`   |
+
+`ogkush.js` is a dynamically inserted script, so it is _async_, not deferred: it now loads in
+parallel with the game's own page load and waits for `DOMContentLoaded` itself before it touches
+anything (`domReady()` in the bottom IIFE). That in turn required every page-context module to stop
+reading the DOM at module-evaluation time — `<head>` is still empty at `document_start`. Made lazy:
+`OgamePageData` (all getters), `translate.js#currentLanguage()`, `popup.js#getPlayerClass()`,
+`flying.js#hasLifeforms()`; `needs.js` defers its observer registration.
+
+`ogkush.js` deliberately stays **last** in the injection order: `pageContextInit()` throws unless
+`contentContextInit()` has already published its callback token on `<html>`.
+
+`domReady()` resumes via `setTimeout(..., 0)` rather than straight out of the DOMContentLoaded
+listener, because the game creates page globals such as `resourcesBar` and `fleetDispatcher` in its
+own listeners and the old ordering always ran after the whole dispatch.
+
+### 5. Two smaller ones on the same path
+
+- **The wide-layout flash.** The layout classes were applied in `start()`, so every page change
+  painted the vanilla-width layout first and jumped to the wide one when OGI caught up.
+  `wide-layout.js` now mirrors its three switches into a small `ogi-layout` localStorage key, and
+  `main.js` applies them at `document_start`, before the first paint. `ogk-data` itself is far too
+  large to parse there.
+- **`waitFor()` never checked its predicate before the first interval tick.** Every caller paid a
+  full `checkIntervals` (10 ms by default) even when the condition already held — `DOMPurify` and
+  `#eventContent` both sit on the start-up path.
+
+### Measuring it
+
+`src/util/perf.js` is a profiler that costs one `localStorage.getItem` when off. Turn it on with
+`localStorage.setItem("ogi-perf", "1")` (sticky) or `&ogi-perf=1` on the game URL (one load), then
+reload. `ogkush.js` prints:
+
+- a timeline: module evaluation, DOM ready, `init()`, `start()`, the DOMPurify wait;
+- one row per `start()` step that took more than 0.5 ms (`perf.instrumentMethods`);
+- totals for `ogk-data`: parse time, number of writes, time spent in them, and the blob size.
+
+That last table is the one to look at before attacking the store: it answers "how big is the blob
+really, and how many of the 82 writes actually happen on this page" with numbers instead of
+estimates.
+
 ---
 
 ## Investigated and deliberately not changed

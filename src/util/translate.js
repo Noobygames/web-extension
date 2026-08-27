@@ -2629,9 +2629,29 @@ const translation = Object.freeze({
   },
 });
 
-const language = OgamePageData.playerLang;
-let currentLanguage = ["ar", "mx"].includes(language) ? "es" : language;
-currentLanguage = ["de", "en", "es", "fr", "tr", "br"].includes(currentLanguage) ? currentLanguage : "en";
+const SUPPORTED_LANGUAGES = ["de", "en", "es", "fr", "tr", "br"];
+
+let resolvedLanguage = null;
+
+/**
+ * The player language, resolved on first use rather than at module evaluation.
+ *
+ * Lazy on purpose: `OgamePageData` reads the `<meta name="ogame-language">`
+ * tag, and `ogkush.js` is injected at `document_start` so its module graph can
+ * load in parallel with the game's page parse. At that moment `<head>` is
+ * still empty. Every caller runs after `DOMContentLoaded`.
+ *
+ * @returns {string} one of SUPPORTED_LANGUAGES
+ */
+function currentLanguage() {
+  if (resolvedLanguage) return resolvedLanguage;
+
+  const language = OgamePageData.playerLang;
+  const mapped = ["ar", "mx"].includes(language) ? "es" : language;
+  resolvedLanguage = SUPPORTED_LANGUAGES.includes(mapped) ? mapped : "en";
+
+  return resolvedLanguage;
+}
 
 class Translator {
   logger = getLogger("Translator");
@@ -2647,7 +2667,7 @@ class Translator {
     return translations;
   }
   #translate(id, type = "text") {
-    return translation?.[type]?.[id]?.[currentLanguage] || translation?.[type]?.[id]?.en || "";
+    return translation?.[type]?.[id]?.[currentLanguage()] || translation?.[type]?.[id]?.en || "";
   }
   translate(id, type = "text") {
     if (OGIData.json.translations && type === "tech") {
@@ -2705,8 +2725,8 @@ class Translator {
     const diffInMinutes = Math.floor((new Date() - new Date(translations.lastUpdate)) / (1000 * 60));
 
     //if langage is different from currentLanguage or if date is older than 60 minutes update
-    if (translations.language !== currentLanguage || diffInMinutes > 60) {
-      this.logger.debug(`Translations (${currentLanguage}) will be updated`);
+    if (translations.language !== currentLanguage() || diffInMinutes > 60) {
+      this.logger.debug(`Translations (${currentLanguage()}) will be updated`);
 
       this.#ForceUpdateAllTechNamesFromEmpire(translations, empireFromPlanets);
       if (empireFromMoons) {
@@ -2715,14 +2735,14 @@ class Translator {
 
       //set date to now and language to currentLanguage
       translations.lastUpdate = new Date().toISOString();
-      translations.language = currentLanguage;
+      translations.language = currentLanguage();
 
       OGIData.json.translations = translations;
 
-      this.logger.debug(`Translations (${currentLanguage}) updated`);
+      this.logger.debug(`Translations (${currentLanguage()}) updated`);
     } else {
       this.logger.debug(
-        `No need to update translations (${currentLanguage}), last update was ${diffInMinutes} minutes ago`
+        `No need to update translations (${currentLanguage()}), last update was ${diffInMinutes} minutes ago`
       );
     }
   }

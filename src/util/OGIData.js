@@ -1,3 +1,5 @@
+import * as perf from "./perf.js";
+
 const localStorageKey = "ogk-data";
 
 class OGIData {
@@ -269,12 +271,22 @@ class OGIData {
   }
 
   constructor() {
-    const res = JSON.parse(localStorage.getItem(localStorageKey));
+    const at = perf.isEnabled() ? performance.now() : 0;
+    const raw = localStorage.getItem(localStorageKey);
+    const res = JSON.parse(raw);
     this._json = res || {};
+    perf.accumulate("ogk-data parse", perf.isEnabled() ? performance.now() - at : 0, raw ? raw.length : 0);
   }
 
   #save() {
-    localStorage.setItem(localStorageKey, JSON.stringify(this._json));
+    // Every setter writes the whole blob. That is the documented contract (a
+    // setter must be durable the moment it returns), but it also means the cost
+    // of one write scales with the total size of ogk-data - which is why the
+    // profiler tracks the count and the size, not just the time.
+    const at = perf.isEnabled() ? performance.now() : 0;
+    const raw = JSON.stringify(this._json);
+    localStorage.setItem(localStorageKey, raw);
+    perf.accumulate("ogk-data save", perf.isEnabled() ? performance.now() - at : 0, raw.length);
   }
   Save() {
     this.#save();

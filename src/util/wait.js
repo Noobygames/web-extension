@@ -7,6 +7,14 @@
  */
 export function waitFor(predicateCallback, checkIntervals = 10, timeout = 5e3) {
   return new Promise((resolve, reject) => {
+    // Check once up front. Without this every caller pays a full `checkIntervals`
+    // tick even when the condition already holds, which on the start-up path
+    // (DOMPurify, #eventContent, ...) is pure latency for nothing.
+    if (predicateCallback()) {
+      resolve(true);
+      return;
+    }
+
     let timeoutId = NaN;
     const intervalId = setInterval(() => {
       if (predicateCallback()) {

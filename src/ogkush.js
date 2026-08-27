@@ -45,10 +45,12 @@ import { productionBreakdown, effectiveCrawlers, crawlerBonus } from "./util/pro
 import { indexClaims, claimStatus, claimCssClass, CLAIM_FREE } from "./util/targetClaims.js";
 import { watchForEmpireChanges } from "./util/stageForUpdate.js";
 import Notifier from "./util/Notifier.js";
+import * as perf from "./util/perf.js";
 
 const DISCORD_INVITATION_URL = "https://discord.gg/8Y4SWup";
 //const VERSION = "__VERSION__";
 const logger = getLogger();
+perf.mark("ogkush.js module evaluation");
 pageContextInit();
 
 var dataHelper = (function () {
@@ -18763,10 +18765,35 @@ function versionInStatusBar() {
   siteFooterTextRight.append(" | ", version);
 }
 
+/**
+ * Resolves once the game's DOM is parsed.
+ *
+ * `ogkush.js` is injected at `document_start` so the browser can fetch, parse
+ * and compile the ~70 module files in parallel with the game's own page load
+ * instead of starting all of that after DOMContentLoaded. Nothing below may
+ * touch the DOM before this resolves.
+ *
+ * @returns {Promise<void>}
+ */
+function domReady() {
+  if (document.readyState !== "loading") return Promise.resolve();
+  return new Promise((resolve) =>
+    // setTimeout, not a bare resolve: the game sets up page globals such as
+    // `resourcesBar` and `fleetDispatcher` in its own DOMContentLoaded
+    // listeners, and resuming inside the same dispatch could land before them.
+    // Yielding to the next task reproduces the old ordering, where this file
+    // was only injected once the dispatch had finished.
+    document.addEventListener("DOMContentLoaded", () => setTimeout(resolve, 0), { once: true })
+  );
+}
+
 (async () => {
   logger.info("Reveal Ogame Beyond Infinity");
 
   try {
+    await domReady();
+    perf.mark("DOM ready");
+
     const rawURL = new URL(window.location.href);
     const page = rawURL.searchParams.get("component") || rawURL.searchParams.get("page");
     if (["intro", "empire", "combatsim"].includes(page)) {
@@ -18790,20 +18817,23 @@ function versionInStatusBar() {
       });
     }
 
-    const ogKush = new OGInfinity();
-    ogKush.init();
-    versionInStatusBar();
+    const ogKush = perf.time("new OGInfinity()", () => new OGInfinity());
+    perf.time("OGInfinity.init()", () => ogKush.init());
+    perf.time("versionInStatusBar()", () => versionInStatusBar());
 
-    new Messages();
+    perf.time("new Messages()", () => new Messages());
 
     // workaround for "DOMPurify not defined" issue
-    await wait.waitForDefinition(window, "DOMPurify");
+    await perf.timeAsync("wait for DOMPurify", () => wait.waitForDefinition(window, "DOMPurify"));
 
     Element.prototype.html = function (html) {
       this.innerHTML = DOMPurify.sanitize(html);
     };
 
-    ogKush.start();
+    // No-op unless profiling is on (localStorage["ogi-perf"] = "1").
+    perf.instrumentMethods(ogKush, "start > ");
+    perf.time("OGInfinity.start()", () => ogKush.start());
+    perf.report();
   } catch (ex) {
     logger.error(ex);
   }

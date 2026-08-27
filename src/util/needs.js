@@ -28,7 +28,19 @@ export function display() {
   });
 }
 
-obs(document.getElementById("eventboxContent"), display, { subtree: false });
+// Deferred instead of registered at module evaluation: `ogkush.js` is injected at
+// `document_start` so its module graph loads in parallel with the game's page parse,
+// and `#eventboxContent` does not exist yet at that point. OGIObserver silently
+// ignores a null element, so an eager call would just drop the observer.
+function observeEventBox() {
+  obs(document.getElementById("eventboxContent"), display, { subtree: false });
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", observeEventBox, { once: true });
+} else {
+  observeEventBox();
+}
 
 function getNeedsResourceByCoords(coords, isMoon) {
   const planetFound = getPlanetByCoords(coords);

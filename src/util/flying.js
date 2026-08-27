@@ -20,7 +20,21 @@ const isOwnPlanet = (coords) => {
   return found;
 };
 
-const hasLifeforms = document.querySelector(".lifeform") != null;
+let lifeformsPresent = null;
+
+/**
+ * Whether the account runs lifeforms, read off the DOM on first use.
+ *
+ * Lazy on purpose: `ogkush.js` is injected at `document_start` so its module
+ * graph loads in parallel with the game's page parse, and `.lifeform` does not
+ * exist yet at that point. The default export only runs after DOMContentLoaded.
+ *
+ * @returns {boolean}
+ */
+function hasLifeforms() {
+  if (lifeformsPresent === null) lifeformsPresent = document.querySelector(".lifeform") != null;
+  return lifeformsPresent;
+}
 
 export default function () {
   let met = 0,
@@ -124,9 +138,9 @@ export default function () {
       [missionType.ATTACK, missionType.ACS_ATTACK].includes(parseInt(type)) && !back && isOwnPlanet(destCoords);
 
     if (!isAttackAgainst) {
-      metalRow = hasLifeforms ? -4 : -3;
-      crystalRow = hasLifeforms ? -3 : -2;
-      deuteriumRow = hasLifeforms ? -2 : -1;
+      metalRow = hasLifeforms() ? -4 : -3;
+      crystalRow = hasLifeforms() ? -3 : -2;
+      deuteriumRow = hasLifeforms() ? -2 : -1;
     }
 
     // Ships

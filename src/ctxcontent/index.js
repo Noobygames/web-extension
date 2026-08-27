@@ -171,6 +171,13 @@ document.addEventListener("ogi-notification-sync", function (e) {
   });
 });
 
+/**
+ * Hydrates the universe DataHelper from `chrome.storage.local` and refreshes it.
+ *
+ * Injection of the page-context scripts used to live at the bottom of this
+ * function. It now happens in `main.js` at `document_start`, before this module
+ * is even imported, so `ogkush.js` can load in parallel with the game page.
+ */
 export function main() {
   mainLogger.log("Starting Ogame Beyond Infinity");
 
@@ -194,7 +201,9 @@ export function main() {
     });
   }
 
-  injectScript("libs/lz-string.min.js", null, false);
-  injectScript("libs/purify.min.js", null, false);
+  // Last step on purpose: `pageContextInit()` inside ogkush.js throws unless
+  // `contentContextInit()` above has already published its callback token, and
+  // that runs when this module is evaluated. The two small libraries are
+  // injected earlier, straight from main.js at document_start.
   injectScript("ogkush.js", null, true);
 }

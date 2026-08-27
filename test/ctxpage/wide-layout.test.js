@@ -184,3 +184,42 @@ test("applyWideLayout is a no-op without a document rather than throwing", async
   assert.doesNotThrow(() => applyWideLayout(null));
   assert.doesNotThrow(() => applyWideLayout(undefined));
 });
+
+/**
+ * The boot mirror. `main.js` reads this key at `document_start` to put the
+ * classes on <html> before the game paints; it exists because `ogk-data` is far
+ * too large to parse at that point. If it stops being written, the wide layout
+ * silently goes back to flashing the vanilla width on every page change.
+ */
+test("applying the layout mirrors the switches into the boot cache", async () => {
+  await withWideOptions({ wideLayoutEnable: true, wideZoomEnable: true, wideZoomFactor: 1.25 }, (root, mod) => {
+    mod.applyWideLayout(root);
+
+    assert.deepEqual(JSON.parse(localStorage.getItem(mod.BOOT_CACHE_KEY)), {
+      layout: true,
+      zoom: true,
+      factor: 1.25,
+    });
+  });
+});
+
+test("the boot cache follows the options off again", async () => {
+  await withWideOptions({ wideLayoutEnable: false, wideZoomEnable: false, wideZoomFactor: 1.5 }, (root, mod) => {
+    mod.applyWideLayout(root);
+
+    assert.deepEqual(JSON.parse(localStorage.getItem(mod.BOOT_CACHE_KEY)), {
+      layout: false,
+      zoom: false,
+      // Zoom off means "no factor", not "the factor the user last picked".
+      factor: 0,
+    });
+  });
+});
+
+test("an out-of-range factor is mirrored clamped, the way it is applied", async () => {
+  await withWideOptions({ wideLayoutEnable: true, wideZoomEnable: true, wideZoomFactor: 9 }, (root, mod) => {
+    mod.applyWideLayout(root);
+
+    assert.equal(JSON.parse(localStorage.getItem(mod.BOOT_CACHE_KEY)).factor, mod.WIDE_ZOOM_MAX);
+  });
+});

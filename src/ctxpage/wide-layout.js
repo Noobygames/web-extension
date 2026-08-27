@@ -56,6 +56,17 @@ export function applyWideLayout(root) {
 }
 
 /**
+ * localStorage key holding just the three switches this file needs.
+ *
+ * The real options live in the `ogk-data` blob, which is far too large to parse
+ * at `document_start`. This tiny mirror lets `main.js` put the classes on
+ * `<html>` before the game paints, so switching pages no longer shows the
+ * vanilla-width layout for a moment and then jumps to the wide one. Kept in
+ * step here, on every apply.
+ */
+export const BOOT_CACHE_KEY = "ogi-layout";
+
+/**
  * @param {HTMLElement} root
  */
 function applyTo(root) {
@@ -71,5 +82,21 @@ function applyTo(root) {
   } else {
     // Hand control back to the stepped media queries in global.css.
     root.style.removeProperty("--ogl-wide-zoom");
+  }
+
+  writeBootCache(layoutOn, zoomOn, factor);
+}
+
+/**
+ * @param {boolean} layoutOn
+ * @param {boolean} zoomOn
+ * @param {number} factor 0 means "let the media queries decide"
+ */
+function writeBootCache(layoutOn, zoomOn, factor) {
+  try {
+    localStorage.setItem(BOOT_CACHE_KEY, JSON.stringify({ layout: layoutOn, zoom: zoomOn, factor }));
+  } catch (_) {
+    // Storage full or blocked - the classes are applied either way, the next
+    // page load just falls back to the defaults for one paint.
   }
 }
