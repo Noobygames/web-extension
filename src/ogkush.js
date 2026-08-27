@@ -37,6 +37,7 @@ import OverviewPage from "./ctxpage/overview/OverviewPage.js";
 import TraderImportExportPage from "./ctxpage/traderOverview/TraderImportExportPage.js";
 import { addTemplateSelector } from "./ctxpage/fleetdispatch/templates.js";
 import RecyclingYieldCalculator from "./util/recyclingYieldCalculator.js";
+import Notifier from "./util/Notifier.js";
 
 const DISCORD_INVITATION_URL = "https://discord.gg/8Y4SWup";
 //const VERSION = "__VERSION__";
@@ -1413,6 +1414,8 @@ class OGInfinity {
     this.eventAction = this.isMobile ? "touchstart" : "mouseenter";
     this.universe = window.location.host.replace(/\D/g, "");
     this.universeUrl = `https://${getMetaValue("ogame-universe").content}`;
+    this.universeName = getMetaValue("ogame-universe-name").content;
+    this.universeDomain = getMetaValue("ogame-universe").content;
     this.geologist = !!document.querySelector(".geologist.on");
     this.technocrat = !!document.querySelector(".technocrat.on");
     this.admiral = !!document.querySelector(".admiral.on");
@@ -1448,7 +1451,10 @@ class OGInfinity {
   init() {
     this.json = OGIData.json;
     this.json.playerId = this.playerId;
+    this.json.universeId = this.universe;
     this.json.universeUrl = this.universeUrl;
+    this.json.universeName = this.universeName;
+    this.json.universeDomain = this.universeDomain;
     this.json.welcome = this.json.welcome !== false;
     this.json.needLifeformUpdate = this.json.needLifeformUpdate || {};
     this.json.pantrySync = this.json.pantrySync || "";
@@ -1489,6 +1495,7 @@ class OGInfinity {
     this.json.playerMarkers = this.json.playerMarkers || {};
     this.json.markers = this.json.markers || {};
     this.json.missing = this.json.missing || {};
+    this.json.notifications = this.json.notifications || {};
     this.json.targetTabs = this.json.targetTabs || { g: 1, s: 0 };
     this.json.spyProbes = this.json.spyProbes || 5;
     this.json.openTooltip = this.json.openTooltip || false;
@@ -1797,6 +1804,13 @@ class OGInfinity {
           }
         });
     }, 100);
+
+    /*
+     * When browser is closed, all scheduled notifications are cleared
+     * => So we need to re-schedule the notification
+     * => close tab doesn't clear scheduled notifications
+     */
+    Notifier.BeginSyncNotifications(force);
   }
 
   overviewDates() {
@@ -3357,6 +3371,8 @@ class OGInfinity {
       .then((xml) => {
         this.json.serverSettingsTimeStamp = xml.querySelector("serverData").getAttribute("timestamp");
         this.json.universeUrl = `https://${xml.querySelector("domain").innerHTML}`;
+        this.json.universeName = xml.querySelector("name").innerHTML;
+        this.json.universeDomain = xml.querySelector("domain").innerHTML;
         this.json.topScore = Number(xml.querySelector("topScore").innerHTML);
         this.json.speed = Number(xml.querySelector("speed").innerHTML);
         this.json.speedResearch =
@@ -13635,6 +13651,7 @@ class OGInfinity {
       mainSyncJsonObj.discoveriesSums = this?.json?.discoveriesSums;
       mainSyncJsonObj.harvests = this?.json?.harvests;
       mainSyncJsonObj.spies = await this.getObjLastElements(this?.json?.spies, 5000);
+      mainSyncJsonObj.notifications = this?.json?.notifications;
 
       let finalJson = {
         data: LZString.compressToUTF16(JSON.stringify(mainSyncJsonObj)),
@@ -14695,6 +14712,17 @@ class OGInfinity {
       }
     }
     if (this.page == "movement") {
+      const allRemainingFleets = Array.from(document.querySelectorAll(".fleetDetails"))
+        .map((fleet) => {
+          const fleetId = Number(fleet.getAttribute("id").replace("fleet", ""));
+          const type = parseInt(fleet.getAttribute("data-mission-type"));
+          const isBack = !fleet.querySelector(".reversal a");
+          return [fleetId, type, isBack];
+        })
+        .filter(([fleetId, type, isBack]) => Notifier.IsFleetMissionNotifiable(type));
+
+      Notifier.CleanObsoleteFleetsNotifications(allRemainingFleets);
+
       let lastFleetId = -1;
       let lastFleetBtn;
       document.querySelectorAll(".fleetDetails").forEach((fleet) => {
@@ -14730,8 +14758,11 @@ class OGInfinity {
           }
         }
 
-        let type = fleet.getAttribute("data-mission-type");
+        // parseInt: Notifier.IsFleetMissionNotifiable / IsFleetReturnBasedMission compare against
+        // numeric MissionType values, and the attribute is a string.
+        let type = parseInt(fleet.getAttribute("data-mission-type"));
         let originCoords = fleet.querySelector(".originCoords").textContent;
+        const isOriginMoon = !!fleet.querySelector(".originData .moon");
         OGIData.empire.forEach((planet) => {
           if (planet.coordinates == originCoords) {
             fleet.querySelector(".timer").classList.add("friendly");
@@ -14747,11 +14778,11 @@ class OGInfinity {
         // to get 1 ship in discoveries, as it does not have ".fleetinfo"
         fleetCount = Math.max(1, fleetCount);
         const destCoords = fleet.querySelector(".destinationCoords a").textContent;
-        const destMoon = !!fleet.querySelector(".destinationData moon");
+        const isDestMoon = !!fleet.querySelector(".destinationData .moon");
         const reversal = fleet.querySelector(".reversal a");
         if (reversal) {
           reversal.addEventListener("click", () => {
-            needsUtil.displayLocksByCoords(destCoords.slice(1, -1), destMoon);
+            needsUtil.displayLocksByCoords(destCoords.slice(1, -1), isDestMoon);
           });
         }
         let details = fleet.appendChild(createDOM("div", { class: "ogk-fleet-detail" }));
@@ -14762,44 +14793,99 @@ class OGInfinity {
             toFormatedNumber(fleetCount, null, true) + " " + this.getTranslatedText(64)
           )
         );
-        if (!fleet.querySelector(".reversal")) return;
-        let back =
-          fleet.querySelector(".reversal a").title ||
-          fleet.querySelector(".reversal a").getAttribute("data-tooltip-title");
-        let splitted = back.split("|")[1].replace("<br>", "/").replace(/:|\./g, "/").split("/");
-        let backDate = {
-          year: splitted[2],
-          month: splitted[1],
-          day: splitted[0],
-          h: splitted[3],
-          m: splitted[4],
-          s: splitted[5],
-        };
+        const backButton = fleet.querySelector(".reversal a");
+        let isBack = false;
+        if (backButton) {
+          let back = backButton.title || backButton.getAttribute("data-tooltip-title");
+          let splitted = back.split("|")[1].replace("<br>", "/").replace(/:|\./g, "/").split("/");
+          let backDate = {
+            year: splitted[2],
+            month: splitted[1],
+            day: splitted[0],
+            h: splitted[3],
+            m: splitted[4],
+            s: splitted[5],
+          };
 
-        // Unlike the .absTime attributes above, these components come from the reversal tooltip as
-        // wall-clock text in the *server* timezone. new Date(y, m, d, ...) reads them as browser-local,
-        // so the resulting instant is off by timezoneDiff whenever the two zones differ. With the OGI
-        // timezone option on the user wants local time, so the diff has to be added back here.
-        const timeZoneChangeReverse = this.json.options.timeZone ? this.json.timezoneDiff : 0;
-        const baseTime =
-          new Date(backDate.year, backDate.month - 1, backDate.day, backDate.h, backDate.m, backDate.s).getTime() +
-          timeZoneChangeReverse * 1e3;
+          // Unlike the .absTime attributes above, these components come from the reversal tooltip as
+          // wall-clock text in the *server* timezone. new Date(y, m, d, ...) reads them as browser-local,
+          // so the resulting instant is off by timezoneDiff whenever the two zones differ. With the OGI
+          // timezone option on the user wants local time, so the diff has to be added back here.
+          const timeZoneChangeReverse = this.json.options.timeZone ? this.json.timezoneDiff : 0;
+          const baseTime =
+            new Date(backDate.year, backDate.month - 1, backDate.day, backDate.h, backDate.m, backDate.s).getTime() +
+            timeZoneChangeReverse * 1e3;
 
-        let content = details.appendChild(createDOM("div", { class: "ogl-date" }));
+          let content = details.appendChild(createDOM("div", { class: "ogl-date" }));
 
-        // The tooltip states when the fleet would be home if it reversed *now*. Every second spent
-        // flying outbound adds one more second of flight back, so the reversal ETA moves 2s per 1s of
-        // real time. Recomputed from wall-clock rather than incremented per tick, so a throttled
-        // background tab (which drops setInterval firings) no longer makes the display drift behind.
-        const realStart = Date.now();
+          // The tooltip states when the fleet would be home if it reversed *now*. Every second spent
+          // flying outbound adds one more second of flight back, so the reversal ETA moves 2s per 1s of
+          // real time. Recomputed from wall-clock rather than incremented per tick, so a throttled
+          // background tab (which drops setInterval firings) no longer makes the display drift behind.
+          const realStart = Date.now();
 
-        const updateTimer = () => {
-          const virtualElapsed = (Date.now() - realStart) * 2;
-          content.textContent = getFormatedDate(baseTime + virtualElapsed, "[d].[m].[y] - [G]:[i]:[s] ");
-        };
+          const updateTimer = () => {
+            const virtualElapsed = (Date.now() - realStart) * 2;
+            content.textContent = getFormatedDate(baseTime + virtualElapsed, "[d].[m].[y] - [G]:[i]:[s] ");
+          };
 
-        updateTimer();
-        setInterval(updateTimer, 500);
+          updateTimer();
+          setInterval(updateTimer, 500);
+        } else {
+          isBack = true;
+        }
+
+        if (Notifier.IsFleetMissionNotifiable(type)) {
+          const convertToDate = (timeString) => {
+            const [datePart, timePart] = timeString.split(" ");
+            const [dayPart, monthPart, yearPart] = datePart.split(".");
+            const formatedDate = `${yearPart}-${monthPart}-${dayPart}`;
+            return new Date(`${formatedDate}T${timePart}`);
+          };
+
+          let eventDate = convertToDate(fleet.querySelector(".timer").getAttribute("data-tooltip-title"));
+
+          const notifyMeButton = fleet.appendChild(createDOM("button", { class: "notify-me-button" }));
+
+          if (Notifier.IsFleetArrivalNotificationScheduled(id, isBack)) {
+            notifyMeButton.classList.add("active");
+          }
+
+          notifyMeButton.addEventListener("click", () => {
+            if (!Notifier.IsFleetArrivalNotificationScheduled(id, isBack)) {
+              if (isBack)
+                Notifier.ScheduleFleetArrivalNotification(id, originCoords, isOriginMoon, type, isBack, eventDate);
+              else Notifier.ScheduleFleetArrivalNotification(id, destCoords, isDestMoon, type, isBack, eventDate);
+
+              if (!isBack && fleet.querySelector(".nextTimer") && Notifier.IsFleetReturnBasedMission(type)) {
+                //if fleet type is a return based like transport or harvest, then also preshot the return notification
+                eventDate = convertToDate(fleet.querySelector(".nextTimer").getAttribute("data-tooltip-title"));
+                Notifier.ScheduleFleetArrivalNotification(id, originCoords, isOriginMoon, type, true, eventDate);
+              }
+
+              if (!notifyMeButton.classList.contains("active")) notifyMeButton.classList.add("active");
+            } else {
+              Notifier.CancelFleetArrivalScheduledNotification(id, isBack);
+
+              if (!isBack && Notifier.IsFleetReturnBasedMission(type)) {
+                //if fleet type is a return based like transport or harvest, then cancel also the return notification
+                Notifier.CancelFleetArrivalScheduledNotification(id, true);
+              }
+              // remove active class from button
+              if (notifyMeButton.classList.contains("active")) notifyMeButton.classList.remove("active");
+            }
+          });
+
+          if (backButton) {
+            backButton.addEventListener("click", () => {
+              Notifier.CancelFleetArrivalScheduledNotification(id, isBack);
+              if (!isBack) {
+                // if fleet type is a return based like transport or harvest, then cancel also the return notification
+                Notifier.CancelFleetArrivalScheduledNotification(id, true);
+              }
+            });
+          }
+        }
       });
       if (lastFleetBtn) {
         lastFleetBtn.style.filter = "hue-rotate(180deg) saturate(150%)";

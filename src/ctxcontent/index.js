@@ -145,8 +145,30 @@ document.addEventListener("ogi-galaxy-clear", function (e) {
   chrome.storage.local.remove(`ogi-galaxy-${UNIVERSE}`);
 });
 document.addEventListener("ogi-notification", function (e) {
-  const msg = Object.assign({ iconUrl: "assets/images/logo128.png" }, e.detail);
-  chrome.runtime.sendMessage({ type: "notification", universe: UNIVERSE, message: msg }, function (response) {});
+  if (!e.detail) throw new Error("No notification details provided");
+  chrome.runtime.sendMessage({ eventType: "ogi-notification", message: e.detail }, function (response) {});
+});
+document.addEventListener("ogi-notification-scheduled", function (e) {
+  if (!e.detail) throw new Error("No notification details provided");
+  chrome.runtime.sendMessage({ eventType: "ogi-notification-scheduled", message: e.detail }, function (response) {});
+});
+document.addEventListener("ogi-notification-cancel", function (e) {
+  if (!e.detail) throw new Error("No notification details provided");
+  chrome.runtime.sendMessage({ eventType: "ogi-notification-cancel", message: e.detail }, function (response) {});
+});
+document.addEventListener("ogi-notification-sync", function (e) {
+  if (!e.detail) throw new Error("No notification details provided");
+  chrome.runtime.sendMessage({ eventType: "ogi-notification-sync", message: e.detail }, function (response) {
+    // The sync result has to be applied by the page-context Notifier, which owns OGIData.
+    // Importing Notifier here would pull the page's localStorage singleton into the content
+    // script and give it a second, always-stale copy of ogk-data - so the result goes back
+    // over an event instead, the same way ogi-players / ogi-filter reply.
+    let clone = response ?? {};
+    if (navigator.userAgent.indexOf("Firefox") > 0) {
+      clone = cloneInto(clone, document.defaultView);
+    }
+    document.dispatchEvent(new CustomEvent("ogi-notification-sync-rep", { detail: clone }));
+  });
 });
 
 export function main() {
