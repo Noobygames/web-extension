@@ -12,11 +12,16 @@
  * Usage:
  *   node scripts/build-unpacked.mjs --target=chrome  --version=2.1.1 --out=dist/unpacked/chrome
  *   node scripts/build-unpacked.mjs --target=firefox --version=2.1.1 --out=dist/unpacked/firefox
+ *
+ * Pass --stable-id to pin the extension id with a local key, so a permanently installed build
+ * keeps its chrome.storage.local data across rebuilds and moves. See scripts/dev-key.mjs.
  */
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+
+import { devManifestKey, devExtensionId } from "./dev-key.mjs";
 
 const args = Object.fromEntries(
   process.argv.slice(2).map((arg) => {
@@ -69,6 +74,15 @@ for (const entry of manifest.web_accessible_resources || []) {
   delete entry.extension_ids;
 }
 
+// Optional: pin the extension id. Without a key Chromium derives the id from the absolute path,
+// so a rebuild elsewhere would look like a different extension and lose its chrome.storage.local
+// data. Only for local installs - the store build is signed by the store.
+let stableId = null;
+if (args["stable-id"]) {
+  manifest.key = devManifestKey();
+  stableId = devExtensionId();
+}
+
 fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
 // 4. Stamp the version constant read by ogkush.js (status bar link)
@@ -90,4 +104,5 @@ const loadHint =
 
 console.log(`Built unpacked ${target} extension v${version}`);
 console.log(`  ${outDir}`);
+if (stableId) console.log(`  extension id: ${stableId} (pinned by .local-extension-key.pem)`);
 console.log(`  ${loadHint}`);

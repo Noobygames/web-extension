@@ -20,6 +20,10 @@ console.log(`Ogame Infinity - make targets
   make coverage       Run the suite and print a coverage report
   make bench          Micro-benchmark the hot paths
 
+  make install-brave  Build a PERMANENT local install into local-extension/
+                      (load once via brave://extensions -> Load unpacked)
+  make install-brave-id  Print the pinned extension id
+
   make dev            Build unpacked Chromium/Brave extension into ${chromeDir}
   make dev-firefox    Build unpacked Firefox extension into ${firefoxDir}
   make brave          Build + launch Brave with the extension loaded (throwaway dev profile)

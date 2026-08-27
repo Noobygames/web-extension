@@ -22,7 +22,7 @@ export OGI_VERSION := $(VERSION)
 export OGI_CHROME_DIR := $(CHROME_DIR)
 export OGI_FIREFOX_DIR := $(FIREFOX_DIR)
 
-.PHONY: help install format check test test-watch coverage bench build dev dev-firefox brave brave-main brave-open clean clean-profile
+.PHONY: help install install-brave install-brave-id format check test test-watch coverage bench build dev dev-firefox brave brave-main brave-open clean clean-profile
 
 help:
 	@node scripts/help.mjs
@@ -51,6 +51,12 @@ bench:
 # Unpacked builds - loadable via "Load unpacked" / "Load Temporary Add-on".
 dev:
 	node scripts/build-unpacked.mjs --target=chrome --version=$(VERSION) --out=$(CHROME_DIR)
+
+install-brave:
+	node scripts/install-local.mjs
+
+install-brave-id:
+	node scripts/dev-key.mjs
 
 dev-firefox:
 	node scripts/build-unpacked.mjs --target=firefox --version=$(VERSION) --out=$(FIREFOX_DIR)
