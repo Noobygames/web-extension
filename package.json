@@ -1,6 +1,6 @@
 {
   "name": "ogame-beyond-infinity",
-  "version": "2.1.1",
+  "version": "1.0.0",
   "description": "This extension provides a set additional features for OGame.",
   "main": "src/main.js",
   "scripts": {
