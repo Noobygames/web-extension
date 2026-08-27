@@ -2,7 +2,15 @@
 
 Companion to [pr-analysis.md](./pr-analysis.md). All 8 open PRs from that snapshot were taken
 onto integration branches off `master` @ `6524a86`, with every review item from the analysis
-addressed. Nothing was pushed and `master` is untouched apart from one tooling commit.
+addressed.
+
+**Seven of the eight are now merged into the fork's local `master`** — everything except #408,
+which stays on its branch. Nothing has been pushed to `origin` yet.
+
+Merge order, dependency first: #533+#531 → #485 → #547 → #546 → #519 → #493. Only the last
+conflicted (twice, both against #485 in the fleet-movement loop). After the merge: 197 tests green,
+both Chrome and Firefox unpacked builds succeed with matching permissions, no duplicate translation
+ids in any sub-table, and every file the merges touched passes eslint.
 
 Every branch: `npm test` green, `node scripts/build-unpacked.mjs chrome` produces a loadable build,
 and `src/ogkush.js` carries **no new prettier violations** (master's pre-existing 18 hunks are
@@ -178,10 +186,27 @@ Side effect: `translate.js` is now prettier-clean, one file off the pre-existing
 
 ---
 
+## Found while merging the branches together
+
+Three defects only became visible once the branches were combined, and are fixed in
+`fix(lint)` on top of the merges:
+
+- **`src/util/Notifier.js` shipped a bare `debugger;`** (#493) inside
+  `CleanObsoleteFleetsNotifications`. It halts the page for anyone with devtools open.
+- **Formatting violations in files that lint clean on master**: template literals with no
+  interpolation where double quotes are enforced (`background.js`, `data-helper.js`), an
+  over-indented `chrome.storage.local.get` block (`data-helper.js`), and an unnecessary `\"`
+  escape inside a regex literal (`templates.js`). These are not on the pre-existing red list —
+  they arrived with the PRs.
+- **#493 needs `parseInt` on the mission type** where #485 leaves the surrounding loop untouched,
+  because `Notifier` compares against numeric `MissionType` values. Both changes land in the same
+  few lines and neither branch alone showed the interaction.
+
+The seven files that still fail eslint are untouched by any of these PRs and predate this work.
+
 ## What was not done
 
-- **Nothing was pushed**, no PRs were opened or commented on upstream, and `master` was not
-  fast-forwarded onto any branch.
+- **Nothing was pushed** and no PRs were opened or commented on upstream.
 - **No browser verification.** Every branch builds and its tests pass, but none of it was exercised
   against a live OGame page. The DOM-facing parts — #547's template preselection, #519's P16 inputs,
   #493's bell — are unverified beyond static checks.
