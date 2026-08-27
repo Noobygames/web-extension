@@ -18,6 +18,7 @@ console.log(`Ogame Infinity - make targets
   make test           Run the unit test suite (node:test + jsdom)
   make test-watch     Re-run the suite on every change
   make coverage       Run the suite and print a coverage report
+  make bench          Micro-benchmark the hot paths
 
   make dev            Build unpacked Chromium/Brave extension into ${chromeDir}
   make dev-firefox    Build unpacked Firefox extension into ${firefoxDir}

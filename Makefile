@@ -22,7 +22,7 @@ export OGI_VERSION := $(VERSION)
 export OGI_CHROME_DIR := $(CHROME_DIR)
 export OGI_FIREFOX_DIR := $(FIREFOX_DIR)
 
-.PHONY: help install format check test test-watch coverage build dev dev-firefox brave brave-main brave-open clean clean-profile
+.PHONY: help install format check test test-watch coverage bench build dev dev-firefox brave brave-main brave-open clean clean-profile
 
 help:
 	@node scripts/help.mjs
@@ -44,6 +44,9 @@ test-watch:
 
 coverage:
 	npm run coverage
+
+bench:
+	npm run bench
 
 # Unpacked builds - loadable via "Load unpacked" / "Load Temporary Add-on".
 dev:
