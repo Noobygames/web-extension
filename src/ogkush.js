@@ -39,6 +39,7 @@ import { addTemplateSelector } from "./ctxpage/fleetdispatch/templates.js";
 import RecyclingYieldCalculator from "./util/recyclingYieldCalculator.js";
 import { planHarvest, CARGO_SHIP_IDS } from "./util/harvestPlanner.js";
 import { planExpeditionFleets } from "./util/expeditionBalancer.js";
+import { productionBreakdown, effectiveCrawlers, crawlerBonus } from "./util/productionEngine.js";
 import Notifier from "./util/Notifier.js";
 
 const DISCORD_INVITATION_URL = "https://discord.gg/8Y4SWup";
@@ -1700,6 +1701,7 @@ class OGInfinity {
     this.updateProductionProgress(false); //We haven't refreshed the empire data recently => false
     this.updateSpaceShipsPresence();
     this.showStorageTimers();
+    this.realProductionTooltip();
     // this.showTabTimer(); TODO: enable when timer is moved to the clock area
     this.markLifeforms();
     this.navigationArrows();
@@ -17373,6 +17375,90 @@ class OGInfinity {
       let selector = `.technology[data-technology='${technoDetails}'] span`;
       wait.waitForQuerySelector(selector).then(() => document.querySelector(selector).click());
     }
+  }
+
+  /**
+   * Real production tooltip (roadmap Feature D).
+   *
+   * Attaches a breakdown to each resource in the bar showing where the hourly number actually
+   * comes from: base mines, plasma, crawlers, lifeform research, and the class/officer bonuses.
+   * Every bonus is a share of the base and is summed before being applied once - compounding them
+   * is what makes other tools disagree with the game by a few percent.
+   *
+   * Read-only. Every input is already on the page; nothing is fetched.
+   */
+  realProductionTooltip() {
+    if (this.page !== "overview" || this.current.isMoon) return;
+
+    const planet = OGIData.empire[this.current.index];
+    if (!planet || !planet.production) return;
+
+    const mineLevels = [Number(planet[1]) || 0, Number(planet[2]) || 0, Number(planet[3]) || 0];
+    const isCollector = this.playerClass == PLAYER_CLASS_MINER;
+
+    const crawlers = effectiveCrawlers({
+      mineLevels,
+      crawlerCount: Number(planet[217]) || 0,
+      geologist: this.geologist,
+    });
+
+    const crawlerShare = crawlerBonus({
+      crawlers,
+      overload: Number(this.json.options.crawlerPercent) || 1,
+      isCollector,
+      classBonus: isCollector ? Number(this.json.minerBonusAdditionalCrawler) || 0 : 0,
+      lifeformBonus: Number(this.json.lifeformBonus?.crawlerBonus?.production) || 0,
+    });
+
+    const resourceSelectors = ["#resources_metal", "#resources_crystal", "#resources_deuterium"];
+
+    resourceSelectors.forEach((selector, index) => {
+      const element = document.querySelector(selector);
+      if (!element) return;
+
+      const hourly = Math.floor(planet.production.hourly[index]) || 0;
+      if (hourly <= 0) return;
+
+      // The stored hourly figure already includes every bonus, so the breakdown is derived by
+      // working back to the base rather than by recomputing the mines from scratch.
+      const lifeformShare =
+        (Number(this.json.lifeformBonus?.productionBonus?.[index]) || 0) +
+        (Number(this.json.lifeformPlanetBonus?.[this.current.id]?.productionBonus?.[index]) || 0);
+
+      const plasmaLevel = Number(this.json.technology?.[122]) || 0;
+      const parts = productionBreakdown({
+        baseProduction: hourly / (1 + crawlerShare + lifeformShare + plasmaLevel * PLASMATECH_BONUS[index]),
+        resourceIndex: index,
+        plasmaLevel,
+        crawlerBonus: crawlerShare,
+        lifeformBonus: lifeformShare,
+      });
+
+      const detail = createDOM("div", { class: "ogl-production-detail" });
+      detail.appendChild(createDOM("div", { class: "ogl-production-title" }, this.getTranslatedText(243)));
+
+      const addRow = (label, value) => {
+        if (!value) return;
+        const line = createDOM("div", { class: "ogl-production-row" });
+        line.appendChild(createDOM("span", {}, label));
+        line.appendChild(createDOM("span", {}, toFormatedNumber(value, null, true)));
+        detail.appendChild(line);
+      };
+
+      addRow(this.getTranslatedText(244), parts.base);
+      addRow(this.getTranslatedText(245), parts.plasma);
+      addRow(this.getTranslatedText(246), parts.crawler);
+      addRow(this.getTranslatedText(247), parts.lifeform);
+      addRow(this.getTranslatedText(248), parts.other);
+
+      const total = createDOM("div", { class: "ogl-production-row ogl-production-total" });
+      total.appendChild(createDOM("span", {}, "Σ"));
+      total.appendChild(createDOM("span", {}, toFormatedNumber(parts.total, null, true)));
+      detail.appendChild(total);
+
+      element.classList.add("ogl-production-hint");
+      element.addEventListener("mouseover", () => tooltip(element, detail, false, false, 100));
+    });
   }
 
   showStorageTimers() {
