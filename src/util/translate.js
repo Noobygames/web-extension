@@ -2249,6 +2249,22 @@ const translation = Object.freeze({
       tr: undefined,
       br: undefined,
     },
+    227: {
+      de: "Leere Systeme",
+      en: "Empty systems",
+      es: "Sistemas vacíos",
+      fr: "Systèmes vides",
+      tr: "Boş sistemler",
+      br: "Sistemas vazios",
+    },
+    228: {
+      de: "Inaktive Systeme",
+      en: "Inactive systems",
+      es: "Sistemas inactivos",
+      fr: "Systèmes inactifs",
+      tr: "Pasif sistemler",
+      br: "Sistemas inativos",
+    },
   },
 });
 
