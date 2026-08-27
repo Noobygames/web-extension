@@ -1537,7 +1537,12 @@ class OGInfinity {
     this.isLoading = false;
     this.autoQueue = new AutoQueue();
 
-    pageContextRequest("ptre", "setTeamKey", this.json.options.ptreTK || "");
+    // The content script needs the PTRE team key to decide whether to build galaxyStorage,
+    // but it must never read it from OGIData - that singleton belongs to the page context.
+    // pageContextRequest rejects on a failed bridge call, so the rejection is handled here.
+    pageContextRequest("ptre", "setTeamKey", this.json.options.ptreTK || "").catch((err) =>
+      console.warn("[OGI][PTRE] setTeamKey failed", err)
+    );
   }
 
   start() {
@@ -4248,8 +4253,7 @@ class OGInfinity {
     // refreshed even when no PTRE team key is set. PTRE work is gated inside scan().
     // Any failure here must NOT propagate to the OGame galaxy render path.
     try {
-      const serverTimeMs =
-        serverTime && typeof serverTime.getTime !== "undefined" ? serverTime.getTime() : null;
+      const serverTimeMs = serverTime && typeof serverTime.getTime !== "undefined" ? serverTime.getTime() : null;
       const ptreKey = this.json.options.ptreTK || null;
       pageContextRequest(
         "ptre",
@@ -15477,7 +15481,9 @@ class OGInfinity {
         this.json.options.ptreTK = "";
         // TODO: Display an error message "Invalid PTRE Team Key Format. TK should look like: TM-XXXX-XXXX-XXXX-XXXX"
       }
-      pageContextRequest("ptre", "setTeamKey", this.json.options.ptreTK || "");
+      pageContextRequest("ptre", "setTeamKey", this.json.options.ptreTK || "").catch((err) =>
+        console.warn("[OGI][PTRE] setTeamKey failed", err)
+      );
       this.json.options.pantryKey = pantryInput.value.trim();
       this.json.options.simulator = simulatorInput.value;
       this.json.options.expedition.defaultTime = Math.max(1, Math.min(~~expeditionDefaultTime.value, 16));

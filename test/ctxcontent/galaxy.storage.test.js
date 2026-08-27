@@ -41,11 +41,12 @@ test("the rebuild indexes planets by galaxy > system > position", async () => {
 
     helper.rebuildGalaxyStorage("a-ptre-key");
 
+    // No per-slot `ts`: the whole snapshot shares one timestamp, kept in
+    // lastGalaxyUpdateTS. scan() diffs slots by value, not by age (PR #531).
     assert.deepEqual(helper.galaxyStorage["1"]["2"]["3"], {
       playerId: 101,
       planetId: 33701001,
       moonId: 33801001,
-      ts: 1700000000,
     });
     assert.equal(helper.galaxyStorage["1"]["2"]["5"].playerId, 102);
     assert.equal(helper.galaxyStorage["1"]["2"]["5"].moonId, -1, "a planet without a moon stores -1");
@@ -62,7 +63,7 @@ test("every one of the 15 slots of a touched system is materialised", async () =
     assert.deepEqual(Object.keys(system).sort((a, b) => a - b).length, 15);
     // -1 rather than a missing key: slot presence is what makes "this position
     // is empty" distinguishable from "this position was never scanned"
-    assert.deepEqual(system["4"], { playerId: -1, planetId: -1, moonId: -1, ts: 1700000000 });
+    assert.deepEqual(system["4"], { playerId: -1, planetId: -1, moonId: -1 });
   });
 });
 
