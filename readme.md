@@ -38,16 +38,20 @@ Did you fix it already? Please fork the latest `master` branch and raise a Pull 
 
 A `Makefile` wraps the common tasks. It needs `node`/`npm` on your PATH and works from PowerShell, cmd and a POSIX shell.
 
-    make help          # list all targets
-    make install       # install dev dependencies
-    make dev           # build an unpacked extension into dist/unpacked/chrome
-    make dev-firefox   # build an unpacked extension into dist/unpacked/firefox
-    make test          # run the unit test suite
-    make coverage      # run the suite and print a coverage report
-    make format        # prettier
-    make check         # eslint
-    make build         # release zips via packaging.sh
-    make clean         # remove dist/
+    make help             # list all targets
+    make install          # install dev dependencies
+    make install-brave    # build a permanent local install into local-extension/
+    make install-brave-id # print the pinned extension id
+    make dev              # build an unpacked extension into dist/unpacked/chrome
+    make dev-firefox      # build an unpacked extension into dist/unpacked/firefox
+    make brave            # build + launch Brave with the extension (throwaway profile)
+    make test             # run the unit test suite
+    make coverage         # run the suite and print a coverage report
+    make bench            # micro-benchmark the hot paths
+    make format           # prettier
+    make check            # eslint
+    make build            # release zips via packaging.sh
+    make clean            # remove dist/
 
 ### Tests
 
@@ -55,7 +59,32 @@ A `Makefile` wraps the common tasks. It needs `node`/`npm` on your PATH and work
 
 Please add tests for the code you change, and run `make test` before opening a pull request. [docs/testing.md](docs/testing.md) explains the harness, what is covered today, and the conventions — including the tests deliberately marked `KNOWN BUG:`, which pin down behaviour that is currently wrong so that fixing it registers as an intentional change.
 
+### Installing your local build permanently (Brave / Chrome / Edge)
+
+    make install-brave
+
+Builds into `local-extension/`, then load it **once**: `brave://extensions` → enable _Developer mode_ → _Load unpacked_ → pick that folder. It survives browser restarts from then on. After changing something in `src/`, run `make install-brave` again and press the reload icon on the extension card — the path never changes, so you never have to re-add it.
+
+That last click is manual because Chromium deliberately offers no command line for installing an unpacked extension into a real profile.
+
+Two things make this stick where `make dev` does not:
+
+- It builds into `local-extension/`, **not** `dist/`. `dist/` is wiped by `make clean` and by every other build target, and a browser drops an unpacked extension whose directory disappears.
+- The extension id is pinned by a local keypair, so it no longer depends on the absolute path. That matters because `chrome.storage.local` — the per-universe `DataHelper` data and the galaxy snapshot — is keyed by extension id, so moving the repo would otherwise orphan all of it. `make install-brave-id` prints the id; the private key lives in `.local-extension-key.pem`, is gitignored, never leaves your machine, and is unrelated to the Web Store key. Keep it: deleting it changes the id.
+
+If the profile you load it into already has OGI from the store, disable the store version on `brave://extensions` first — see the note below on why.
+
+Firefox cannot do this: unsigned add-ons are always temporary there and are dropped on restart. A permanent Firefox install has to be signed through AMO.
+
+[docs/local-install.md](docs/local-install.md) has the details and troubleshooting.
+
+### Benchmarks
+
+`make bench` runs `scripts/bench.mjs`, a micro-benchmark harness over the hot paths (the flight and profit maths, the claim index, the harvest planner, and the repeated DOM work). It is not a substitute for profiling in the real game — treat the numbers as lower bounds — but it gives any change a reproducible baseline. [docs/performance.md](docs/performance.md) records what has been measured and fixed so far.
+
 ### Testing your local build in Brave (or Chrome / Edge)
+
+For a quick throwaway test instead of a permanent install:
 
     make brave
 
