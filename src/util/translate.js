@@ -2402,6 +2402,30 @@ const translation = Object.freeze({
       tr: "Pasif sistemler",
       br: "Sistemas inativos",
     },
+    232: {
+      de: "Gewinn/h",
+      en: "Profit/h",
+      es: "Ganancia/h",
+      fr: "Gain/h",
+      tr: "Kâr/sa",
+      br: "Lucro/h",
+    },
+    233: {
+      de: "Hin- und Rückflug",
+      en: "Round trip",
+      es: "Ida y vuelta",
+      fr: "Aller-retour",
+      tr: "Gidiş-dönüş",
+      br: "Ida e volta",
+    },
+    234: {
+      de: "Von",
+      en: "From",
+      es: "Desde",
+      fr: "Depuis",
+      tr: "Nereden",
+      br: "De",
+    },
   },
 });
 

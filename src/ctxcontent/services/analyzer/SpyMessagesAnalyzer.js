@@ -16,6 +16,9 @@ import PlayerClass from "../../../util/enum/playerClass.js";
 import OgamePageData from "../../../util/OgamePageData.js";
 import OGIData from "../../../util/OGIData.js";
 import Translator from "../../../util/translate.js";
+import { evaluateTarget } from "../../../util/farmEvaluator.js";
+import { formatDuration } from "../../../util/fleetFlight.js";
+import * as coordinate from "../../../util/ogame.coordinate.js";
 
 class SpyMessagesAnalyzer {
   #logger;
@@ -153,6 +156,76 @@ class SpyMessagesAnalyzer {
     table.parentNode.insertBefore(tableOptions, table);
   }
 
+  #flightContextCache = null;
+
+  /**
+   * Own planets as flight origins, plus the universe geometry the distance formula needs.
+   * Everything comes from data the page already holds - no request is made for any of it.
+   */
+  #flightContext() {
+    if (this.#flightContextCache) return this.#flightContextCache;
+
+    const origins = [];
+    (OGIData.empire || []).forEach((planet) => {
+      // a moon shares its planet's coordinates, so it adds no separate origin
+      const parsed = this.#parseCoords(planet.coordinates);
+      if (parsed) origins.push(parsed);
+    });
+
+    const json = OGIData.json;
+    const settings = json.universeSettingsTooltip || {};
+
+    // The cargo already chosen for this table decides the flight time, so the estimate matches
+    // the fleet the player intends to send rather than some notional ship.
+    const chosen = (json.ships || {})[OGIData.options.spyFret];
+
+    this.#flightContextCache = {
+      origins,
+      shipSpeed: Number(chosen?.speed) || 0,
+      fleetSpeedFactor: Number(json.speedFleetWar) || 1,
+      universe: {
+        galaxies: settings.galaxies,
+        systems: settings.systems,
+        donutGalaxy: settings.donutGalaxy,
+        donutSystem: settings.donutSystem,
+      },
+    };
+
+    return this.#flightContextCache;
+  }
+
+  #parseCoords(raw) {
+    const parts = String(raw || "")
+      .replace(/[[\]]/g, "")
+      .split(":");
+    if (parts.length !== 3) return null;
+
+    const [galaxy, system, position] = parts.map(Number);
+    if ([galaxy, system, position].some((n) => !Number.isFinite(n))) return null;
+
+    return { galaxy, system, position };
+  }
+
+  #flightOf(report) {
+    const target = this.#parseCoords(report.coords);
+    if (!target) return { profitPerHour: 0, durationSeconds: Infinity, origin: null, distance: Infinity };
+
+    const context = this.#flightContext();
+
+    return evaluateTarget({
+      target,
+      origins: context.origins,
+      loot: report.renta,
+      shipSpeed: context.shipSpeed,
+      fleetSpeedFactor: context.fleetSpeedFactor,
+      universe: context.universe,
+    });
+  }
+
+  #profitPerHour(report) {
+    return this.#flightOf(report).profitPerHour;
+  }
+
   #spyTableHeader(table) {
     const thead = createDOM("thead");
     table.appendChild(thead);
@@ -165,6 +238,7 @@ class SpyMessagesAnalyzer {
     header.appendChild(createDOM("th", { "data-filter": "COORDS" }, "Coords"));
     header.appendChild(createDOM("th", {}, "Name (+)"));
     header.appendChild(createDOM("th", { "data-filter": "$" }, "Gain"));
+    header.appendChild(createDOM("th", { "data-filter": "PER_HOUR" }, Translator.translate(232)));
     header.appendChild(createDOM("th", { "data-filter": "FLEET" }, "Fleet"));
     header.appendChild(createDOM("th", { "data-filter": "DEF" }, "Def"));
 
@@ -327,6 +401,8 @@ class SpyMessagesAnalyzer {
         return compare(b.fleet, a.fleet);
       } else if (spyFilter === "DEF") {
         return compare(b.defense, a.defense);
+      } else if (spyFilter === "PER_HOUR") {
+        return compare(this.#profitPerHour(b), this.#profitPerHour(a));
       }
     });
 
@@ -447,6 +523,31 @@ class SpyMessagesAnalyzer {
       }%, rgb(166, 224, 176) ${report.resRatio[2]}%)`;
 
       bodyRow.appendChild(gainCol);
+
+      // Profit per hour: what the target is worth once the flight is paid for. Display only -
+      // it reorders the table, it never sends anything anywhere.
+      const flight = this.#flightOf(report);
+      const perHour = flight.profitPerHour;
+      const perHourCol = createDOM(
+        "td",
+        { class: "ogl-tooltipLeft ogl-lootable" },
+        perHour > 0 ? toFormattedNumber(Math.round(perHour), null, true) : "-"
+      );
+
+      if (perHour > 0) {
+        const perHourDetail = createDOM("div");
+        perHourDetail.appendChild(
+          createDOM("div", undefined, `${Translator.translate(233)}: ${formatDuration(flight.durationSeconds)}`)
+        );
+        if (flight.origin) {
+          perHourDetail.appendChild(
+            createDOM("div", undefined, `${Translator.translate(234)}: ${coordinate.toString(flight.origin, true)}`)
+          );
+        }
+        perHourCol.addEventListener("mouseover", () => tooltip(perHourCol, perHourDetail, true, false, 50));
+      }
+
+      bodyRow.appendChild(perHourCol);
 
       const fleetCol = createDOM("td", {}, toFormattedNumber(report.fleet, null, true));
       if (
