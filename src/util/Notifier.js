@@ -175,7 +175,6 @@ class Notifier {
     for (const [obsoleteNotificationId, obsoleteNotification] of Object.entries(OGIData.notifications).filter(
       ([id, x]) => x.category === "fleet" && !possibleRemainingFleetIds.includes(id)
     )) {
-      debugger;
       this.#cancelScheduledNotification(obsoleteNotificationId, true);
     }
   }

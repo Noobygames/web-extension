@@ -8,7 +8,7 @@ export function addTemplateSelector(templateDivId, templateType, updateCallback)
   const addMxSelectors = (divId, type) => {
     const options = getOption("expedition");
     document.querySelectorAll(`${divId} .actions a.editTemplate`).forEach((editTemplate) => {
-      const fleetId = editTemplate.getAttribute("onclick").match(/(?<=\", )\d+/)[0];
+      const fleetId = editTemplate.getAttribute("onclick").match(/(?<=", )\d+/)[0];
       const a = DOM.createDOM("a", {
         class: "tooltip js_hideTipOnMobile icon_link",
         style: "margin-right: 3px;",

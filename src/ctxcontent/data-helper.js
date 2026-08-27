@@ -36,42 +36,39 @@ export class DataHelper {
 
   init() {
     return new Promise(async (resolve, reject) => {
-      chrome.storage.local.get(
-        ["ogi-scanned-" + this.universe, "ogi-galaxy-" + this.universe],
-        (result) => {
-          let scannedJson;
-          try {
-            scannedJson = JSON.parse(result["ogi-scanned-" + this.universe]);
-          } catch (error) {
-            scannedJson = {};
-          }
-          this.scannedPlanets = scannedJson.scannedPlanets || {};
-          this.scannedPlayers = scannedJson.scannedPlayers || {};
-          this.lastPlayersUpdate = this.lastPlayersUpdate || new Date(0);
-          this.lastPlanetsUpdate = this.lastPlayersUpdate || new Date(0);
-
-          // Galaxy storage lives in its own key so hot writes (from scan()) stay small
-          // and never drag the big `[UNIVERSE]` blob along. The dedicated key is the
-          // SOLE source of truth; do not fall back to `this.galaxyStorage` /
-          // `this.lastGalaxyUpdateTS` values inherited from the big blob via
-          // Object.assign in main() - a manual reset would be defeated otherwise.
-          let galaxyJson;
-          try {
-            galaxyJson = JSON.parse(result["ogi-galaxy-" + this.universe]);
-          } catch (error) {
-            galaxyJson = null;
-          }
-          if (galaxyJson && typeof galaxyJson === "object") {
-            this.galaxyStorage = galaxyJson.galaxyStorage || {};
-            this.lastGalaxyUpdateTS = galaxyJson.lastGalaxyUpdateTS ?? -1;
-          } else {
-            this.galaxyStorage = {};
-            this.lastGalaxyUpdateTS = -1;
-          }
-
-          resolve();
+      chrome.storage.local.get(["ogi-scanned-" + this.universe, "ogi-galaxy-" + this.universe], (result) => {
+        let scannedJson;
+        try {
+          scannedJson = JSON.parse(result["ogi-scanned-" + this.universe]);
+        } catch (error) {
+          scannedJson = {};
         }
-      );
+        this.scannedPlanets = scannedJson.scannedPlanets || {};
+        this.scannedPlayers = scannedJson.scannedPlayers || {};
+        this.lastPlayersUpdate = this.lastPlayersUpdate || new Date(0);
+        this.lastPlanetsUpdate = this.lastPlayersUpdate || new Date(0);
+
+        // Galaxy storage lives in its own key so hot writes (from scan()) stay small
+        // and never drag the big `[UNIVERSE]` blob along. The dedicated key is the
+        // SOLE source of truth; do not fall back to `this.galaxyStorage` /
+        // `this.lastGalaxyUpdateTS` values inherited from the big blob via
+        // Object.assign in main() - a manual reset would be defeated otherwise.
+        let galaxyJson;
+        try {
+          galaxyJson = JSON.parse(result["ogi-galaxy-" + this.universe]);
+        } catch (error) {
+          galaxyJson = null;
+        }
+        if (galaxyJson && typeof galaxyJson === "object") {
+          this.galaxyStorage = galaxyJson.galaxyStorage || {};
+          this.lastGalaxyUpdateTS = galaxyJson.lastGalaxyUpdateTS ?? -1;
+        } else {
+          this.galaxyStorage = {};
+          this.lastGalaxyUpdateTS = -1;
+        }
+
+        resolve();
+      });
     });
   }
 
@@ -225,7 +222,8 @@ export class DataHelper {
       // on first visit we force-emit all 15 positions - populated AND empty - so PTRE
       // learns the initial shape of the system. Without a team key we never persist and
       // never emit (keyless behavior matches master).
-      const storedSystem = this.galaxyStorage && this.galaxyStorage[galaxy] ? this.galaxyStorage[galaxy][system] : undefined;
+      const storedSystem =
+        this.galaxyStorage && this.galaxyStorage[galaxy] ? this.galaxyStorage[galaxy][system] : undefined;
       const previousSystemFound = Boolean(teamKey && storedSystem);
       const previousSystemSnapshot = previousSystemFound ? storedSystem : generateEmptySystem();
       const currentSystemSnapshot = {};
@@ -240,10 +238,27 @@ export class DataHelper {
         const extra = (additionnal && (additionnal[pos] || additionnal[String(pos)])) || {};
         const coords = galaxy + ":" + system + ":" + pos;
 
-        ptreLogger.debug("[GALAXY] [" + coords +"] Player " + previousSystemSnapshot[pos].playerId + "=>" + cur.playerId +
-            " | Planet: " + previousSystemSnapshot[pos].planetId + "=>" + cur.planetId +
-            " | Moon: " + previousSystemSnapshot[pos].moonId + "=>" + cur.moonId +
-            " (" + (extra.playerName || "") + " - " + (extra.playerRank ?? -1) + ")");
+        ptreLogger.debug(
+          "[GALAXY] [" +
+            coords +
+            "] Player " +
+            previousSystemSnapshot[pos].playerId +
+            "=>" +
+            cur.playerId +
+            " | Planet: " +
+            previousSystemSnapshot[pos].planetId +
+            "=>" +
+            cur.planetId +
+            " | Moon: " +
+            previousSystemSnapshot[pos].moonId +
+            "=>" +
+            cur.moonId +
+            " (" +
+            (extra.playerName || "") +
+            " - " +
+            (extra.playerRank ?? -1) +
+            ")"
+        );
 
         // ---- Non-PTRE side effects: refresh OGI's internal maps used by getPlayer/filter.
         // Runs regardless of whether a PTRE team key is set (matches master behavior).
@@ -327,7 +342,7 @@ export class DataHelper {
             payload[coords] = entry;
           }
         }
-      }// End positions loop
+      } // End positions loop
 
       // Persist only when at least one position in the system actually moved.
       // Identical revisits (same player/planet/moon layout as previously stored) skip
@@ -405,11 +420,11 @@ export class DataHelper {
   rebuildGalaxyStorage(ptreKey) {
     const logger = getLogger("updateUniverse");
     if (!ptreKey) {
-      logger.debug(`[galaxyStorage] rebuild skipped: no PTRE key`);
+      logger.debug("[galaxyStorage] rebuild skipped: no PTRE key");
       return;
     }
     if (!this._galaxySnapshot) {
-      logger.debug(`[galaxyStorage] rebuild skipped: no cached snapshot`);
+      logger.debug("[galaxyStorage] rebuild skipped: no cached snapshot");
       return;
     }
     const newGalaxyTs = this._galaxySnapshot.timestamp;
@@ -458,7 +473,9 @@ export class DataHelper {
 
     this.lastGalaxyUpdateTS = newGalaxyTs;
     const galaxyBuildDurationMs = Math.round(performance.now() - galaxyBuildStart);
-    logger.debug(`[galaxyStorage] New data: systems=${updatedSystemsCount} planets=${updatedPlanetsCount} moons=${updatedMoonsCount} | TS=${this.lastGalaxyUpdateTS} | Took ${galaxyBuildDurationMs}ms`);
+    logger.debug(
+      `[galaxyStorage] New data: systems=${updatedSystemsCount} planets=${updatedPlanetsCount} moons=${updatedMoonsCount} | TS=${this.lastGalaxyUpdateTS} | Took ${galaxyBuildDurationMs}ms`
+    );
     this.flushGalaxyStorage();
   }
 

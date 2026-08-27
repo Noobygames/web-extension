@@ -192,7 +192,7 @@ class BackgroundNotifier {
 
   #areEquals = (notificationA, notificationB) => {
     if (notificationA.id !== notificationB.id) {
-      console.debug(`Notification ID mismatch`, {
+      console.debug("Notification ID mismatch", {
         notificationA: notificationA.id,
         notificationB: notificationB.id,
       });
@@ -404,7 +404,7 @@ class BackgroundNotifier {
       await this.notificationData.SaveAsync();
     } else {
       //else open lobby
-      await chrome.tabs.create({ url: `https://lobby.ogame.gameforge.com/` });
+      await chrome.tabs.create({ url: "https://lobby.ogame.gameforge.com/" });
     }
   }
 }
