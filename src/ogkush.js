@@ -3219,7 +3219,13 @@ class OGInfinity {
         };
 
         this.saveData();
-        return this.onFleetSentRedirectUrl;
+        //if onFleetSentRedirectUrl is string return it.
+        //else if it's a method call it and return the result, if it's not a string return undefined
+        return typeof this.onFleetSentRedirectUrl === "string"
+          ? this.onFleetSentRedirectUrl
+          : typeof this.onFleetSentRedirectUrl === "function"
+          ? this.onFleetSentRedirectUrl()
+          : undefined;
       });
       $(".send_all").before(createDOM("span", { class: "select-most" }));
       $(".allornonewrap > .secondcol > span.select-most").on("click", () => {
@@ -9737,6 +9743,12 @@ class OGInfinity {
         dispatch.style.display = "none";
       }
       let destination = dispatch.appendChild(createDOM("div", { class: "ogl-dest" }));
+      let systemButtons = destination.appendChild(
+        createDOM("div", { class: "ogl-system-buttons", system: fleetDispatcher.targetPlanet.system })
+      );
+
+      let systemInputMinus = systemButtons.appendChild(createDOM("span", { class: "ogl-system-input-minus" }));
+      let systemInputPlus = systemButtons.appendChild(createDOM("span", { class: "ogl-system-input-plus" }));
       let resDiv = dispatch.appendChild(createDOM("div"));
       let actions = resDiv.appendChild(createDOM("div", { class: "ogl-transport" }));
       let coords = destination.appendChild(createDOM("div", { class: "ogl-coords" }));
@@ -9897,7 +9909,11 @@ class OGInfinity {
                 if (missionURL != 0 && missions.includes(missionURL)) {
                   defaultMission = missionURL;
                 } else if (fleetDispatcher.targetPlanet.position == 16) {
-                  defaultMission = that.json.options.expeditionMission == 15 ? 15 : 6;
+                  if (fleetDispatcher.mission !== 15 && fleetDispatcher.mission !== 6) {
+                    defaultMission = that.json.options.expeditionMission == 15 ? 15 : 6;
+                  } else {
+                    defaultMission = fleetDispatcher.mission;
+                  }
                 } else if (fleetDispatcher.targetIsBuddyOrAllyMember || !missions.includes(1)) {
                   // if available missions do not include attack mission, the target is own planet/moon
                   defaultMission = that.json.options.harvestMission;
@@ -10015,6 +10031,10 @@ class OGInfinity {
       returnDiv.style.visibility = "hidden";
       info.appendChild(createDOM("div", {}, this.getTranslatedText(49)));
       let consDiv = info.appendChild(createDOM("div", { class: "undermark" }));
+      info.appendChild(createDOM("div", {}, this.getTranslatedText(227)));
+      let emptySystemsDiv = info.appendChild(createDOM("div", { class: "ogl-empty-systems" }));
+      info.appendChild(createDOM("div", {}, this.getTranslatedText(228)));
+      let inactiveSystemsDiv = info.appendChild(createDOM("div", { class: "ogl-inactive-systems" }));
 
       // fleet speed selector in page fleet 1
       const slider = DOM.createDOM("div", { style: "margin-top: 10px" });
@@ -10137,6 +10157,13 @@ class OGInfinity {
         }
         if (this.rawURL.searchParams.get("mission") == 3) {
           if (index == 3) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+        if (this.rawURL.searchParams.get("mission") == 6) {
+          if (index == 6) {
             return true;
           } else {
             return false;
@@ -10275,8 +10302,11 @@ class OGInfinity {
           fleetDispatcher.targetPlanet.position = position;
         } else {
           galaxyInput.value = fleetDispatcher.targetPlanet.galaxy;
+          galaxyInput.setAttribute("value", fleetDispatcher.targetPlanet.galaxy);
           systemInput.value = fleetDispatcher.targetPlanet.system;
+          systemInput.setAttribute("value", fleetDispatcher.targetPlanet.system);
           positionInput.value = fleetDispatcher.targetPlanet.position;
+          positionInput.setAttribute("value", fleetDispatcher.targetPlanet.position);
         }
         if (fleetDispatcher.mission == 4 || fleetDispatcher.mission == 0) {
           returnDiv.style.visibility = "hidden";
@@ -10312,6 +10342,8 @@ class OGInfinity {
           consDiv.textContent = "-";
           arrivalDiv.textContent = "-";
           returnDiv.textContent = "-";
+          emptySystemsDiv.textContent = "-";
+          inactiveSystemsDiv.textContent = "-";
           document
             .querySelector(".ogl-dispatch .ogl-missions")
             .replaceChildren(createDOM("span", { style: "color: #9099a3" }, `${that.getTranslatedText(111)}`));
@@ -10355,6 +10387,21 @@ class OGInfinity {
           icon.classList.add("ogl-active");
         }
         durationDiv.replaceChildren(createDOM("strong", {}, formatTime(fleetDispatcher.getDuration())));
+        if (fleetDispatcher.emptySystems > 0) {
+          emptySystemsDiv.textContent = fleetDispatcher.emptySystems;
+          emptySystemsDiv.classList.add("middlemark");
+        } else {
+          emptySystemsDiv.textContent = "-";
+          emptySystemsDiv.classList.remove("middlemark");
+        }
+
+        if (fleetDispatcher.inactiveSystems > 0) {
+          inactiveSystemsDiv.textContent = fleetDispatcher.inactiveSystems;
+          inactiveSystemsDiv.classList.add("middlemark");
+        } else {
+          inactiveSystemsDiv.textContent = "-";
+          inactiveSystemsDiv.classList.remove("middlemark");
+        }
         consDiv.textContent = toFormatedNumber(fleetDispatcher.getConsumption(), 0);
         if (fleetDispatcher.getConsumption() > deutAvailable) {
           consDiv.classList.add("overmark");
@@ -10393,6 +10440,33 @@ class OGInfinity {
         galaxyInput.value = "";
         document.querySelector("#missionsDiv").setAttribute("data", "true");
       });
+      const plusOrMinSystem = (increment) => {
+        let system = parseInt(systemButtons.getAttribute("system") ?? "1");
+        let candidate = increment ? system + 1 : system - 1;
+        if (candidate <= 0) candidate = fleetDispatcher.fleetHelper.MAX_SYSTEM;
+        else if (candidate > fleetDispatcher.fleetHelper.MAX_SYSTEM) candidate = 1;
+        systemButtons.setAttribute("system", candidate);
+
+        // if system is set, increase or decrease it by one
+        if (systemInput.value) {
+          const finalSystem = parseInt(systemButtons.getAttribute("system") ?? "1");
+          systemInput.value = finalSystem;
+          systemInput.setAttribute("value", finalSystem);
+        }
+        systemButtons.setAttribute("processing", "false");
+        const processing = systemButtons.getAttribute("processing");
+        if (processing === "true") return;
+        systemButtons.setAttribute("processing", "true");
+        debounce(() => {
+          fleetDispatcher.targetPlanet.system = parseInt(systemButtons.getAttribute("system") ?? "1");
+          fleetDispatcher.refreshTarget();
+          fleetDispatcher.updateTarget();
+          fleetDispatcher.fetchTargetPlayerData();
+          fleetDispatcher.refresh();
+        }, 250)();
+      };
+      systemInputMinus.addEventListener("click", () => plusOrMinSystem(false));
+      systemInputPlus.addEventListener("click", () => plusOrMinSystem(true));
       systemInput.addEventListener("click", () => {
         systemInput.value = "";
         document.querySelector("#missionsDiv").setAttribute("data", "true");
@@ -11420,6 +11494,11 @@ class OGInfinity {
 
       btnExpe.addEventListener("mouseover", () => this.tooltip(btnExpe, optionsContainerDiv, false, false, 750));
       btnExpe.addEventListener("click", async () => {
+        //remove active class of .ogk-customMission buttons
+        document.querySelectorAll(".ogk-customMission.ogl-active").forEach((btn) => {
+          btn.classList.remove("ogl-active");
+        });
+
         await wait.waitFor(() => !fleetDispatcher.loading);
         document.querySelector("#resetall").click();
         this.expedition = true;
@@ -17332,6 +17411,11 @@ class OGInfinity {
       });
       btnCollect.addEventListener("mouseover", () => this.tooltip(btnCollect, cargoChoice, false, false, 500));
       btnCollect.addEventListener("click", () => {
+        //remove active class of .ogk-customMission buttons
+        document.querySelectorAll(".ogk-customMission.ogl-active").forEach((btn) => {
+          btn.classList.remove("ogl-active");
+        });
+
         document.querySelector("#resetall").click();
         this.collect = true;
         this.expedition = false;
@@ -17398,6 +17482,12 @@ class OGInfinity {
       fleetDispatcher.shipsOnPlanet?.find((x) => x.number > 0) !== undefined &&
       !fleetDispatcher.isOnVacation
     ) {
+      const getMissionClass = (mission) => {
+        if (mission == 4) return "statio";
+        if (mission == 6) return "spy";
+        return "";
+      };
+
       let missionsDiv = document.querySelector("#allornone .secondcol");
       const maxMissions = 5;
       let nbMissions = getOption("nbCustomMissions");
@@ -17459,7 +17549,7 @@ class OGInfinity {
 
           const customMissionClassSelector = `.ogk-customMission.ogk-customMission-${customMissionId}`;
           const customMissionClass = `ogk-customMission ogk-customMission-${customMissionId}`;
-          const missionClass = this.json.options.customMissions[customMissionId].mission == 4 ? "statio" : "";
+          const missionClass = getMissionClass(this.json.options.customMissions[customMissionId].mission);
           const optionClass = `ogk-customMission-options ogk-customMission-${customMissionId}`;
           const optionClassSelector = `.ogk-customMission-options.ogk-customMission-${customMissionId}`;
 
@@ -17540,6 +17630,7 @@ class OGInfinity {
           const pf = createFleetChoice(219);
 
           //mission choices
+          const spyMission = createMissionChoice(6);
           const tr = createMissionChoice(3);
           const dp = createMissionChoice(4);
 
@@ -17659,7 +17750,6 @@ class OGInfinity {
                     : "largeCargo";
           const getShipClassSelector = (shipId) =>
             shipId === "select-most" ? ".select-most" : shipId === "sendall" ? ".sendall" : `.ogl-fleet-${shipId}`;
-          const getMissionClass = (mission) => (mission == 4 ? "statio" : "");
           const getMissionClassSelector = (mission) => `.ogl-mission-${mission}`;
 
           let updateDefaultCollectShip = (shipId) => {
@@ -17685,7 +17775,7 @@ class OGInfinity {
             if (newHighlight) newHighlight.classList.add("highlight");
           };
 
-          let updateDefaultCollectMission = (mission) => {
+          let updateDefaultMission = (mission) => {
             this.json.options.customMissions[customMissionId].mission = mission;
             this.saveData();
 
@@ -17710,8 +17800,9 @@ class OGInfinity {
           sc.addEventListener("click", () => updateDefaultCollectShip(202));
           lc.addEventListener("click", () => updateDefaultCollectShip(203));
           pf.addEventListener("click", () => updateDefaultCollectShip(219));
-          tr.addEventListener("click", () => updateDefaultCollectMission(3));
-          dp.addEventListener("click", () => updateDefaultCollectMission(4));
+          spyMission.addEventListener("click", () => updateDefaultMission(6));
+          tr.addEventListener("click", () => updateDefaultMission(3));
+          dp.addEventListener("click", () => updateDefaultMission(4));
           tgt.addEventListener("click", () => {
             let container = this.openPlanetList(
               (planet) => {
@@ -17763,6 +17854,13 @@ class OGInfinity {
             try {
               btnCollectProcessing = true;
 
+              //remove active class of .ogk-customMission buttons
+              document.querySelectorAll(".ogk-customMission.ogl-active").forEach((btn) => {
+                btn.classList.remove("ogl-active");
+              });
+              //add active class to the clicked button
+              btnCollect.classList.add("ogl-active");
+
               const selectedRoute = this.json.options.customMissions[customMissionId];
               const selectedTarget = selectedRoute.target[currentId];
 
@@ -17796,8 +17894,24 @@ class OGInfinity {
               };
               const target = findTargetByIdOrCoords(selectedTarget);
 
+              // Ghost spy: a P16 custom spy mission targets the empty slot of a nearby system, so the
+              // coordinates come from the current planet plus the systemDistance offset rather than
+              // from a stored target. Only the inputs on the game's own fleetdispatch form are filled -
+              // the player still dispatches the fleet themselves (one click, one action).
+              if (selectedRoute.mission == 6) {
+                const systemDistance = this.rawURL.searchParams.get("systemDistance") ?? 0;
+                let candidateSystem = OgamePageData.currentSystem + parseInt(systemDistance);
+                if (OgamePageData.donutSystem) {
+                  const maxSystem = fleetDispatcher.fleetHelper.MAX_SYSTEM;
+                  if (candidateSystem > maxSystem) candidateSystem = candidateSystem - maxSystem;
+                  if (candidateSystem < 1) candidateSystem = maxSystem + candidateSystem;
+                }
+                document.querySelector(".ogl-coords #galaxyInput").value = OgamePageData.currentGalaxy;
+                document.querySelector(".ogl-coords #systemInput").value = candidateSystem;
+                document.querySelector(".ogl-coords #positionInput").value = 16;
+              }
               //if target doesn't exist anymore (moved or destroyed) do not select a target and let the player select a new one by himself to avoid error and bad experience
-              if (target) {
+              else if (target) {
                 document.querySelector(".ogl-coords #galaxyInput").value = target.galaxy;
                 document.querySelector(".ogl-coords #systemInput").value = target.system;
                 document.querySelector(".ogl-coords #positionInput").value = target.position;
@@ -17826,10 +17940,6 @@ class OGInfinity {
                 });
               }
 
-              //select mission
-              fleetDispatcher.mission = selectedRoute.mission;
-              fleetDispatcher.selectMission(selectedRoute.mission);
-
               //select cargo
               document.querySelector(".ogl-cargo a.send_none").click();
               if (this.json.options.customMissions[customMissionId].resources) {
@@ -17846,10 +17956,24 @@ class OGInfinity {
                 this.selectBestCargoShip(selectedRoute.ship);
               }
 
+              /*
+               * if mission is espionage, has not selected probe and has one available, select at least one
+               * here, we don't care about keep ships options, because it's a ghosting / emergency feature
+               * so if the player want to keep his probe, he will get it at fleet return
+               */
+              if (selectedRoute.mission == 6) {
+                const hasProbeSelected = fleetDispatcher.shipsToSend.some((s) => s.id == 210);
+                if (!hasProbeSelected) this.selectShips(210, 1);
+              }
+
               fleetDispatcher.refreshTarget();
               fleetDispatcher.updateTarget();
               fleetDispatcher.fetchTargetPlayerData();
               fleetDispatcher.refresh();
+
+              //select mission after selecting target and ships
+              fleetDispatcher.mission = selectedRoute.mission;
+              fleetDispatcher.selectMission(selectedRoute.mission);
 
               //reselect cargo
               if (this.json.options.customMissions[customMissionId].resources) {
@@ -17857,7 +17981,8 @@ class OGInfinity {
               }
 
               let nextId = currentId;
-              if (this.json.options.customMissions[customMissionId].rotation) {
+              const rotation = this.json.options.customMissions[customMissionId].rotation;
+              if (rotation) {
                 nextId = this.current.planet.nextElementSibling.id
                   ? this.current.planet.nextElementSibling.id.split("-")[1]
                   : document.querySelectorAll(".smallplanet")[0].id.split("-")[1];
@@ -17866,11 +17991,56 @@ class OGInfinity {
                 }
               }
 
-              this.onFleetSentRedirectUrl =
-                "https://" +
-                window.location.host +
-                window.location.pathname +
-                `?page=ingame&component=fleetdispatch&cp=${nextId}&galaxy=${selectedTarget.galaxy}&system=${selectedTarget.system}&position=${selectedTarget.position}&type=${selectedTarget.type}&mission=${selectedRoute.mission}&oglMode=${ogiMode.CUSTOM_MISSION}&customMissionId=${customMissionId}`;
+              this.onFleetSentRedirectUrl = () => {
+                // we only need new next position Id, and indicate the current custom mission id in url
+                const urlParams = new URLSearchParams({
+                  page: "ingame",
+                  component: "fleetdispatch",
+                  cp: nextId,
+                  oglMode: ogiMode.CUSTOM_MISSION,
+                  customMissionId: customMissionId,
+                });
+                // but some parameters could help for performance with rotation
+                if (rotation) {
+                  urlParams.set("mission", selectedRoute.mission); //preselect mission
+                  if (selectedRoute.mission == 6) {
+                    //find next coords for targe with nextId
+                    const nextTarget =
+                      OGIData.empire.find((p) => p.id == nextId) ??
+                      OGIData.empire.find((p) => p.moon && p.moon.id == nextId)?.moon;
+                    if (nextTarget.galaxy) urlParams.set("galaxy", nextTarget.galaxy);
+                    if (nextTarget.system) urlParams.set("system", nextTarget.system);
+                    urlParams.set("position", 16); //preselect P16
+                    urlParams.set("type", 1); //preselect planetType
+
+                    /*
+                     * if there is some change in system, we need to calculate the difference of coordinates
+                     * to apply it to the next target for preselection
+                     */
+
+                    if (fleetDispatcher.targetPlanet.system !== OgamePageData.currentSystem) {
+                      const maxSystem = fleetDispatcher.fleetHelper.MAX_SYSTEM;
+                      let distance = fleetDispatcher.targetPlanet.system - OgamePageData.currentSystem;
+                      // In a donut system, if the distance is greater than half of the max, it's shorter to go through the loop.
+                      if (OgamePageData.donutSystem) {
+                        if (Math.abs(distance) > maxSystem / 2) {
+                          distance = distance > 0 ? distance - maxSystem : distance + maxSystem;
+                        }
+                      }
+                      urlParams.set("systemDistance", distance);
+                    }
+                  } else {
+                    const nextTarget = selectedRoute.target[nextId];
+                    if (nextTarget) {
+                      if (nextTarget.galaxy) urlParams.set("galaxy", nextTarget.galaxy);
+                      if (nextTarget.system) urlParams.set("system", nextTarget.system);
+                      if (nextTarget.position) urlParams.set("position", nextTarget.position);
+                      if (nextTarget.type) urlParams.set("type", nextTarget.type);
+                    }
+                  }
+                }
+                return "https://" + window.location.host + window.location.pathname + "?" + urlParams.toString();
+              };
             } catch (error) {
               logger.error(error);
             } finally {
