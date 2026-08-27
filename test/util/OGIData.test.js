@@ -102,6 +102,40 @@ test("the sideStalk setter preserves insertion order", async () => {
   });
 });
 
+test("the sideStalk remove/restore round-trip persists (PR #546)", async () => {
+  await withOGIData({}, (OGIData) => {
+    OGIData.sideStalk = [101, 202, 303];
+
+    // Exactly the shape stalk.js uses: copy -> splice -> reassign. A direct
+    // OGIData.sideStalk.splice() would mutate the getter's result and never save.
+    const afterRemoval = OGIData.sideStalk.slice();
+    const index = afterRemoval.indexOf(202);
+    afterRemoval.splice(index, 1);
+    OGIData.sideStalk = afterRemoval;
+
+    assert.deepEqual(stored().sideStalk, [101, 303], "the removal must reach localStorage immediately");
+
+    // Undo puts the player back at its old position, not at the end
+    const afterUndo = OGIData.sideStalk.slice();
+    afterUndo.splice(index, 0, 202);
+    OGIData.sideStalk = afterUndo;
+
+    assert.deepEqual(stored().sideStalk, [101, 202, 303]);
+  });
+});
+
+test("TRAP: splicing the sideStalk getter result does NOT remove the player", async () => {
+  await withOGIData({}, (OGIData) => {
+    OGIData.sideStalk = [101, 202, 303];
+
+    OGIData.sideStalk.splice(1, 1);
+
+    // The getter hands back the live array, so the in-memory list does change -
+    // but nothing is written, and the next reload brings the player back.
+    assert.deepEqual(stored().sideStalk, [101, 202, 303]);
+  });
+});
+
 test("EVERY write-through accessor persists to localStorage", async () => {
   // OGIData is ~28 near-identical getter/setter pairs. A single missing
   // #save() in one of them is invisible by inspection, so the contract is
