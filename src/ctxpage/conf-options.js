@@ -54,6 +54,13 @@ const _options = {
   showProgressIndicators: true,
   fleetActivity: true,
   spyFilter: "DATE",
+  // Wide-screen layout: stretch the fixed-width game column on monitors >= 1600px.
+  wideLayoutEnable: true,
+  // Wide-screen zoom: scale the game content itself once the column hits its cap.
+  wideZoomEnable: true,
+  // Manual zoom factor. 0 = automatic stepped zoom (1.15 / 1.25 / 1.4 by viewport
+  // width); any other value is used verbatim from 1600px up, overriding the steps.
+  wideZoomFactor: 0,
   // Feature E: how long an alliance target claim stays 'taken' before the target is fair game.
   claimTtlMinutes: 120,
   ptreTK: "",

@@ -1,5 +1,7 @@
 /// Page Context Imports
 import { initConfOptions, getOptions, getOption, setOption } from "./ctxpage/conf-options.js";
+import { applyWideLayout, normalizeZoomFactor } from "./ctxpage/wide-layout.js";
+import { initChatEnhancements } from "./ctxpage/chat/index.js";
 import ctxMessageAnalyzer from "./ctxpage/messages-analyzer/index.js";
 import * as DOM from "./util/dom.js";
 import { getLogger } from "./util/logger.js";
@@ -1559,6 +1561,8 @@ class OGInfinity {
   }
 
   start() {
+    // Wide-screen layout/zoom switches: pure CSS class toggles on <html>.
+    applyWideLayout();
     this.hasLifeforms = document.querySelector(".lifeform") != null;
     let forceEmpire = document.querySelectorAll("div[id*=planet-]").length != OGIData.empire.length;
     this.updateServerSettings();
@@ -1690,6 +1694,8 @@ class OGInfinity {
     this.betterTooltip();
     this.utilities();
     this.chat();
+    // Chat: private-message button on alliance messages, coordinate hover menu.
+    initChatEnhancements();
     this.uvlinks();
     this.OverviewPage.MakePrettierOverview(this.page);
     this.TraderImportExportPage.RemindMeImportExport(this.page);
@@ -15330,6 +15336,48 @@ class OGInfinity {
       const isChecked = e.currentTarget.checked;
       this.json.options.navigationArrows = isChecked;
     });
+    // Wide-screen layout: stretch the fixed-width game column on monitors >= 1600px.
+    let wideLayout = featureSettings.appendChild(
+      this.createDOM(
+        "div",
+        { class: "ogi-checkbox" },
+        `<label for="wide-layout">${this.getTranslatedText(
+          251
+        )}</label>\n        <input type="checkbox" id="wide-layout" name="wide-layout" ${
+          getOption("wideLayoutEnable") ? "checked" : ""
+        }>`
+      )
+    );
+    wideLayout.querySelector("#wide-layout").addEventListener("click", (e) => {
+      setOption("wideLayoutEnable", e.currentTarget.checked);
+      applyWideLayout();
+    });
+    // Wide-screen zoom: scale the game content once the column has hit its cap.
+    let wideZoom = featureSettings.appendChild(
+      this.createDOM(
+        "div",
+        { class: "ogi-checkbox" },
+        `<label for="wide-zoom">${this.getTranslatedText(
+          252
+        )}</label>\n        <input type="checkbox" id="wide-zoom" name="wide-zoom" ${
+          getOption("wideZoomEnable") ? "checked" : ""
+        }>`
+      )
+    );
+    wideZoom.querySelector("#wide-zoom").addEventListener("click", (e) => {
+      setOption("wideZoomEnable", e.currentTarget.checked);
+      applyWideLayout();
+    });
+    optiondiv = featureSettings.appendChild(
+      createDOM("span", { class: "tooltip", title: this.getTranslatedText(254) }, this.getTranslatedText(253))
+    );
+    let wideZoomFactorInput = optiondiv.appendChild(
+      createDOM("input", {
+        type: "text",
+        class: "ogl-rvalInput ogl-formatInput tooltip",
+        value: String(getOption("wideZoomFactor") ?? 0),
+      })
+    );
     optiondiv = featureSettings.appendChild(
       createDOM("span", { class: "tooltip", title: this.getTranslatedText(105) }, this.getTranslatedText(35))
     );
@@ -15918,6 +15966,9 @@ class OGInfinity {
       setOption("lifeformResearchsIconsDisplayMode", lifeformResearchsIconsInput.value);
       setOption("ownFleetYieldIconsDisplayMode", ownFleetYieldIconsInput.value);
       setOption("nbCustomMissions", nbCustomMissionsSelect.value);
+      // 0 keeps the automatic stepped zoom; anything else is clamped to [1, 2].
+      setOption("wideZoomFactor", normalizeZoomFactor(wideZoomFactorInput.value));
+      applyWideLayout();
 
       this.json.needSync = true;
       this.saveData();
