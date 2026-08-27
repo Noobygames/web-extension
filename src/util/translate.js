@@ -2466,6 +2466,30 @@ const translation = Object.freeze({
       tr: "Toplanacak bir şey yok",
       br: "Nada para coletar",
     },
+    240: {
+      de: "Nicht genug Frachter für eine volle Expedition",
+      en: "Not enough cargo for a full expedition",
+      es: "No hay suficiente carga para una expedición completa",
+      fr: "Pas assez de fret pour une expédition complète",
+      tr: "Tam bir keşif için yeterli kargo yok",
+      br: "Carga insuficiente para uma expedição completa",
+    },
+    241: {
+      de: "Expeditionen gleichmäßig aufteilen",
+      en: "Balance expeditions evenly",
+      es: "Repartir expediciones equitativamente",
+      fr: "Répartir les expéditions équitablement",
+      tr: "Keşifleri eşit dağıt",
+      br: "Distribuir expedições igualmente",
+    },
+    242: {
+      de: "Teilt die vorhandenen Frachter auf die freien Expeditionsslots auf",
+      en: "Splits the cargo on this planet across the free expedition slots",
+      es: "Divide la carga de este planeta entre las ranuras de expedición libres",
+      fr: "Répartit le fret de cette planète sur les emplacements d'expédition libres",
+      tr: "Bu gezegendeki kargoyu boş keşif yuvalarına böler",
+      br: "Divide a carga deste planeta entre os espaços de expedição livres",
+    },
   },
 });
 

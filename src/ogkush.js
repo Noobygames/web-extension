@@ -38,6 +38,7 @@ import TraderImportExportPage from "./ctxpage/traderOverview/TraderImportExportP
 import { addTemplateSelector } from "./ctxpage/fleetdispatch/templates.js";
 import RecyclingYieldCalculator from "./util/recyclingYieldCalculator.js";
 import { planHarvest, CARGO_SHIP_IDS } from "./util/harvestPlanner.js";
+import { planExpeditionFleets } from "./util/expeditionBalancer.js";
 import Notifier from "./util/Notifier.js";
 
 const DISCORD_INVITATION_URL = "https://discord.gg/8Y4SWup";
@@ -11749,7 +11750,32 @@ class OGInfinity {
         const maxSC = Math.max(minSC, this.calcNeededShips({ fret: 202, resources: maxResources - cargoCapacity }));
         const maxLC = Math.max(minLC, this.calcNeededShips({ fret: 203, resources: maxResources - cargoCapacity }));
         const cargoShip = this.json.options.expedition.cargoShip;
-        const cargoShipsNeeded = cargoShip === 202 ? maxSC : maxLC;
+        let cargoShipsNeeded = cargoShip === 202 ? maxSC : maxLC;
+
+        // Balanced dispatch: spread the cargo parked here across the expedition slots that are
+        // actually free, so the first fleet does not swallow ships the later ones still need.
+        // The minimum keeps every proposed fleet able to reach the top expedition tier - below
+        // that it is better to fill fewer expeditions properly.
+        if (this.json.options.expedition.balancedDispatch) {
+          const minimumPerFleet = Math.ceil(maxExpeditionPoints / SHIP_EXPEDITION_POINTS[cargoShip]);
+          const balanced = planExpeditionFleets({
+            maxExpeditions: fleetDispatcher.maxExpeditionCount,
+            activeExpeditions: fleetDispatcher.expeditionCount,
+            maxFleets: fleetDispatcher.maxFleetCount,
+            activeFleets: fleetDispatcher.fleetCount,
+            availableShips: availableShips[cargoShip] || 0,
+            minimumPerFleet,
+            maximumPerFleet: cargoShipsNeeded,
+          });
+
+          if (balanced.perFleet > 0) {
+            cargoShipsNeeded = balanced.perFleet;
+          } else if (balanced.openSlots > 0) {
+            // Not enough cargo here to fill even one expedition properly - say so rather than
+            // silently proposing a fleet that underperforms.
+            warningText += this.getTranslatedText(240) + "<br>";
+          }
+        }
 
         if (availableShips[cargoShip] >= cargoShipsNeeded) {
           selectedShips[cargoShip] = cargoShipsNeeded;
@@ -15311,6 +15337,23 @@ class OGInfinity {
         value: this.json.options.expedition.rotationAfter,
       })
     );
+    // Balanced expedition dispatch (roadmap Feature C). Off by default: it changes the ship count
+    // the dispatch form is pre-filled with, so it should be a deliberate choice.
+    let balancedDispatch = featureSettings.appendChild(
+      this.createDOM(
+        "div",
+        { class: "ogi-checkbox" },
+        `<label for="balanced-dispatch" title="${this.getTranslatedText(242)}">${this.getTranslatedText(
+          241
+        )}</label>\n        <input type="checkbox" id="balanced-dispatch" name="balanced-dispatch" ${
+          this.json.options.expedition.balancedDispatch ? "checked" : ""
+        }>`
+      )
+    );
+    balancedDispatch.querySelector("#balanced-dispatch").addEventListener("click", (e) => {
+      this.json.options.expedition.balancedDispatch = e.currentTarget.checked;
+    });
+
     optiondiv = featureSettings.appendChild(DOM.createDOM("span", {}, Translator.translate(181)));
     const standardUnitInput = DOM.createDOM("select", { class: "ogl-selectInput tooltip" });
     standardUnitInput.append(

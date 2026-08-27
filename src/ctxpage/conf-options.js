@@ -94,6 +94,7 @@ const _options = {
     standardFleet: false,
     standardFleetId: 0,
     standardFleetType: null,
+    balancedDispatch: false,
   },
   overview_display_planet_details: true,
   overview_display_planet_buffBar: true,
