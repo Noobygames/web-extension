@@ -41,6 +41,7 @@ import { planHarvest, CARGO_SHIP_IDS } from "./util/harvestPlanner.js";
 import { planExpeditionFleets } from "./util/expeditionBalancer.js";
 import { productionBreakdown, effectiveCrawlers, crawlerBonus } from "./util/productionEngine.js";
 import { indexClaims, claimStatus, claimCssClass, CLAIM_FREE } from "./util/targetClaims.js";
+import { watchForEmpireChanges } from "./util/stageForUpdate.js";
 import Notifier from "./util/Notifier.js";
 
 const DISCORD_INVITATION_URL = "https://discord.gg/8Y4SWup";
@@ -1622,43 +1623,47 @@ class OGInfinity {
     const ogkush = this;
 
     const rightId = OgamePageData.isAtLeast_13_0_0 ? "planetbarcomponent" : "right";
+    // subtree is off on purpose: the callback only ever acted on mutations whose target IS this
+    // element, so every descendant mutation was delivered just to be filtered out - on a planet-bar
+    // re-render that was ~72 deliveries for the 12 that mattered.
+    //
+    // The refresh below also used to run once PER matching mutation, so re-rendering 12 planets ran
+    // the whole ~15-method refresh 12 times. It is idempotent, so once per batch is enough.
     rightObserver(
       document.getElementById(rightId),
       (mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.target.id === rightId) {
-            ogkush.planetList = document.querySelectorAll(".smallplanet");
-            ogkush.current.planet = (
-              document.querySelector("#planetList .active") ?? document.querySelector("#planetList .planetlink")
-            ).parentNode;
-            document
-              .querySelectorAll(".planet-koords")
-              .forEach((elem) => (elem.textContent = elem.textContent.slice(1, -1)));
-            document.querySelectorAll(".moonlink").forEach((elem) => {
-              elem.classList.add("tooltipRight");
-              elem.classList.remove("tooltipLeft");
-            });
-            document.querySelectorAll(".planetlink").forEach((elem) => {
-              elem.classList.add("tooltipLeft");
-              elem.classList.remove("tooltipRight");
-            });
-            ogkush.sideOptions();
-            ogkush.minesLevel();
-            ogkush.resourceDetail();
-            ogkush.harvest();
-            ogkush.activitytimers();
-            needsUtil.display();
-            ogkush.jumpGate();
-            ogkush.updateFlyings();
-            ogkush.updatePlanets_IncomingHostileFleet();
-            ogkush.updatePlanets_FleetActivity();
-            ogkush.updateProductionProgress(false); //We haven't refreshed the empire data recently => false
-            ogkush.updateSpaceShipsPresence();
-            ogkush.markLifeforms();
-          }
+        if (!mutations.some((mutation) => mutation.target.id === rightId)) return;
+
+        ogkush.planetList = document.querySelectorAll(".smallplanet");
+        ogkush.current.planet = (
+          document.querySelector("#planetList .active") ?? document.querySelector("#planetList .planetlink")
+        ).parentNode;
+        document
+          .querySelectorAll(".planet-koords")
+          .forEach((elem) => (elem.textContent = elem.textContent.slice(1, -1)));
+        document.querySelectorAll(".moonlink").forEach((elem) => {
+          elem.classList.add("tooltipRight");
+          elem.classList.remove("tooltipLeft");
         });
+        document.querySelectorAll(".planetlink").forEach((elem) => {
+          elem.classList.add("tooltipLeft");
+          elem.classList.remove("tooltipRight");
+        });
+        ogkush.sideOptions();
+        ogkush.minesLevel();
+        ogkush.resourceDetail();
+        ogkush.harvest();
+        ogkush.activitytimers();
+        needsUtil.display();
+        ogkush.jumpGate();
+        ogkush.updateFlyings();
+        ogkush.updatePlanets_IncomingHostileFleet();
+        ogkush.updatePlanets_FleetActivity();
+        ogkush.updateProductionProgress(false); //We haven't refreshed the empire data recently => false
+        ogkush.updateSpaceShipsPresence();
+        ogkush.markLifeforms();
       },
-      { subtree: true, childList: true }
+      { subtree: false, childList: true }
     );
 
     wait.waitForQuerySelector("#eventContent").then(() => {
@@ -1795,20 +1800,9 @@ class OGInfinity {
       this.json.needsUpdate = true;
       this.saveData();
     };
-    setInterval(() => {
-      document
-        .querySelectorAll(
-          ".scrap_it, .build-it_wrap, button.upgrade, button.buildmulti, .abortNow, .build-faster, .og-button.submit, .abort_link, .js_executeJumpButton"
-        )
-        .forEach((btn) => {
-          if (!btn.classList.contains("ogk-ready")) {
-            btn.classList.add("ogk-ready");
-            btn.addEventListener("click", () => {
-              stageForUpdate();
-            });
-          }
-        });
-    }, 100);
+    // One delegated listener instead of a 100ms querySelectorAll poll that ran for the whole
+    // session and, after its first pass, had nothing left to do. See util/stageForUpdate.js.
+    watchForEmpireChanges(stageForUpdate);
 
     /*
      * When browser is closed, all scheduled notifications are cleared
