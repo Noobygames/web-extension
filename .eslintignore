@@ -1,0 +1,5 @@
+# Vendored third-party libraries - never reformat or lint these.
+src/libs/
+
+node_modules/
+dist/
