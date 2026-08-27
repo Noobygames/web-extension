@@ -3888,6 +3888,10 @@ class OGInfinity {
       window.location.href = `?${url.toString()}`;
     };
 
+    // Silent no-op unless all three preconditions hold: the standard-fleet option is on, a
+    // template is flagged for expeditions, and it is an admiral (expedition) template. Nothing
+    // is shown when only some hold - the game's own template select stays untouched, which is
+    // the same state as not having configured the feature at all.
     const preselectTemplate = () => {
       const options = getOption("expedition");
       if (!options.standardFleet) return;
@@ -3897,7 +3901,11 @@ class OGInfinity {
     };
 
     if (this.admiral) {
-      addTemplateSelector("#expeditionfleettemplatecomponent", "admiral", preselectTemplate);
+      addTemplateSelector(
+        OgamePageData.isAtLeast_13_0_0 ? "#expeditionfleettemplatecomponent" : "#expeditionFleetOverlay",
+        "admiral",
+        preselectTemplate
+      );
     }
 
     let callback = () => {
@@ -11335,10 +11343,16 @@ class OGInfinity {
 
       // add mx buttons to choose fleet template
       if (this.commander) {
-        addTemplateSelector("#standardfleettemplatecomponent", "commander");
+        addTemplateSelector(
+          OgamePageData.isAtLeast_13_0_0 ? "#standardfleettemplatecomponent" : "#zeuch666",
+          "commander"
+        );
       }
       if (this.admiral) {
-        addTemplateSelector("#expeditionfleettemplatecomponent", "admiral");
+        addTemplateSelector(
+          OgamePageData.isAtLeast_13_0_0 ? "#expeditionfleettemplatecomponent" : "#expeditionFleetOverlay",
+          "admiral"
+        );
       }
 
       btnExpe.addEventListener("mouseover", () => this.tooltip(btnExpe, optionsContainerDiv, false, false, 750));
@@ -11488,8 +11502,15 @@ class OGInfinity {
         let timeFleetTemplate = null;
         let speedFleetTemplate = null;
         if (this.json.options.expedition.standardFleet) {
+          // standardFleetType is new in this feature; configs saved before it exists carry an id
+          // with no type. Treating null as "either list" keeps those users' template working -
+          // templateApplied then stops the commander pass from overriding an admiral match, the
+          // same precedence the pre-split code had.
+          let templateApplied = false;
+          const configuredType = this.json.options.expedition.standardFleetType;
           const selectShipsFromFleetTemplate = (fleetTemplate, templateType) => {
-            if (templateType === this.json.options.expedition.standardFleetType) {
+            if (templateApplied) return;
+            if (configuredType == null || configuredType === templateType) {
               for (const template of fleetTemplate) {
                 if (template.id === Number(this.json.options.expedition.standardFleetId)) {
                   if (!!template.fleetSpeed) speedFleetTemplate = template.fleetSpeed;
@@ -11504,6 +11525,7 @@ class OGInfinity {
                   } else {
                     warningText = this.getTranslatedText(164) + "<br>" + warningText + "<br>";
                   }
+                  templateApplied = true;
                   break;
                 } else {
                   if (template.id == null) break;
@@ -11515,7 +11537,10 @@ class OGInfinity {
             selectShipsFromFleetTemplate(expeditionFleetTemplates, "admiral");
           }
           if (this.commander) {
-            selectShipsFromFleetTemplate(standardFleetTemplates, "commander");
+            selectShipsFromFleetTemplate(
+              OgamePageData.isAtLeast_13_0_0 ? standardFleetTemplates : standardFleets,
+              "commander"
+            );
           }
         }
 

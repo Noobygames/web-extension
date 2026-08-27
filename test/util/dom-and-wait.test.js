@@ -92,6 +92,67 @@ test("createSVG builds elements in the SVG namespace", async () => {
   });
 });
 
+// changeOGSelect drives OGame's custom select widget: a real <select> that is
+// visually replaced by a .dropdown sibling, so setting .value alone shows the
+// old label and never notifies the game's own change listeners.
+function selectMarkup(document) {
+  document.body.innerHTML = `
+    <select class="expeditionFleetTemplateSelect">
+      <option value="0">-</option>
+      <option value="42">Raid template</option>
+    </select>
+    <div class="dropdown"><a href="#">-</a></div>`;
+}
+
+test("changeOGSelect sets the value, the visible label and fires change", async () => {
+  await withDom(({ changeOGSelect }, { window }) => {
+    selectMarkup(window.document);
+    let changes = 0;
+    window.document.querySelector(".expeditionFleetTemplateSelect").addEventListener("change", () => changes++);
+
+    changeOGSelect(".expeditionFleetTemplateSelect", "42");
+
+    assert.equal(window.document.querySelector(".expeditionFleetTemplateSelect").value, "42");
+    assert.equal(window.document.querySelector(".dropdown > a").textContent, "Raid template");
+    assert.equal(changes, 1, "the game's own listeners must see the selection change");
+  });
+});
+
+test("changeOGSelect leaves everything alone for an unknown value", async () => {
+  await withDom(({ changeOGSelect }, { window }) => {
+    selectMarkup(window.document);
+    let changes = 0;
+    window.document.querySelector(".expeditionFleetTemplateSelect").addEventListener("change", () => changes++);
+
+    changeOGSelect(".expeditionFleetTemplateSelect", "999");
+
+    assert.equal(window.document.querySelector(".expeditionFleetTemplateSelect").value, "0");
+    assert.equal(changes, 0);
+  });
+});
+
+test("changeOGSelect is a no-op when the select is not on the page", async () => {
+  await withDom(({ changeOGSelect }, { window }) => {
+    window.document.body.innerHTML = "";
+
+    assert.doesNotThrow(() => changeOGSelect(".expeditionFleetTemplateSelect", "42"));
+  });
+});
+
+test("changeOGSelect still selects when the game renders no dropdown label", async () => {
+  await withDom(({ changeOGSelect }, { window }) => {
+    window.document.body.innerHTML = `
+      <select class="expeditionFleetTemplateSelect">
+        <option value="0">-</option>
+        <option value="42">Raid template</option>
+      </select>`;
+
+    changeOGSelect(".expeditionFleetTemplateSelect", "42");
+
+    assert.equal(window.document.querySelector(".expeditionFleetTemplateSelect").value, "42");
+  });
+});
+
 // --------------------------------------------------------------------------
 // util/wait.js
 // --------------------------------------------------------------------------
