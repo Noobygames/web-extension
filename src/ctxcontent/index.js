@@ -1,11 +1,16 @@
 import { getLogger } from "../util/logger.js";
 import { injectScript } from "../util/runContext.js";
 import { contentContextInit } from "../util/service.callbackEvent.js";
+import { suppressAbortRejections } from "../util/abort.js";
 import * as wait from "../util/wait.js";
 import { getExpeditionType } from "./callbacks/expedition-type.js";
 import { DataHelper } from "./data-helper.js";
 
 const mainLogger = getLogger();
+
+// The universe API requests below outlive a fast page change; a navigation
+// aborting them is expected, not an error. See util/abort.js.
+suppressAbortRejections();
 
 // PTRE team key held in the content script only for the lifetime of the tab.
 // Pushed in from the page via `ptre.setTeamKey`; never persisted here.

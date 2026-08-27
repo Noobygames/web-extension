@@ -46,11 +46,15 @@ import { indexClaims, claimStatus, claimCssClass, CLAIM_FREE } from "./util/targ
 import { watchForEmpireChanges } from "./util/stageForUpdate.js";
 import Notifier from "./util/Notifier.js";
 import * as perf from "./util/perf.js";
+import { pageSignal, isAbortError, suppressAbortRejections } from "./util/abort.js";
 
 const DISCORD_INVITATION_URL = "https://discord.gg/8Y4SWup";
 //const VERSION = "__VERSION__";
 const logger = getLogger();
 perf.mark("ogkush.js module evaluation");
+// OGame navigates on every view change, which aborts whatever the extension had
+// in flight - the empire refresh above all. See util/abort.js.
+suppressAbortRejections();
 pageContextInit();
 
 var dataHelper = (function () {
@@ -1443,7 +1447,7 @@ class OGInfinity {
 
   #migrations() {
     if (typeof OGIData.json.lifeformBonus.productionBonus === "undefined") {
-      this.#updateData().then(() => console.log("done"));
+      reportUnlessAborted(this.#updateData());
     }
   }
 
@@ -1568,8 +1572,13 @@ class OGInfinity {
     this.hasLifeforms = document.querySelector(".lifeform") != null;
     let forceEmpire = document.querySelectorAll("div[id*=planet-]").length != OGIData.empire.length;
     this.updateServerSettings();
-    this.updateEmpireData(forceEmpire);
-    if (this.json.needLifeformUpdate[this.current.id] && !this.current.isMoon) this.updateLifeform();
+    // Fire and forget on purpose - the UI renders from the cached empire and
+    // updates when this lands. Unhandled, its rejection surfaced as an
+    // "Uncaught (in promise)" on every page change that cut a refresh short.
+    reportUnlessAborted(this.updateEmpireData(forceEmpire));
+    if (this.json.needLifeformUpdate[this.current.id] && !this.current.isMoon) {
+      reportUnlessAborted(this.updateLifeform());
+    }
 
     if (UNIVERSVIEW_LANGS.includes(OgamePageData.gameLang)) {
       this.univerviewLang = OgamePageData.gameLang;
@@ -12101,14 +12110,10 @@ class OGInfinity {
   }
 
   async getLifeformBonus() {
-    const abortController = new AbortController();
-    this.abordSignal = abortController.signal;
-    window.onbeforeunload = function (e) {
-      abortController.abort();
-    };
+    this.abordSignal = pageSignal();
     return fetch(
       `https://s${this.universe}-${OgamePageData.gameLang}.ogame.gameforge.com/game/index.php?page=ingame&component=lfbonuses`,
-      { signal: abortController.signal }
+      { signal: pageSignal() }
     )
       .then((rep) => rep.text())
       .then((str) => {
@@ -12288,11 +12293,9 @@ class OGInfinity {
 
   getEmpireInfo() {
     const hasMoon = document.querySelector("a.moonlink") !== null;
-    const abortController = new AbortController();
-    window.onbeforeunload = () => abortController.abort();
 
     const empireRequest = (href) =>
-      fetch(`?${href.toString()}`, { signal: abortController.signal })
+      fetch(`?${href.toString()}`, { signal: pageSignal() })
         .then((response) => response.text())
         .then((string) =>
           JSON.parse(
@@ -15113,15 +15116,13 @@ class OGInfinity {
   }
 
   getJSON(url, callback) {
-    let cancelController = new AbortController();
-    let signal = cancelController.signal;
-
-    fetch(url, { signal: signal })
+    fetch(url, { signal: pageSignal() })
       .then((response) => response.json())
       .then((data) => callback(data))
-      .catch((error) => console.log(`Failed to fetch ${url} : ${error}`));
-
-    window.onbeforeunload = () => cancelController.abort();
+      .catch((error) => {
+        // A navigation cancelling this is not a failure worth printing.
+        if (!isAbortError(error)) console.log(`Failed to fetch ${url} : ${error}`);
+      });
   }
 
   getTranslatedText(id, type = "text") {
@@ -18750,6 +18751,23 @@ class AutoQueue extends Queue {
 
     return true;
   }
+}
+
+/**
+ * Attaches a terminal handler to a promise nobody awaits.
+ *
+ * Without one, a rejection becomes an "Uncaught (in promise)" console entry and
+ * lands in the extension's error list. A navigation aborting the request is the
+ * normal case here and says nothing, so it is dropped; anything else is logged
+ * where it can be seen.
+ *
+ * @param {Promise<unknown>} promise
+ */
+function reportUnlessAborted(promise) {
+  if (!promise || typeof promise.catch !== "function") return;
+  promise.catch((error) => {
+    if (!isAbortError(error)) logger.error(error);
+  });
 }
 
 /**

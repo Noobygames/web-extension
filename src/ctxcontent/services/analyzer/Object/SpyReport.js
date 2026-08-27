@@ -1,4 +1,5 @@
 import { cleanValue } from "../../../../util/cleanValue.js";
+import { pageSignal } from "../../../../util/abort.js";
 import { calcNeededShips } from "../../../../util/calcNeededShips.js";
 import * as DOM from "../../../../util/dom.js";
 import ship from "../../../../util/enum/ship.js";
@@ -336,10 +337,8 @@ export class SpyReport {
         if (element) element.remove();
       };
       const parser = new window.DOMParser();
-      const abortController = new AbortController();
-      window.onbeforeunload = () => abortController.abort();
       const seeReportRequest = (href) => {
-        fetch(`${href.toString()}`, { signal: abortController.signal })
+        fetch(`${href.toString()}`, { signal: pageSignal() })
           .then((response) => {
             if (!response.ok) throw new Error(Translator.translate(211));
             return response.text();

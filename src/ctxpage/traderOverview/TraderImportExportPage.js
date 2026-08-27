@@ -1,4 +1,5 @@
 import { getOption, setOption } from "../conf-options.js";
+import { pageSignal } from "../../util/abort.js";
 import * as DOM from "../../util/dom.js";
 import { getLogger } from "../../util/logger.js";
 import OGIData from "../../util/OGIData.js";
@@ -13,15 +14,12 @@ class TraderImportExportPage {
   }
 
   #isImportExportActiveRequest() {
-    const abortController = new AbortController();
-    window.onbeforeunload = () => abortController.abort();
-
     const searchParams = OgamePageData.isAtLeast_13_0_0
       ? new URLSearchParams({ page: "componentOnly", component: "externaldataexport", action: "importExportInfo", asJson: "1" })
       : new URLSearchParams({ page: "ajax", component: "traderimportexport" })
 
     if(OgamePageData.isAtLeast_13_0_0) {
-      return fetch(`?${searchParams.toString()}`, { signal: abortController.signal, headers: {"X-Requested-With": "XMLHttpRequest"} })
+      return fetch(`?${searchParams.toString()}`, { signal: pageSignal(), headers: {"X-Requested-With": "XMLHttpRequest"} })
       .then((response) => response.json())
       .then((data) =>  {
         if(data)
@@ -41,7 +39,7 @@ class TraderImportExportPage {
     }
     else
     {
-      return fetch(`?${searchParams.toString()}`, { signal: abortController.signal })
+      return fetch(`?${searchParams.toString()}`, { signal: pageSignal() })
         .then((response) => response.text())
         .then((string) => new DOMParser()
           .parseFromString(string, "text/html")

@@ -1,7 +1,6 @@
-const domParser = new DOMParser();
+import { pageSignal } from "./abort.js";
 
-const abortController = new AbortController();
-window.onbeforeunload = () => abortController.abort();
+const domParser = new DOMParser();
 
 /** @template T */
 export class FetchResponse {
@@ -63,13 +62,13 @@ export function fetchJson(input, init) {
 function fixInit(init) {
   if (!init) {
     return {
-      signal: abortController.signal,
+      signal: pageSignal(),
       cache: "default",
     };
   }
 
   if (!Object.hasOwn(init, "signal")) {
-    init.signal = abortController.signal;
+    init.signal = pageSignal();
   }
 
   if (!Object.hasOwn(init, "cache")) {

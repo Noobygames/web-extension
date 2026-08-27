@@ -1,10 +1,9 @@
 import { getLogger } from "./logger.js";
+import { pageSignal, isAbortError } from "./abort.js";
 
 const logger = getLogger("service.ptre");
 
 const PTRE_URL = "https://ptre.chez.gg/scripts/";
-const abortController = new AbortController();
-window.onbeforeunload = () => abortController.abort();
 
 /**
  * @typedef {object} PtreResponse
@@ -44,12 +43,13 @@ export function getPlayerInfos(country, universe, teamKey, cleanPlayerName, play
 
   return fetch(url, {
     method: "GET",
-    signal: abortController.signal,
+    signal: pageSignal(),
     mode: "cors",
   })
     .then((response) => response.json())
     .catch((reason) => {
-      logger.error(reason);
+      // A page change aborting the request is expected, not a PTRE failure.
+      if (!isAbortError(reason)) logger.error(reason);
       throw reason;
     });
 }
@@ -67,11 +67,12 @@ export function updateGalaxy(country, universe, position) {
   return fetch(url, {
     method: "POST",
     body: JSON.stringify(position),
-    signal: abortController.signal,
+    signal: pageSignal(),
   })
     .then((response) => response.json())
     .catch((reason) => {
-      logger.error(reason);
+      // A page change aborting the request is expected, not a PTRE failure.
+      if (!isAbortError(reason)) logger.error(reason);
       throw reason;
     })
     .then((data) => {
@@ -97,11 +98,12 @@ export function importPlayerActivity(country, universe, activity) {
   return fetch(url, {
     method: "POST",
     body: JSON.stringify(activity),
-    signal: abortController.signal,
+    signal: pageSignal(),
   })
     .then((response) => response.json())
     .catch((reason) => {
-      logger.error(reason);
+      // A page change aborting the request is expected, not a PTRE failure.
+      if (!isAbortError(reason)) logger.error(reason);
       throw reason;
     })
     .then((data) => {
@@ -126,11 +128,12 @@ export function importSpy(teamKey, reportKey) {
 
   return fetch(url, {
     method: "GET",
-    signal: abortController.signal,
+    signal: pageSignal(),
   })
     .then((response) => response.json())
     .catch((reason) => {
-      logger.error(reason);
+      // A page change aborting the request is expected, not a PTRE failure.
+      if (!isAbortError(reason)) logger.error(reason);
       throw reason;
     })
     .then((data) => {
@@ -170,12 +173,13 @@ export function getGalaxyTargets(country, universe, teamKey, galaxy, system) {
 
   return fetch(url, {
     method: "GET",
-    signal: abortController.signal,
+    signal: pageSignal(),
     mode: "cors",
   })
     .then((response) => response.json())
     .catch((reason) => {
-      logger.error(reason);
+      // A page change aborting the request is expected, not a PTRE failure.
+      if (!isAbortError(reason)) logger.error(reason);
       throw reason;
     });
 }
