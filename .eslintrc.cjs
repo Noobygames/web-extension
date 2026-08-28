@@ -3,14 +3,13 @@ module.exports = {
     browser: true,
     es2020: true,
   },
+  // "prettier" (eslint-config-prettier) turns off every stylistic rule that
+  // Prettier already owns. Do not re-enable any of them below: indent, quotes,
+  // semi and linebreak-style used to be listed in `rules` and fought with
+  // prettier/prettier over the same code, which kept `npm run check` red on
+  // correctly formatted files and buried the real findings.
   extends: ["eslint:recommended", "prettier"],
   plugins: ["prettier"],
-  overrides: [
-    {
-      files: ["src/**/*.js"],
-      excludedFiles: "src/libs/**",
-    },
-  ],
   parserOptions: {
     ecmaVersion: "latest",
     sourceType: "module",
@@ -24,9 +23,5 @@ module.exports = {
     "no-inner-declarations": 0,
     "no-global-assign": 0,
     "no-prototype-builtins": 0,
-    indent: ["error", 2],
-    "linebreak-style": ["error", "unix"],
-    quotes: ["error", "double", { avoidEscape: true }],
-    semi: ["error", "always"],
   },
 };

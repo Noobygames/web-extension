@@ -25,6 +25,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Lint
+        run: npm run check
+
       - name: Coverage report
         # Informational only - printed into the job log, never a gate.
         run: npm run coverage

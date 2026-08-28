@@ -77,7 +77,9 @@ class SpyMessagesAnalyzer {
     let table = document.querySelector(".ogl-spyTable");
 
     if (!table) {
-      const target = document.querySelector(OgamePageData.isAtLeast_13_0_0 ? "#messages .messagePaginator" : "#messagewrapper .messagePaginator");
+      const target = document.querySelector(
+        OgamePageData.isAtLeast_13_0_0 ? "#messages .messagePaginator" : "#messagewrapper .messagePaginator"
+      );
       table = createDOM("table", { class: "ogl-spyTable" });
       target.parentNode.insertBefore(table, target);
 
@@ -759,107 +761,107 @@ class SpyMessagesAnalyzer {
 
         const line = gainCol.parentElement;
 
-          if (line.getAttribute("data") === "expanded") {
-            line.setAttribute("data", "closed");
-            document.querySelectorAll("tr.spyTable-extended").forEach((e) => e.remove());
+        if (line.getAttribute("data") === "expanded") {
+          line.setAttribute("data", "closed");
+          document.querySelectorAll("tr.spyTable-extended").forEach((e) => e.remove());
 
-            return;
+          return;
+        }
+        const expanded = document.querySelector("tr[data='expanded']");
+        if (expanded) {
+          expanded.setAttribute("data", "closed");
+          document.querySelectorAll("tr.spyTable-extended").forEach((e) => e.remove());
+        }
+        line.setAttribute("data", "expanded");
+        const nextReport = line.nextElementSibling;
+        for (let round = 1; round < renta.length; round++) {
+          const extraLine = line.parentNode.insertBefore(createDOM("tr", { class: "spyTable-extended" }), nextReport);
+          extraLine.appendChild(createDOM("td"));
+          extraLine.appendChild(createDOM("td", { class: "ogl-date" }));
+          extraLine.appendChild(createDOM("td"));
+          extraLine.appendChild(createDOM("td", { class: "ogl-name" }));
+
+          const extraDetail = createDOM("div");
+          const extraDetailMetal = createDOM(
+            "div",
+            { class: "ogl-metal" },
+            `Metal : ${toFormattedNumber(renta[round] * report.resRatio[0], null, true)}`
+          );
+          const extraDetailCrystal = createDOM(
+            "div",
+            { class: "ogl-crystal" },
+            `Crystal : ${toFormattedNumber(renta[round] * report.resRatio[1], null, true)}`
+          );
+          const extraDetailDeut = createDOM(
+            "div",
+            { class: "ogl-deut" },
+            `Deuterium : ${toFormattedNumber(renta[round] * report.resRatio[2], null, true)}`
+          );
+          const extraDetailSplitLine = createDOM(
+            "div",
+            { class: "splitline" },
+            `Total : ${toFormattedNumber(renta[round], null, true)}`
+          );
+
+          extraDetail.appendChild(extraDetailMetal);
+          extraDetail.appendChild(extraDetailCrystal);
+          extraDetail.appendChild(extraDetailDeut);
+          extraDetail.appendChild(extraDetailSplitLine);
+          const extraTotal = extraLine.appendChild(
+            createDOM("td", { class: "ogl-tooltipLeft ogl-lootable" }, toFormattedNumber(renta[round], null, true))
+          );
+          extraTotal.addEventListener("mouseover", () => tooltip(extraTotal, extraDetail, true, false, 50));
+          extraTotal.style.background = `linear-gradient(to right, rgba(255, 170, 204, 0.63) ${
+            report.resRatio[0]
+          }%, rgba(115, 229, 255, 0.78) ${report.resRatio[0]}%\n, rgba(115, 229, 255, 0.78) ${
+            report.resRatio[0] + report.resRatio[1]
+          }%, rgb(166, 224, 176) ${report.resRatio[2]}%)`;
+          if (renta[round] >= OGIData.options.rvalLimit) extraTotal.classList.add("ogl-good");
+
+          extraLine.appendChild(createDOM("td"));
+          extraLine.appendChild(createDOM("td"));
+
+          const extraShip = extraLine.appendChild(createDOM("td", { class: "ogl-cargo-choice" }));
+
+          let currentValue = null;
+
+          for (const shipsKey in ships) {
+            const ship = ships[shipsKey];
+
+            const value = calcNeededShips({
+              moreFret: true,
+              fret: ship.id,
+              resources: Math.ceil((report.total * Math.pow(1 - report.loot / 100, round) * report.loot) / 100),
+            });
+
+            if (ship.id === OGIData.options.spyFret) currentValue = value;
+
+            extraShip.setAttribute(`data-ship-${ship.id}`, value);
           }
-          const expanded = document.querySelector("tr[data='expanded']");
-          if (expanded) {
-            expanded.setAttribute("data", "closed");
-            document.querySelectorAll("tr.spyTable-extended").forEach((e) => e.remove());
-          }
-          line.setAttribute("data", "expanded");
-          const nextReport = line.nextElementSibling;
-          for (let round = 1; round < renta.length; round++) {
-            const extraLine = line.parentNode.insertBefore(createDOM("tr", { class: "spyTable-extended" }), nextReport);
-            extraLine.appendChild(createDOM("td"));
-            extraLine.appendChild(createDOM("td", { class: "ogl-date" }));
-            extraLine.appendChild(createDOM("td"));
-            extraLine.appendChild(createDOM("td", { class: "ogl-name" }));
 
-            const extraDetail = createDOM("div");
-            const extraDetailMetal = createDOM(
-              "div",
-              { class: "ogl-metal" },
-              `Metal : ${toFormattedNumber(renta[round] * report.resRatio[0], null, true)}`
-            );
-            const extraDetailCrystal = createDOM(
-              "div",
-              { class: "ogl-crystal" },
-              `Crystal : ${toFormattedNumber(renta[round] * report.resRatio[1], null, true)}`
-            );
-            const extraDetailDeut = createDOM(
-              "div",
-              { class: "ogl-deut" },
-              `Deuterium : ${toFormattedNumber(renta[round] * report.resRatio[2], null, true)}`
-            );
-            const extraDetailSplitLine = createDOM(
-              "div",
-              { class: "splitline" },
-              `Total : ${toFormattedNumber(renta[round], null, true)}`
-            );
+          extraShip.setAttribute("data-coords", report.coords);
+          extraShip.setAttribute("data-planet-target-type", report.planetTargetType);
 
-            extraDetail.appendChild(extraDetailMetal);
-            extraDetail.appendChild(extraDetailCrystal);
-            extraDetail.appendChild(extraDetailDeut);
-            extraDetail.appendChild(extraDetailSplitLine);
-            const extraTotal = extraLine.appendChild(
-              createDOM("td", { class: "ogl-tooltipLeft ogl-lootable" }, toFormattedNumber(renta[round], null, true))
-            );
-            extraTotal.addEventListener("mouseover", () => tooltip(extraTotal, extraDetail, true, false, 50));
-            extraTotal.style.background = `linear-gradient(to right, rgba(255, 170, 204, 0.63) ${
-              report.resRatio[0]
-            }%, rgba(115, 229, 255, 0.78) ${report.resRatio[0]}%\n, rgba(115, 229, 255, 0.78) ${
-              report.resRatio[0] + report.resRatio[1]
-            }%, rgb(166, 224, 176) ${report.resRatio[2]}%)`;
-            if (renta[round] >= OGIData.options.rvalLimit) extraTotal.classList.add("ogl-good");
+          const extraFleetQueryParams = this.#fleetDispatchLink(
+            report.coords,
+            report.planetTargetType,
+            OGIData.options.spyFret,
+            currentValue
+          );
 
-            extraLine.appendChild(createDOM("td"));
-            extraLine.appendChild(createDOM("td"));
+          extraShip.appendChild(
+            createDOM(
+              "a",
+              {
+                href: "?" + extraFleetQueryParams.toString(),
+              },
+              toFormattedNumber(currentValue)
+            )
+          );
 
-            const extraShip = extraLine.appendChild(createDOM("td", { class: "ogl-cargo-choice" }));
-
-            let currentValue = null;
-
-            for (const shipsKey in ships) {
-              const ship = ships[shipsKey];
-
-              const value = calcNeededShips({
-                moreFret: true,
-                fret: ship.id,
-                resources: Math.ceil((report.total * Math.pow(1 - report.loot / 100, round) * report.loot) / 100),
-              });
-
-              if (ship.id === OGIData.options.spyFret) currentValue = value;
-
-              extraShip.setAttribute(`data-ship-${ship.id}`, value);
-            }
-
-            extraShip.setAttribute("data-coords", report.coords);
-            extraShip.setAttribute("data-planet-target-type", report.planetTargetType);
-
-            const extraFleetQueryParams = this.#fleetDispatchLink(
-              report.coords,
-              report.planetTargetType,
-              OGIData.options.spyFret,
-              currentValue
-            );
-
-            extraShip.appendChild(
-              createDOM(
-                "a",
-                {
-                  href: "?" + extraFleetQueryParams.toString(),
-                },
-                toFormattedNumber(currentValue)
-              )
-            );
-
-            extraLine.appendChild(createDOM("td"));
-            extraLine.appendChild(createDOM("td"));
-          }
+          extraLine.appendChild(createDOM("td"));
+          extraLine.appendChild(createDOM("td"));
+        }
       };
 
       gainCol.addEventListener("click", () => {

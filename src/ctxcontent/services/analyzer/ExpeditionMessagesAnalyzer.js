@@ -78,7 +78,7 @@ class ExpeditionMessagesAnalyzer {
         ) {
           let amountDisplay = "";
           if (expeditions[msgId].hasOwnProperty("amount") && !!expeditions[msgId].amount) {
-             if (expeditions[msgId].result.toLowerCase() === "merchant") {
+            if (expeditions[msgId].result.toLowerCase() === "merchant") {
               amountDisplay = `${expeditions[msgId].amount[0]} / ${expeditions[msgId].amount[1]} / ${expeditions[msgId].amount[2]}`;
             } else if (!expeditions[msgId].amount[3]) {
               amountDisplay = toFormattedNumber(standardUnit.standardUnit(expeditions[msgId].amount), [0, 1], true);

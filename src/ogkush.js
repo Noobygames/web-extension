@@ -4603,7 +4603,7 @@ class OGInfinity {
 
     if (OgamePageData.isAtLeast_13_0_0) {
       jumpgateDone = (data) => {
-        var data = $.parseJSON(data);
+        data = $.parseJSON(data);
         if (data.success) {
           planet = data["targetMoon"];
           /* ogi code */
@@ -4627,7 +4627,7 @@ class OGInfinity {
       };
     } else {
       jumpgateDone = (data) => {
-        var data = $.parseJSON(data);
+        data = $.parseJSON(data);
         if (data["status"]) {
           planet = data["targetMoon"];
           /* ogi code */
@@ -12002,8 +12002,8 @@ class OGInfinity {
             if (configuredType == null || configuredType === templateType) {
               for (const template of fleetTemplate) {
                 if (template.id === Number(this.json.options.expedition.standardFleetId)) {
-                  if (!!template.fleetSpeed) speedFleetTemplate = template.fleetSpeed;
-                  if (!!template.expeditionTime) timeFleetTemplate = template.expeditionTime;
+                  if (template.fleetSpeed) speedFleetTemplate = template.fleetSpeed;
+                  if (template.expeditionTime) timeFleetTemplate = template.expeditionTime;
                   let enoughShips = true;
                   for (const ship in template.ships) {
                     if (template.ships[ship] > availableShips[ship]) enoughShips = false;
@@ -18617,7 +18617,7 @@ class OGInfinity {
 
               if (lastSentFleet?.speedPercent) {
                 fleetDispatcher.speedPercent = lastSentFleet.speedPercent;
-                document.querySelector(`.ogl-fleetSpeed [data-step=\"${lastSentFleet?.speedPercent}\"]`).click();
+                document.querySelector(`.ogl-fleetSpeed [data-step="${lastSentFleet?.speedPercent}"]`).click();
               }
             }
 
