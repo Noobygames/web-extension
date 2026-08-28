@@ -218,6 +218,16 @@ class OGBIData {
     this.#save();
   }
 
+  get needsUpdate() {
+    return this._json.needsUpdate;
+  }
+
+  set needsUpdate(needsUpdate) {
+    this._json.needsUpdate = needsUpdate;
+
+    this.#save();
+  }
+
   get needSync() {
     return this._json.needSync;
   }

@@ -174,58 +174,68 @@ class OGBeyondInfinity {
     document.querySelector(".ogl-dialogOverlay").classList.remove("ogl-active");
   }
 
+  /**
+   * Seeds ogk-data with the keys the rest of the extension assumes are there.
+   *
+   * This is the one place that writes through `OGBIData.json` instead of the
+   * named setters: roughly sixty defaults land here, and a setter per default
+   * would mean sixty full serializations of the whole blob before the page has
+   * even painted. They are batched instead, and `start()` persists them with the
+   * single `OGBIData.Save()` after `#migrations()`. Everywhere else the rule from
+   * Phase 4 of refactoring.md holds - one logical change goes through its setter,
+   * a batch ends in exactly one `Save()`, never both.
+   */
   init() {
-    this.json = OGBIData.json;
-    this.json.playerId = this.playerId;
-    this.json.universeId = this.universe;
-    this.json.universeUrl = this.universeUrl;
-    this.json.universeName = this.universeName;
-    this.json.universeDomain = this.universeDomain;
-    this.json.welcome = this.json.welcome !== false;
-    this.json.needLifeformUpdate = this.json.needLifeformUpdate || {};
-    this.json.pantrySync = this.json.pantrySync || "";
-    this.json.empire = this.json.empire || [];
-    this.json.jumpGate = this.json.jumpGate || {};
-    this.json.searchHistory = this.json.searchHistory || [];
-    this.json.watchList = this.json.watchList || {};
-    this.json.expeditions = this.json.expeditions || {};
-    this.json.spies = this.json.spies || {};
-    this.json.combats = this.json.combats || {};
-    this.json.harvests = this.json.harvests || {};
-    this.json.trades = this.json.trades || {};
-    this.json.evolution = this.json.evolution || {};
-    this.json.playerSearch = this.json.playerSearch || "";
-    this.json.currentExpes = this.json.currentExpes || [];
-    this.json.combatsSums = this.json.combatsSums || {};
-    this.json.tradesSums = this.json.tradesSums || {};
-    this.json.expeditionSums = this.json.expeditionSums || {};
-    this.json.discoveriesSums = this.json.discoveriesSums || {};
-    this.json.discoveries = this.json.discoveries || {};
-    this.json.spies = this.json.spies || {};
-    this.json.flying = this.json.flying || {
+    OGBIData.json.playerId = this.playerId;
+    OGBIData.json.universeId = this.universe;
+    OGBIData.json.universeUrl = this.universeUrl;
+    OGBIData.json.universeName = this.universeName;
+    OGBIData.json.universeDomain = this.universeDomain;
+    OGBIData.json.welcome = OGBIData.json.welcome !== false;
+    OGBIData.json.needLifeformUpdate = OGBIData.json.needLifeformUpdate || {};
+    OGBIData.json.pantrySync = OGBIData.json.pantrySync || "";
+    OGBIData.json.empire = OGBIData.json.empire || [];
+    OGBIData.json.jumpGate = OGBIData.json.jumpGate || {};
+    OGBIData.json.searchHistory = OGBIData.json.searchHistory || [];
+    OGBIData.json.watchList = OGBIData.json.watchList || {};
+    OGBIData.json.expeditions = OGBIData.json.expeditions || {};
+    OGBIData.json.spies = OGBIData.json.spies || {};
+    OGBIData.json.combats = OGBIData.json.combats || {};
+    OGBIData.json.harvests = OGBIData.json.harvests || {};
+    OGBIData.json.trades = OGBIData.json.trades || {};
+    OGBIData.json.evolution = OGBIData.json.evolution || {};
+    OGBIData.json.playerSearch = OGBIData.json.playerSearch || "";
+    OGBIData.json.currentExpes = OGBIData.json.currentExpes || [];
+    OGBIData.json.combatsSums = OGBIData.json.combatsSums || {};
+    OGBIData.json.tradesSums = OGBIData.json.tradesSums || {};
+    OGBIData.json.expeditionSums = OGBIData.json.expeditionSums || {};
+    OGBIData.json.discoveriesSums = OGBIData.json.discoveriesSums || {};
+    OGBIData.json.discoveries = OGBIData.json.discoveries || {};
+    OGBIData.json.spies = OGBIData.json.spies || {};
+    OGBIData.json.flying = OGBIData.json.flying || {
       metal: 0,
       crystal: 0,
       deuterium: 0,
       fleet: [],
       ids: [],
     };
-    this.json.coordsHistory = this.json.coordsHistory || [];
-    this.json.serverSettingsTimeStamp = this.json.serverSettingsTimeStamp || 0;
-    this.json.trashsimSettings = this.json.trashsimSettings || false;
-    this.json.universeSettingsTooltip = this.json.universeSettingsTooltip || {};
-    this.json.topScore = this.json.topScore || 0;
-    this.json.shipNames = this.json.shipNames || false;
-    this.json.autoHarvest = this.json.autoHarvest || ["0:0:0", 3];
-    this.json.myActivities = this.json.myActivities || {};
-    this.json.sideStalk = this.json.sideStalk || [];
-    this.json.playerMarkers = this.json.playerMarkers || {};
-    this.json.markers = this.json.markers || {};
-    this.json.missing = this.json.missing || {};
-    this.json.notifications = this.json.notifications || {};
-    this.json.targetTabs = this.json.targetTabs || { g: 1, s: 0 };
-    this.json.spyProbes = this.json.spyProbes || 5;
-    this.json.openTooltip = this.json.openTooltip || false;
-    this.json.technology = this.json.technology || {
+    OGBIData.json.coordsHistory = OGBIData.json.coordsHistory || [];
+    OGBIData.json.serverSettingsTimeStamp = OGBIData.json.serverSettingsTimeStamp || 0;
+    OGBIData.json.trashsimSettings = OGBIData.json.trashsimSettings || false;
+    OGBIData.json.universeSettingsTooltip = OGBIData.json.universeSettingsTooltip || {};
+    OGBIData.json.topScore = OGBIData.json.topScore || 0;
+    OGBIData.json.shipNames = OGBIData.json.shipNames || false;
+    OGBIData.json.autoHarvest = OGBIData.json.autoHarvest || ["0:0:0", 3];
+    OGBIData.json.myActivities = OGBIData.json.myActivities || {};
+    OGBIData.json.sideStalk = OGBIData.json.sideStalk || [];
+    OGBIData.json.playerMarkers = OGBIData.json.playerMarkers || {};
+    OGBIData.json.markers = OGBIData.json.markers || {};
+    OGBIData.json.missing = OGBIData.json.missing || {};
+    OGBIData.json.notifications = OGBIData.json.notifications || {};
+    OGBIData.json.targetTabs = OGBIData.json.targetTabs || { g: 1, s: 0 };
+    OGBIData.json.spyProbes = OGBIData.json.spyProbes || 5;
+    OGBIData.json.openTooltip = OGBIData.json.openTooltip || false;
+    OGBIData.json.technology = OGBIData.json.technology || {
       106: 0,
       108: 0,
       109: 0,
@@ -243,38 +253,38 @@ class OGBeyondInfinity {
       124: 0,
       199: 0,
     };
-    this.json.ships = this.json.ships || {};
-    this.json.allianceClass = this.json.allianceClass || AllianceClass.NONE;
-    this.json.productionProgress = this.json.productionProgress || {};
-    this.json.moonProductionProgress = this.json.moonProductionProgress || {};
-    this.json.lfProductionProgress = this.json.lfProductionProgress || {};
-    this.json.researchProgress = this.json.researchProgress || {};
-    this.json.lfResearchProgress = this.json.lfResearchProgress || {};
+    OGBIData.json.ships = OGBIData.json.ships || {};
+    OGBIData.json.allianceClass = OGBIData.json.allianceClass || AllianceClass.NONE;
+    OGBIData.json.productionProgress = OGBIData.json.productionProgress || {};
+    OGBIData.json.moonProductionProgress = OGBIData.json.moonProductionProgress || {};
+    OGBIData.json.lfProductionProgress = OGBIData.json.lfProductionProgress || {};
+    OGBIData.json.researchProgress = OGBIData.json.researchProgress || {};
+    OGBIData.json.lfResearchProgress = OGBIData.json.lfResearchProgress || {};
 
-    this.json.productionProgressFinished = this.json.productionProgressFinished || {};
-    this.json.moonProductionProgressFinished = this.json.moonProductionProgressFinished || {};
-    this.json.lfProductionProgressFinished = this.json.lfProductionProgressFinished || {};
-    this.json.lfResearchProgressFinished = this.json.lfResearchProgressFinished || {};
+    OGBIData.json.productionProgressFinished = OGBIData.json.productionProgressFinished || {};
+    OGBIData.json.moonProductionProgressFinished = OGBIData.json.moonProductionProgressFinished || {};
+    OGBIData.json.lfProductionProgressFinished = OGBIData.json.lfProductionProgressFinished || {};
+    OGBIData.json.lfResearchProgressFinished = OGBIData.json.lfResearchProgressFinished || {};
 
-    this.json.tchat = this.json.tchat || false;
-    this.json.needSync = this.json.needSync || false;
-    this.json.timezoneDiff = this.json.timezoneDiff || 0;
+    OGBIData.json.tchat = OGBIData.json.tchat || false;
+    OGBIData.json.needSync = OGBIData.json.needSync || false;
+    OGBIData.json.timezoneDiff = OGBIData.json.timezoneDiff || 0;
 
-    initConfOptions(this.json.options);
+    initConfOptions(OGBIData.json.options);
     // set a proxy for compatibility, important for saving configuration.
-    this.json.options = getOptions();
+    OGBIData.json.options = getOptions();
 
-    this.json.selectedLifeforms = this.json.selectedLifeforms || {};
-    this.json.lifeformBonus = this.json.lifeformBonus || {};
-    this.json.lifeformPlanetBonus = this.json.lifeformPlanetBonus || {};
-    this.json.reminders = this.json.reminders || {};
+    OGBIData.json.selectedLifeforms = OGBIData.json.selectedLifeforms || {};
+    OGBIData.json.lifeformBonus = OGBIData.json.lifeformBonus || {};
+    OGBIData.json.lifeformPlanetBonus = OGBIData.json.lifeformPlanetBonus || {};
+    OGBIData.json.reminders = OGBIData.json.reminders || {};
     this.isLoading = false;
     this.autoQueue = new AutoQueue();
 
     // The content script needs the PTRE team key to decide whether to build galaxyStorage,
     // but it must never read it from OGBIData - that singleton belongs to the page context.
     // pageContextRequest rejects on a failed bridge call, so the rejection is handled here.
-    pageContextRequest("ptre", "setTeamKey", this.json.options.ptreTK || "").catch((err) =>
+    pageContextRequest("ptre", "setTeamKey", OGBIData.json.options.ptreTK || "").catch((err) =>
       console.warn("[OGI][PTRE] setTeamKey failed", err)
     );
   }
@@ -289,7 +299,7 @@ class OGBeyondInfinity {
     // updates when this lands. Unhandled, its rejection surfaced as an
     // "Uncaught (in promise)" on every page change that cut a refresh short.
     reportUnlessAborted(updateEmpireData(this.empireContext(), forceEmpire));
-    if (this.json.needLifeformUpdate[this.current.id] && !this.current.isMoon) {
+    if (OGBIData.json.needLifeformUpdate[this.current.id] && !this.current.isMoon) {
       reportUnlessAborted(updateLifeform(this.empireContext()));
     }
 
@@ -301,8 +311,8 @@ class OGBeyondInfinity {
 
     try {
       if (spionageAmount != undefined) {
-        this.json.spyProbes = spionageAmount;
-        this.saveData();
+        OGBIData.json.spyProbes = spionageAmount;
+        OGBIData.Save();
       }
     } catch (e) {}
 
@@ -314,10 +324,10 @@ class OGBeyondInfinity {
       // included, which is why the whole page looked dead for one missing global.
       const shipsData = getShipsData();
       if (shipsData) {
-        this.json.shipNames = {};
+        OGBIData.json.shipNames = {};
         for (let id in shipsData) {
-          this.json.shipNames[shipsData[id].name] = id;
-          this.json.ships[id] = {
+          OGBIData.json.shipNames[shipsData[id].name] = id;
+          OGBIData.json.ships[id] = {
             name: shipsData[id].name,
             cargoCapacity: shipsData[id].baseCargoCapacity,
             speed: shipsData[id].speed,
@@ -330,7 +340,7 @@ class OGBeyondInfinity {
       }
       const apiTechData = typeof fleetDispatcher !== "undefined" ? fleetDispatcher?.apiTechData : undefined;
       apiTechData?.forEach((tech) => {
-        this.json.technology[tech[0]] = tech[1];
+        OGBIData.json.technology[tech[0]] = tech[1];
       });
     }
     document.querySelectorAll(".moonlink").forEach((elem) => {
@@ -369,7 +379,7 @@ class OGBeyondInfinity {
     await nextPaint();
 
     this.#migrations();
-    this.saveData();
+    OGBIData.Save();
     listenKeyboard(this.pageContext());
 
     wait.waitForQuerySelector("#eventContent").then(() => {
@@ -414,7 +424,7 @@ class OGBeyondInfinity {
     if (storage.total > 4.5) {
       purgeLocalStorage();
     }
-    if (this.json.welcome) {
+    if (OGBIData.json.welcome) {
       if (this.page == "fleetdispatch") {
         wait
           .waitFor(() => OGBIData.empire.length)
@@ -430,9 +440,9 @@ class OGBeyondInfinity {
         window.location.href = "?page=ingame&component=fleetdispatch";
       }
     }
-    this.markedPlayers = getMarkedPlayers(this.galaxyContext(), this.json.markers);
-    if (this.json.options.pantryKey) {
-      checkPantrySync(this.pageContext(), this.json.options.pantryKey);
+    this.markedPlayers = getMarkedPlayers(this.galaxyContext(), OGBIData.json.markers);
+    if (OGBIData.json.options.pantryKey) {
+      checkPantrySync(this.pageContext(), OGBIData.json.options.pantryKey);
     }
 
     /*Fix banner styles for messages, premium and shop page*/
@@ -516,13 +526,13 @@ class OGBeyondInfinity {
 
   timeZone() {
     if (window.timeZoneDiffSeconds !== undefined) {
-      this.json.timezoneDiff = timeZoneDiffSeconds;
-      this.saveData();
+      OGBIData.json.timezoneDiff = timeZoneDiffSeconds;
+      OGBIData.Save();
     }
-    if (this.json.options.timeZone) {
-      timeDiff = timeDiff + this.json.timezoneDiff * 1e3;
+    if (OGBIData.json.options.timeZone) {
+      timeDiff = timeDiff + OGBIData.json.timezoneDiff * 1e3;
     }
-    let hourDiff = this.json.timezoneDiff / 60 / 60;
+    let hourDiff = OGBIData.json.timezoneDiff / 60 / 60;
     hourDiff != 0 &&
       $(".ogk-ping").prepend(
         DOM.createDOM(
@@ -536,7 +546,7 @@ class OGBeyondInfinity {
   overviewDates() {
     document.querySelectorAll("#productionboxBottom time[class$='Countdown']").forEach((timer) => {
       const timeLeft = time.getTimeFromISOString(timer.getAttribute("datetime")) * 1e3;
-      const timeZoneChange = this.json.options.timeZone ? 0 : this.json.timezoneDiff;
+      const timeZoneChange = OGBIData.json.options.timeZone ? 0 : OGBIData.json.timezoneDiff;
       const newDate = new Date(Date.now() + timeLeft - timeZoneChange * 1e3);
       const dateTxt = getFormatedDate(newDate.getTime(), "[d].[m].[y] - [G]:[i]:[s] ");
       timer.parentNode.appendChild(DOM.createDOM("div", { class: "ogl-date" }, dateTxt));
@@ -545,26 +555,26 @@ class OGBeyondInfinity {
 
   async updateServerSettings(force = false) {
     const timeSinceServerTimeStamp =
-      document.querySelector("[name='ogame-timestamp']").content - this.json?.serverSettingsTimeStamp;
+      document.querySelector("[name='ogame-timestamp']").content - OGBIData.json?.serverSettingsTimeStamp;
     if (timeSinceServerTimeStamp < 24 * 3600 && !force) return;
     let settingsUrl = `https://s${this.universe}-${OgamePageData.gameLang}.ogame.gameforge.com/api/serverData.xml`;
     return fetch(settingsUrl)
       .then((rep) => rep.text())
       .then((str) => new window.DOMParser().parseFromString(str, "text/xml"))
       .then((xml) => {
-        this.json.serverSettingsTimeStamp = xml.querySelector("serverData").getAttribute("timestamp");
-        this.json.universeUrl = `https://${xml.querySelector("domain").innerHTML}`;
-        this.json.universeName = xml.querySelector("name").innerHTML;
-        this.json.universeDomain = xml.querySelector("domain").innerHTML;
-        this.json.topScore = Number(xml.querySelector("topScore").innerHTML);
-        this.json.speed = Number(xml.querySelector("speed").innerHTML);
-        this.json.speedResearch =
+        OGBIData.json.serverSettingsTimeStamp = xml.querySelector("serverData").getAttribute("timestamp");
+        OGBIData.json.universeUrl = `https://${xml.querySelector("domain").innerHTML}`;
+        OGBIData.json.universeName = xml.querySelector("name").innerHTML;
+        OGBIData.json.universeDomain = xml.querySelector("domain").innerHTML;
+        OGBIData.json.topScore = Number(xml.querySelector("topScore").innerHTML);
+        OGBIData.json.speed = Number(xml.querySelector("speed").innerHTML);
+        OGBIData.json.speedResearch =
           Number(xml.querySelector("speed").innerHTML) * Number(xml.querySelector("researchDurationDivisor").innerHTML);
-        this.json.speedFleetWar = Number(xml.querySelector("speedFleetWar").innerHTML);
-        this.json.speedFleetPeaceful = Number(xml.querySelector("speedFleetPeaceful").innerHTML);
-        this.json.speedFleetHolding = Number(xml.querySelector("speedFleetHolding").innerHTML);
-        this.json.researchDivisor = Number(xml.querySelector("researchDurationDivisor").innerHTML);
-        this.json.trashsimSettings = {
+        OGBIData.json.speedFleetWar = Number(xml.querySelector("speedFleetWar").innerHTML);
+        OGBIData.json.speedFleetPeaceful = Number(xml.querySelector("speedFleetPeaceful").innerHTML);
+        OGBIData.json.speedFleetHolding = Number(xml.querySelector("speedFleetHolding").innerHTML);
+        OGBIData.json.researchDivisor = Number(xml.querySelector("researchDurationDivisor").innerHTML);
+        OGBIData.json.trashsimSettings = {
           speed: xml.querySelector("speedFleetWar").innerHTML,
           speed_fleet: xml.querySelector("speedFleetWar").innerHTML,
           galaxies: xml.querySelector("galaxies").innerHTML,
@@ -586,7 +596,7 @@ class OGBeyondInfinity {
           warriorBonusRecyclerFuelConsumption: xml.querySelector("warriorBonusRecyclerFuelConsumption").innerHTML,
           combatDebrisFieldLimit: xml.querySelector("combatDebrisFieldLimit").innerHTML,
         };
-        this.json.universeSettingsTooltip = {
+        OGBIData.json.universeSettingsTooltip = {
           galaxies: Number(xml.querySelector("galaxies").innerHTML),
           systems: Number(xml.querySelector("systems").innerHTML),
           donutGalaxy: xml.querySelector("donutGalaxy").innerHTML == 1,
@@ -599,39 +609,45 @@ class OGBeyondInfinity {
           fuelConsumption: Number(xml.querySelector("globalDeuteriumSaveFactor").innerHTML),
           probeCargo: Number(xml.querySelector("probeCargo").innerHTML),
         };
-        this.json.cargoHyperspaceTechMultiplier = Number(xml.querySelector("cargoHyperspaceTechMultiplier").innerHTML);
-        this.json.minerBonusResourceProduction = Number(xml.querySelector("minerBonusResourceProduction").innerHTML);
-        this.json.minerBonusAdditionalCrawler = Number(xml.querySelector("minerBonusAdditionalCrawler").innerHTML);
-        this.json.minerBonusMaxCrawler = Number(xml.querySelector("minerBonusMaxCrawler").innerHTML);
-        this.json.minerBonusEnergy = Number(xml.querySelector("minerBonusEnergy").innerHTML);
-        this.json.resourceBuggyProductionBoost = Number(xml.querySelector("resourceBuggyProductionBoost").innerHTML);
-        this.json.resourceBuggyMaxProductionBoost = Number(
+        OGBIData.json.cargoHyperspaceTechMultiplier = Number(
+          xml.querySelector("cargoHyperspaceTechMultiplier").innerHTML
+        );
+        OGBIData.json.minerBonusResourceProduction = Number(
+          xml.querySelector("minerBonusResourceProduction").innerHTML
+        );
+        OGBIData.json.minerBonusAdditionalCrawler = Number(xml.querySelector("minerBonusAdditionalCrawler").innerHTML);
+        OGBIData.json.minerBonusMaxCrawler = Number(xml.querySelector("minerBonusMaxCrawler").innerHTML);
+        OGBIData.json.minerBonusEnergy = Number(xml.querySelector("minerBonusEnergy").innerHTML);
+        OGBIData.json.resourceBuggyProductionBoost = Number(
+          xml.querySelector("resourceBuggyProductionBoost").innerHTML
+        );
+        OGBIData.json.resourceBuggyMaxProductionBoost = Number(
           xml.querySelector("resourceBuggyMaxProductionBoost").innerHTML
         );
-        this.json.explorerBonusIncreasedResearchSpeed = Number(
+        OGBIData.json.explorerBonusIncreasedResearchSpeed = Number(
           xml.querySelector("explorerBonusIncreasedResearchSpeed").innerHTML
         );
-        this.json.explorerBonusIncreasedExpeditionOutcome = Number(
+        OGBIData.json.explorerBonusIncreasedExpeditionOutcome = Number(
           xml.querySelector("explorerBonusIncreasedExpeditionOutcome").innerHTML
         );
-        this.json.lifeFormResearchSpeed = {};
+        OGBIData.json.lifeFormResearchSpeed = {};
         xml.querySelectorAll("generalBase").forEach((elem) => {
           let research = elem.parentNode.parentNode;
           let id = research.getAttribute("technologyId");
-          this.json.lifeFormResearchSpeed[id] = {};
+          OGBIData.json.lifeFormResearchSpeed[id] = {};
           research.querySelector("factors").childNodes.forEach((factor) => {
-            this.json.lifeFormResearchSpeed[id][factor.nodeName] = factor.innerHTML;
+            OGBIData.json.lifeFormResearchSpeed[id][factor.nodeName] = factor.innerHTML;
           });
         });
-        this.json.lifeFormCostReductionFromBuilding = {};
-        this.json.lifeFormCostReductionFromResearch = {};
+        OGBIData.json.lifeFormCostReductionFromBuilding = {};
+        OGBIData.json.lifeFormCostReductionFromResearch = {};
         xml.querySelectorAll("technologyBase").forEach((elem) => {
           if (elem.parentNode.parentNode.parentNode.nodeName == "building") {
             let bonusTo = elem.parentNode.querySelector("techId").innerHTML;
             let bonusFrom = elem.parentNode.parentNode.parentNode.getAttribute("technologyId");
-            this.json.lifeFormCostReductionFromBuilding[bonusTo] =
-              this.json.lifeFormCostReductionFromBuilding[bonusTo] || {};
-            this.json.lifeFormCostReductionFromBuilding[bonusTo][bonusFrom] = {
+            OGBIData.json.lifeFormCostReductionFromBuilding[bonusTo] =
+              OGBIData.json.lifeFormCostReductionFromBuilding[bonusTo] || {};
+            OGBIData.json.lifeFormCostReductionFromBuilding[bonusTo][bonusFrom] = {
               base: elem.parentNode.querySelector("technologyBase").innerHTML,
               factor: elem.parentNode.querySelector("technologyFactor").innerHTML,
               max: elem.parentNode.querySelector("technologyMax").innerHTML,
@@ -640,24 +656,24 @@ class OGBeyondInfinity {
           if (elem.parentNode.parentNode.parentNode.nodeName == "research") {
             let bonusTo = elem.parentNode.querySelector("techId").innerHTML;
             let bonusFrom = elem.parentNode.parentNode.parentNode.getAttribute("technologyId");
-            this.json.lifeFormCostReductionFromResearch[bonusTo] =
-              this.json.lifeFormCostReductionFromResearch[bonusTo] || {};
-            this.json.lifeFormCostReductionFromResearch[bonusTo][bonusFrom] = {
+            OGBIData.json.lifeFormCostReductionFromResearch[bonusTo] =
+              OGBIData.json.lifeFormCostReductionFromResearch[bonusTo] || {};
+            OGBIData.json.lifeFormCostReductionFromResearch[bonusTo][bonusFrom] = {
               base: elem.parentNode.querySelector("technologyBase").innerHTML,
               factor: elem.parentNode.querySelector("technologyFactor").innerHTML,
               max: elem.parentNode.querySelector("technologyMax").innerHTML,
             };
           }
         });
-        this.json.lifeFormTimeReductionFromBuilding = {};
-        this.json.lifeFormTimeReductionFromResearch = {};
+        OGBIData.json.lifeFormTimeReductionFromBuilding = {};
+        OGBIData.json.lifeFormTimeReductionFromResearch = {};
         xml.querySelectorAll("timeTechnologyBase").forEach((elem) => {
           if (elem.parentNode.parentNode.parentNode.nodeName == "building") {
             let bonusTo = elem.parentNode.querySelector("techId").innerHTML;
             let bonusFrom = elem.parentNode.parentNode.parentNode.getAttribute("technologyId");
-            this.json.lifeFormTimeReductionFromBuilding[bonusTo] =
-              this.json.lifeFormTimeReductionFromBuilding[bonusTo] || {};
-            this.json.lifeFormTimeReductionFromBuilding[bonusTo][bonusFrom] = {
+            OGBIData.json.lifeFormTimeReductionFromBuilding[bonusTo] =
+              OGBIData.json.lifeFormTimeReductionFromBuilding[bonusTo] || {};
+            OGBIData.json.lifeFormTimeReductionFromBuilding[bonusTo][bonusFrom] = {
               base: elem.parentNode.querySelector("timeTechnologyBase").innerHTML,
               factor: elem.parentNode.querySelector("timeTechnologyFactor").innerHTML,
               max: elem.parentNode.querySelector("timeTechnologyMax").innerHTML,
@@ -666,9 +682,9 @@ class OGBeyondInfinity {
           if (elem.parentNode.parentNode.parentNode.nodeName == "research") {
             let bonusTo = elem.parentNode.querySelector("techId").innerHTML;
             let bonusFrom = elem.parentNode.parentNode.parentNode.getAttribute("technologyId");
-            this.json.lifeFormTimeReductionFromResearch[bonusTo] =
-              this.json.lifeFormTimeReductionFromResearch[bonusTo] || {};
-            this.json.lifeFormTimeReductionFromResearch[bonusTo][bonusFrom] = {
+            OGBIData.json.lifeFormTimeReductionFromResearch[bonusTo] =
+              OGBIData.json.lifeFormTimeReductionFromResearch[bonusTo] || {};
+            OGBIData.json.lifeFormTimeReductionFromResearch[bonusTo][bonusFrom] = {
               base: elem.parentNode.querySelector("timeTechnologyBase").innerHTML,
               factor: elem.parentNode.querySelector("timeTechnologyFactor").innerHTML,
               max: elem.parentNode.querySelector("timeTechnologyMax").innerHTML,
@@ -676,15 +692,15 @@ class OGBeyondInfinity {
           }
         });
 
-        this.json.lifeFormProductionBoostFromBuildings = {};
-        this.json.lifeFormProductionBoostFromResearch = {};
+        OGBIData.json.lifeFormProductionBoostFromBuildings = {};
+        OGBIData.json.lifeFormProductionBoostFromResearch = {};
         xml.querySelectorAll("metalBase, crystalBase, deuteriumBase").forEach((elem) => {
           let tech = elem.parentNode.parentNode;
           let id = tech.getAttribute("technologyId");
           let boost =
             tech.nodeName == "building"
-              ? this.json.lifeFormProductionBoostFromBuildings
-              : this.json.lifeFormProductionBoostFromResearch;
+              ? OGBIData.json.lifeFormProductionBoostFromBuildings
+              : OGBIData.json.lifeFormProductionBoostFromResearch;
           if (["ResourceBooster", "ProductionBooster"].includes(tech.querySelector("type").innerHTML)) {
             boost[id] = [
               tech.querySelector("metalBase") ? Number(tech.querySelector("metalBase").innerHTML) : 0,
@@ -693,7 +709,7 @@ class OGBeyondInfinity {
             ];
           }
         });
-        this.saveData();
+        OGBIData.Save();
       });
   }
 
@@ -726,25 +742,24 @@ class OGBeyondInfinity {
    */
 
   chat() {
-    this.json.tchat = !!document.querySelector("#chatBar");
-    if (!this.json.tchat) {
+    OGBIData.json.tchat = !!document.querySelector("#chatBar");
+    if (!OGBIData.json.tchat) {
       return;
     }
     let toggleChat = () => {
-      this.json.tchat = !this.json.tchat;
-      this.saveData();
-      document.querySelector("#chatBar").style.display = this.json.tchat ? "block" : "none";
+      OGBIData.tchat = !OGBIData.tchat;
+      document.querySelector("#chatBar").style.display = OGBIData.tchat ? "block" : "none";
     };
     let oldfunc = ogame.chat.loadChatLogWithPlayer;
     ogame.chat.loadChatLogWithPlayer = (elem, m, cb, uu) => {
-      if (!this.json.tchat) {
+      if (!OGBIData.json.tchat) {
         toggleChat();
       }
       oldfunc(elem, m, cb, uu);
     };
     let btn = document.querySelector("body").appendChild(DOM.createDOM("div", { class: "ogk-chat icon icon_chat" }));
-    if (this.json.tchat) {
-      document.querySelector("#chatBar").style.display = this.json.tchat ? "block" : "none";
+    if (OGBIData.json.tchat) {
+      document.querySelector("#chatBar").style.display = OGBIData.json.tchat ? "block" : "none";
     }
     btn.addEventListener("click", () => {
       toggleChat();
@@ -777,7 +792,7 @@ class OGBeyondInfinity {
     let overViewBtn = harvestOptions.appendChild(
       DOM.createDOM("div", { class: "ogl-option ogl-overview-icon tooltip", title: Translator.translate(5) })
     );
-    if (this.json.options.targetList) {
+    if (OGBIData.json.options.targetList) {
       targetListButton.classList.add("ogl-active");
       targetList(this.galaxyContext(), true);
     }
@@ -788,20 +803,20 @@ class OGBeyondInfinity {
         this.searchOpened = false;
         search.classList.remove("ogl-active");
       }
-      targetList(this.galaxyContext(), !this.json.options.targetList);
+      targetList(this.galaxyContext(), !OGBIData.json.options.targetList);
       targetListButton.classList.toggle("ogl-active");
-      this.json.options.targetList = !this.json.options.targetList;
-      this.saveData();
+      OGBIData.json.options.targetList = !OGBIData.json.options.targetList;
+      OGBIData.Save();
     });
-    if (this.json.playerSearch != "") {
-      playerSearch(this.pageContext(), true, this.json.playerSearch);
+    if (OGBIData.json.playerSearch != "") {
+      playerSearch(this.pageContext(), true, OGBIData.json.playerSearch);
       search.classList.add("ogl-active");
       this.searchOpened = true;
     }
     search.addEventListener("click", () => {
-      if (this.json.options.targetList) {
-        this.json.options.targetList = false;
-        this.saveData();
+      if (OGBIData.json.options.targetList) {
+        OGBIData.json.options.targetList = false;
+        OGBIData.Save();
         targetListButton.classList.remove("ogl-active");
         targetList(this.galaxyContext(), false);
       }
@@ -826,16 +841,16 @@ class OGBeyondInfinity {
         active.click();
         return;
       }
-      if (this.json.options.empire) {
+      if (OGBIData.json.options.empire) {
         document.querySelector("#planetList").classList.remove("moon-construction-sum");
         document.querySelector(".ogl-overview-icon").classList.remove("ogl-active");
         document.querySelectorAll(".ogl-summary, .ogl-res").forEach((elem) => elem.remove());
-        this.json.options.empire = false;
+        OGBIData.json.options.empire = false;
       } else {
-        this.json.options.empire = true;
+        OGBIData.json.options.empire = true;
         resourceDetail(this.overviewContext());
       }
-      this.saveData();
+      OGBIData.Save();
     });
     statsBtn.addEventListener("click", (e) => {
       updateEmpireData(this.empireContext(), e.ctrlKey);
@@ -859,7 +874,7 @@ class OGBeyondInfinity {
 
     let container = DOM.createDOM("div", { class: "ptreContent" });
 
-    if (!this.json.options.ptreTK) {
+    if (!OGBIData.json.options.ptreTK) {
       container.textContent = Translator.translate(151);
       popupUtil.popup(null, container);
       return;
@@ -870,7 +885,7 @@ class OGBeyondInfinity {
       .getPlayerInfos(
         OgamePageData.gameLang,
         this.universe,
-        this.json.options.ptreTK,
+        OGBIData.json.options.ptreTK,
         cleanPlayerName,
         player.id,
         frame
@@ -1116,10 +1131,6 @@ class OGBeyondInfinity {
     }
   }
 
-  saveData() {
-    OGBIData.json = this.json;
-  }
-
   /**
    * The class and officer flags `util/gameFormulas.js` needs, as a plain object.
    *
@@ -1297,11 +1308,11 @@ class OGBeyondInfinity {
         let htmlDocument = new window.DOMParser().parseFromString(str, "text/html");
         let allyClassIcon = htmlDocument.querySelector(".allianceclass");
         if (allyClassIcon) {
-          if (allyClassIcon.classList.contains("trader")) this.json.allianceClass = AllianceClass.MINER;
-          if (allyClassIcon.classList.contains("explorer")) this.json.allianceClass = AllianceClass.EXPLORER;
-          if (allyClassIcon.classList.contains("warrior")) this.json.allianceClass = AllianceClass.WARRIOR;
-          if (allyClassIcon.classList.contains("none")) this.json.allianceClass = AllianceClass.NONE;
-          this.saveData();
+          if (allyClassIcon.classList.contains("trader")) OGBIData.json.allianceClass = AllianceClass.MINER;
+          if (allyClassIcon.classList.contains("explorer")) OGBIData.json.allianceClass = AllianceClass.EXPLORER;
+          if (allyClassIcon.classList.contains("warrior")) OGBIData.json.allianceClass = AllianceClass.WARRIOR;
+          if (allyClassIcon.classList.contains("none")) OGBIData.json.allianceClass = AllianceClass.NONE;
+          OGBIData.Save();
         }
       });
   }
@@ -1356,10 +1367,10 @@ class OGBeyondInfinity {
 
     const crawlerShare = crawlerBonus({
       crawlers,
-      overload: Number(this.json.options.crawlerPercent) || 1,
+      overload: Number(OGBIData.json.options.crawlerPercent) || 1,
       isCollector,
-      classBonus: isCollector ? Number(this.json.minerBonusAdditionalCrawler) || 0 : 0,
-      lifeformBonus: Number(this.json.lifeformBonus?.crawlerBonus?.production) || 0,
+      classBonus: isCollector ? Number(OGBIData.json.minerBonusAdditionalCrawler) || 0 : 0,
+      lifeformBonus: Number(OGBIData.json.lifeformBonus?.crawlerBonus?.production) || 0,
     });
 
     const resourceSelectors = ["#resources_metal", "#resources_crystal", "#resources_deuterium"];
@@ -1374,10 +1385,10 @@ class OGBeyondInfinity {
       // The stored hourly figure already includes every bonus, so the breakdown is derived by
       // working back to the base rather than by recomputing the mines from scratch.
       const lifeformShare =
-        (Number(this.json.lifeformBonus?.productionBonus?.[index]) || 0) +
-        (Number(this.json.lifeformPlanetBonus?.[this.current.id]?.productionBonus?.[index]) || 0);
+        (Number(OGBIData.json.lifeformBonus?.productionBonus?.[index]) || 0) +
+        (Number(OGBIData.json.lifeformPlanetBonus?.[this.current.id]?.productionBonus?.[index]) || 0);
 
-      const plasmaLevel = Number(this.json.technology?.[122]) || 0;
+      const plasmaLevel = Number(OGBIData.json.technology?.[122]) || 0;
       const parts = productionBreakdown({
         baseProduction: hourly / (1 + crawlerShare + lifeformShare + plasmaLevel * PLASMATECH_BONUS[index]),
         resourceIndex: index,
@@ -1416,7 +1427,7 @@ class OGBeyondInfinity {
   showStorageTimers() {
     if (this.page == "overview" && OGBIData.empire[this.current.index]) {
       let currentDate = new Date();
-      let timeZoneChange = this.json.options.timeZone ? 0 : this.json.timezoneDiff;
+      let timeZoneChange = OGBIData.json.options.timeZone ? 0 : OGBIData.json.timezoneDiff;
       let metalStorage = resourcesBar.resources.metal.storage;
       let metalResources = resourcesBar.resources.metal.amount;
       let metalProduction = this.current.isMoon

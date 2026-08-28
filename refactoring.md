@@ -14,12 +14,12 @@ Zahlen aus aktuellem `master` gemessen, nicht geschätzt.
 | :------------------------------------- | :----------------------------------------------------------------- |
 | `src/**` ohne `libs/`                  | ~~33.859~~ **33.580** Zeilen (Phase 1)                             |
 | davon `src/ogCore.js`                  | ~~19.024~~ → **1.846 Zeilen**, **40 Methoden** (Phase 3)           |
-| Testabdeckung                          | 391 → **502 Tests**; `ogCore.js` erstmals dabei (Rechenkerne)      |
+| Testabdeckung                          | 391 → **516 Tests**; `ogCore.js` erstmals dabei (Rechenkerne)      |
 | Dateien ohne jede Abdeckung            | vor Phase 2: 34, darunter `ogCore.js` und `background.js`          |
 | `npm run check`                        | ~~404 Fehler~~ **0** — Phase 0 erledigt, gatet in CI               |
 | `document.querySelector*` in ogCore.js | 424                                                                |
-| `this.json.*` vs. `OGBIData.*`         | 755 vs. 120 — zwei Zugriffswege auf denselben Store                |
-| `this.saveData()`                      | 82 Aufrufe, jeder serialisiert den kompletten Blob                 |
+| `this.json.*` vs. `OGBIData.*`         | ~~755 vs. 120~~ **0 vs. alles** — ein Zugriffsweg (Phase 4)        |
+| `this.saveData()`                      | ~~82 Aufrufe~~ **0** — Methode gelöscht (Phase 4)                  |
 | jQuery `$(…)`                          | 87 Stellen                                                         |
 | `setInterval`                          | 15 Stellen, drei davon reine Polling-Schleifen auf ein Promise     |
 | Tote Methoden in ogCore.js             | ~~13~~ 0 (Phase 1); plus `autoHarvest()`, in Phase 3 nachgereicht  |
@@ -53,7 +53,7 @@ Phase 0  Werkzeug reparieren        [ERLEDIGT]  -> Lint ist grün und gatet in C
 Phase 1  Toter Code + Delegaten     [ERLEDIGT]  -> 370 Zeilen weg, 123 Dateien untracked
 Phase 2  Charakterisierungstests    [ERLEDIGT]  -> 485 Tests, 7 neue Fehler gefunden
 Phase 3  ogCore.js aufteilen        [ERLEDIGT]  -> 19.024 -> 1.846 Zeilen
-Phase 4  Store-Zugriff vereinheitl. (1 Woche)   -> this.json -> OGBIData
+Phase 4  Store-Zugriff vereinheitl. [ERLEDIGT]  -> this.json weg, ein Weg zum Store
 Phase 5  Seitenweises Code-Splitting(1 Woche)   -> Boot-Payload halbieren
 Phase 6  Altlasten & Doku-Drift     (laufend)
 ```
@@ -496,20 +496,50 @@ Reihenfolge, in einem Bundle, das 6 KB größer ist.
 
 ---
 
-## Phase 4 — Ein Weg zum Store
+## Phase 4 — Ein Weg zum Store [ERLEDIGT]
 
-**Problem.** `this.json.*` (755 Stellen) und `OGBIData.*` (120 Stellen) zeigen auf denselben `localStorage["ogk-data"]`. `this.json` wird in `init()` einmal auf `OGBIData.json` gesetzt und danach direkt mutiert — umgeht die Setter, die Write-Through machen, weshalb es überall `this.saveData()` braucht (82 Aufrufe). Genau diese Doppelung ist der Grund, warum extrahiertes Modul aus Phase 3 sonst wieder Instanzreferenz mitschleppen müsste.
+**Problem.** `this.json.*` und `OGBIData.*` zeigten auf denselben `localStorage["ogk-data"]`. `this.json` wurde in `init()` einmal auf `OGBIData.json` gesetzt und danach direkt mutiert — umging die Setter, die Write-Through machen, weshalb es überall `this.saveData()` brauchte. Genau diese Doppelung war der Grund, warum extrahiertes Modul aus Phase 3 sonst wieder Instanzreferenz mitschleppen müsste.
 
-**Schritte.**
+Zahlen zu Beginn der Phase, nicht die aus Abschnitt 0 — Phase 3 hatte den Löwenanteil schon mitgenommen: **227 `this.json`-Stellen** in drei Dateien (`ogCore.js` 158, `ctxpage/messages-analyzer/index.js` 67, `ctxpage/pantry/index.js` 25 als `this?.json?.`) und **14 `this.saveData()`**.
 
-1. Erst inventarisieren: welche der 755 Stellen **lesen** nur (trivial umstellbar), welche mutieren (brauchen `OGBIData.x = …` statt `OGBIData.x.y = …`).
-2. Modul für Modul umstellen, in derselben Reihenfolge wie Phase 3, jeweils direkt nach dem Schnitt.
-3. Erst wenn Zone vollständig auf Setter umgestellt, dortige `saveData()`-Aufrufe entfernen — dann redundant.
-4. **Kein Deferred Write.** Bereits versucht und bewusst zurückgenommen (`docs/performance.md`). Gewinn kommt hier aus _weniger_ Schreibvorgängen, nicht aus _späteren_.
+### Was gemacht wurde
 
-**Nebenschauplatz gleicher Art:** `createCallbackToken()` existiert zweimal — in `util/service.callbackEvent.js` und handkopiert in `src/main.js`, weil klassisches Content-Script nicht importieren kann. Begründet und kommentiert, aber ungetestet: Test, der beide Implementierungen gegeneinander prüft, kostet zehn Zeilen und verhindert stilles Auseinanderlaufen.
+1. **Der Alias ist weg.** `init()` setzt kein `this.json` mehr, und die Methode `OGBeyondInfinity.saveData()` — ihr ganzer Rumpf war `OGBIData.json = this.json`, also eine Neuserialisierung des kompletten Blobs — ist gelöscht. Alle 227 Stellen lesen und schreiben jetzt über `OGBIData`.
+2. **Eine Regel statt zweier Wege**, im Kommentar an `init()` festgehalten: eine einzelne logische Änderung geht durch ihren Setter, der schreibt durch; ein Stapel zusammengehöriger Änderungen mutiert `OGBIData.json.*` und endet in **genau einem** `OGBIData.Save()`. Nie beides. `init()` selbst ist die dokumentierte Ausnahme: rund sechzig Vorgabewerte, die als Stapel laufen, weil ein Setter je Vorgabe sechzig vollständige Serialisierungen vor dem ersten Paint bedeuten würde.
+3. **Weniger Schreibvorgänge, nicht spätere** (Leitplanke 4). Drei Stellen schrieben den ganzen Blob pro Schleifendurchlauf:
 
-**Exit-Kriterium.** `this.json` existiert nicht mehr; `saveData()`-Aufrufe unter 20; `TRAP:`-Tests in `test/util/OGBIData.test.js` unverändert grün.
+   - `ctxpage/eventbox/index.js` speicherte innerhalb von `OGBIData.empire.forEach` — die zweite der beiden sogar außerhalb des Koordinaten-Vergleichs, also einmal pro Planet **pro Bewegung**. Bei 15 Planeten und 10 Rückflügen sind das 150 vollständige `JSON.stringify` des gesamten Speichers, für einen Zustand, den der Schreibvorgang am Ende des Blocks ohnehin festhält.
+   - `ctxpage/galaxy/index.js` speicherte einmal pro markierter Galaxie-Zeile, also bis zu 15-mal bei jedem Aufbau der Galaxieansicht. Jetzt ein `markersChanged`-Flag und ein Schreibvorgang danach.
+   - `ctxpage/empire/index.js`, `settings/index.js` und `util/Notifier.js` schrieben zweimal, wo ein Setter genügt.
+
+   `OGBIData.Save()` im ganzen `src/`: **92 → 80**. Die verbliebenen sitzen in Klick-Handlern, also ein Schreibvorgang pro Benutzeraktion. Kein Deferred Write (`docs/performance.md`).
+
+4. **`needsUpdate` bekam Getter/Setter** in `OGBIData` — drei Schreibstellen, alle mit `Save()` direkt dahinter. Damit sind es 29 Accessoren.
+
+### Zwei stille Fehler, die dabei sichtbar wurden
+
+1. **Der Pantry-Upload lud nichts hoch.** `pantrySync()` ist seit Phase 3 eine Modulfunktion, las den Speicher aber weiter als `this?.json?.options` und so weiter — 25-mal. In einem ES-Modul im Strict Mode ist `this` dort `undefined`, das Optional Chaining hat es verschluckt, und `JSON.stringify` hat jedes `undefined`-Feld weggeworfen. Der Korb bei Pantry enthielt nur noch seinen eigenen Zeitstempel. Nichts hat gemeckert: der Request war erfolgreich, der Toast meldete Erfolg, und das nächste Gerät, das von diesem Korb gemerged hat, bekam nichts. `test/ctxpage/pantry/pantry.test.js` (3 Tests) prüft jetzt den tatsächlich hochgeladenen Inhalt; zwei davon fallen gegen den alten Code.
+2. **Zwei Müllschlüssel in der Wurzel von `ogk-data`.** Der Legacy-Analyzer schrieb bei Expeditionen mit Objektfund `this.json.result` und `this.json["object"]` — gemeint war der Expeditions-Datensatz, getroffen wurde der Speicher selbst. Gelesen hat die beiden nie jemand; das `type = "Object"` in derselben Verzweigung ist, was tatsächlich zählt. Entfernt.
+
+### Wächter
+
+- `test/util/store-access.test.js` (3 Tests) liest den Quelltext, weil keiner dieser Fehler einen Build, einen Lint oder ein Bundle bricht: kein `this.json`/`this?.json` mehr, kein `this.saveData(`, und kein `OGBIData.<setter> = …` mit einem `Save()` direkt dahinter. `ctxcontent/data-helper.js` ist ausgenommen — dessen `saveData()` gehört zu `chrome.storage.local` im Content-Context und hat mit diesem Speicher nichts zu tun.
+- `test/util/callback-token-twins.test.js` (2 Tests) erledigt den **Nebenschauplatz**: `createCallbackToken()` existiert zweimal — in `util/service.callbackEvent.js` und handkopiert in `src/main.js`, weil ein klassisches Content-Script nicht importieren kann. Der Test vergleicht beide Funktionsrümpfe als Quelltext. Driften sie auseinander, veröffentlicht die eine Hälfte ein Token, das die andere nicht wiedererkennt, und das einzige Symptom ist, dass jeder `pageContextRequest()` in einen Timeout läuft.
+
+### Exit-Kriterien
+
+| Kriterium                                     | Ziel     | Ist                                             |
+| :-------------------------------------------- | :------- | :---------------------------------------------- |
+| `this.json`                                   | weg      | **weg** — 0 Stellen, statisch abgesichert       |
+| `saveData()`-Aufrufe                          | < 20     | **0** — die Methode selbst gelöscht             |
+| `TRAP:`-Tests in `test/util/OGBIData.test.js` | grün     | **grün**, unverändert                           |
+| Tests gesamt                                  | —        | 508 → **516**                                   |
+| `npm run check`                               | 0 Fehler | **0**                                           |
+| Bundle-Test                                   | grün     | **grün**; `make dev` baut, Page-Bundle 1.132 KB |
+
+**Was diese Phase bewusst nicht getan hat:** die rund 600 reinen **Lese**-Zugriffe der Form `OGBIData.json.x` auf `OGBIData.x` umzustellen, wo es einen Getter gibt. Das ist kein zweiter Zugriffsweg mehr — es ist derselbe Singleton, nur ohne den benannten Accessor — und eine Umstellung wäre ein Diff über zwanzig Dateien ohne jede Verhaltensänderung, der jeden echten Fund darin begraben würde. Sinnvoll als Beifang, wenn eine Datei ohnehin angefasst wird.
+
+**Zwei Altlasten, die dabei auffielen und bewusst liegenbleiben**, weil sie Verhaltensfragen sind und keine Speicherfragen — beide in Phase 6 aufgenommen: `chat()` überschreibt bei jedem Seitenaufruf das gespeicherte `tchat` mit `!!document.querySelector("#chatBar")`, der Umschalter des Spielers überlebt also keine Navigation; und `util/needs.js` schreibt `OGBIData.json.flying` ohne zu speichern, während `ctxpage/eventbox/index.js` dasselbe Feld speichert.
 
 ---
 
@@ -537,6 +567,8 @@ Code sagt selbst, wo Grenzen liegen: 37 Abfragen auf `this.page`, davon 18 auf `
 Kleinere Punkte, keine eigene Phase nötig, aber nicht vergessen. Jeder ein eigener Commit.
 
 - **Regelverstoß, weiterhin offen.** `ogCore.js:17815` startet auf Overview-Seite ein `setInterval`, das `location.reload()` aufruft, sobald Rohstoffspeicher volläuft. Timergesteuerter Seiten-Reload, damit **`AGENTS.md` §1.3 verboten** („Auto refreshing/reloading game page (timer or otherwise)"). `docs/performance.md` weist bereits darauf hin. Produktentscheidung, kein Refactoring: entweder entfernen oder in etwas umbauen, das Spieler selbst auslöst — **vor nächster Toleration-Einreichung**. Beide anderen `location.reload()`-Stellen (3134, 3145) in Ordnung, laufen aus Click-Handler.
+- **`tchat` überlebt keine Navigation.** `chat()` (`ogCore.js`) setzt bei jedem Seitenaufruf `OGBIData.json.tchat = !!document.querySelector("#chatBar")`, überschreibt also den gespeicherten Wert mit dem, was gerade im DOM steht. Der Umschalter darunter schreibt sauber über den Setter, aber der nächste Seitenwechsel macht ihn wieder zunichte. In Phase 4 aufgefallen und bewusst liegengelassen: eine Verhaltensentscheidung, keine Speicherfrage — soll das Feld das gespeicherte Nutzer-Häkchen sein oder die aktuelle DOM-Beobachtung? Es kann nicht beides sein.
+- **`flying` wird an zwei Stellen anders behandelt.** `util/needs.js:19` schreibt `OGBIData.json.flying = flying()` ohne zu speichern (bei jedem Planetenleisten-Aufbau, also bewusst kein Schreibvorgang), `ctxpage/eventbox/index.js` speichert dasselbe Feld. Ein Setter für `flying` würde die stille Variante persistent machen und damit Schreibvorgänge hinzufügen, was Phase 4 ausdrücklich nicht tun sollte. Entscheiden, welche der beiden recht hat, dann angleichen.
 - **Polling auf ein Promise.** `sideOptions()` (ogCore.js:5056, 5084) und Statistik-Buttons starten `setInterval(…, 20)`, um auf `this.isLoading` zu warten — während `updateEmpireData()` direkt daneben Promise zurückgibt, das verworfen wird. Ersetzen durch `await`. Drei Stellen, je zwei Zeilen.
 - **jQuery.** 87 `$(…)`-Stellen hängen am jQuery der Spielseite. Keine Panik-Migration, aber: neuer Code nutzt es nicht, und wer Datei in Phase 3 anfasst, ersetzt jQuery-Aufrufe darin gleich mit.
 - **`innerHTML`.** 69 Stellen. Laufen über `Element.prototype.html`, also durch DOMPurify — in Ordnung. Direkte `innerHTML =`-Zuweisungen prüfen und auf `.html()` umstellen.
@@ -568,7 +600,7 @@ Kleinere Punkte, keine eigene Phase nötig, aber nicht vergessen. Jeder ein eige
 | `npm run check`             | 0 (Phase 0)                           | 0, in CI erzwungen — erreicht                   |
 | Zeilenabdeckung             | 68 % (ohne 34 Dateien)                | > 75 %, ogCore.js dabei                         |
 | Kern-Bundle (Page-Context)  | 1,13 MB                               | < 500 KB                                        |
-| Zugriffswege auf `ogk-data` | 2                                     | 1                                               |
+| Zugriffswege auf `ogk-data` | ~~2~~ 1 (Phase 4)                     | 1 — erreicht                                    |
 | Produktionsmodelle im Repo  | 3                                     | 1 (`productionEngine.js`)                       |
 | `TODO`/`WIP`/`@deprecated`  | 41, keiner mit Ticket                 | 0 aus dem Altbestand; neue nur als `TODO(#123)` |
 | `KNOWN BUG:`-Tests          | 11                                    | 0 (jeder Fix nimmt sein Präfix mit)             |

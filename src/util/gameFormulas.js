@@ -5,8 +5,9 @@
  * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. The bodies are unchanged;
  * the only edits were the ones needed to drop `this`:
  *
- * - `this.json` became `OGBIData.json` - `OGBeyondInfinity.init()` assigns one to the other,
- *   so it was always the same object.
+ * - `this.json` became `OGBIData.json`. Back then `OGBeyondInfinity.init()` aliased one
+ *   to the other, so it was always the same object; Phase 4 removed the alias, and
+ *   `OGBIData` is now the only way in.
  * - `this.saveData()` became `OGBIData.Save()`, which is what it did.
  * - `this.playerClass` / `this.geologist` / `this.allOfficers` became an explicit
  *   `player` argument on the three functions that read them. A formula module must not

@@ -631,9 +631,10 @@ function settings(context) {
     var reader = new FileReader();
     reader.onload = (evt) => {
       let json = JSON.parse(evt.target.result);
+      // Finish the replacement blob first: assigning it through the setter is one
+      // write, where assigning and then patching it would be two.
+      json.pantrySync = Date.now();
       OGBIData.json = json;
-      OGBIData.json.pantrySync = Date.now();
-      OGBIData.Save();
       document.location = document.location.origin + "/game/index.php?page=ingame&component=overview ";
     };
     reader.readAsText(event.target.files[0], "UTF-8");
@@ -974,8 +975,7 @@ function settings(context) {
     setOption("wideZoomFactor", normalizeZoomFactor(wideZoomFactorInput.value));
     applyWideLayout();
 
-    OGBIData.json.needSync = true;
-    OGBIData.Save();
+    OGBIData.needSync = true;
     document.querySelector(".ogl-dialog .close-tooltip").click();
   });
   resetBtn.addEventListener("click", () => {
@@ -1044,9 +1044,8 @@ function settings(context) {
         json.options = OGBIData.json.options;
         json.options.empire = false;
       }
+      json.needSync = false;
       OGBIData.json = json;
-      OGBIData.json.needSync = false;
-      OGBIData.Save();
       document.location = document.location.origin + "/game/index.php?page=ingame&component=overview ";
     }
   });

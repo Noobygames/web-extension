@@ -200,6 +200,13 @@ function addGalaxyMarkers(context) {
       addMarkerUI(context, coords, colors, id, moon);
     });
 
+  // One write for the whole galaxy view instead of one per row. Every branch below
+  // mutates `OGBIData.json.markers`, which is the live object inside the store, so
+  // anything reading it during the loop already sees the change; only the
+  // serialization is pulled out. Fifteen rows meant fifteen full blob writes on
+  // every galaxy render.
+  let markersChanged = false;
+
   document.querySelectorAll("#galaxyContent .galaxyRow.ctContentRow").forEach((element, index) => {
     element.classList.remove("ogl-marked");
     element.removeAttribute("data-marked");
@@ -222,7 +229,7 @@ function addGalaxyMarkers(context) {
         element.setAttribute("data-marked", OGBIData.json.markers[coords].color);
         OGBIData.json.markers[coords].moon = element.querySelector(".cellMoon .tooltipRel") ? true : false;
       }
-      OGBIData.Save();
+      markersChanged = true;
     } else if (OGBIData.json.playerMarkers && OGBIData.json.playerMarkers[playerId]) {
       //there is no marker for these coord but there is a marker for this player
 
@@ -232,14 +239,15 @@ function addGalaxyMarkers(context) {
         id: playerId,
       };
 
-      //Save data
-      OGBIData.Save();
+      markersChanged = true;
 
       //Update UI
       element.classList.add("ogl-marked");
       element.setAttribute("data-marked", OGBIData.json.playerMarkers[playerId].color);
     }
   });
+
+  if (markersChanged) OGBIData.Save();
 }
 
 function getActivity(context, row) {

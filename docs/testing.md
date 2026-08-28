@@ -75,7 +75,7 @@ Where singleton can reset through own API, prefer that — `OGBIData.json = {…
 
 ## What is covered
 
-`make coverage` print current table. As of writing: **502 tests**. Headline percentage not meaningful alone — the extracted page modules are in the denominator and almost none of them has behavioural coverage.
+`make coverage` print current table. As of writing: **516 tests**. Headline percentage not meaningful alone — the extracted page modules are in the denominator and almost none of them has behavioural coverage.
 
 | Area              | Module                                                                                 | Notes                                                                                                 |
 | ----------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
@@ -86,6 +86,7 @@ Where singleton can reset through own API, prefer that — `OGBIData.json = {…
 | Context bridge    | `util/service.callbackEvent.js`                                                        | Full request/response round-trip across both contexts, error paths, concurrency, Firefox `cloneInto`. |
 | Context detection | `util/runContext.js`                                                                   | Chrome/Edge/Firefox, script injection. 96%                                                            |
 | Page storage      | `util/OGBIData.js`                                                                     | Write-through contract, generic check that **every** setter persists.                                 |
+| Store access      | `src/**` (static)                                                                      | Phase 4 rule: no `this.json` alias, no `saveData()` method, no `Save()` behind a setter.              |
 | Version gate      | `util/OgamePageData.js`                                                                | `isAtLeast_13_0_0` across version shapes.                                                             |
 | Options           | `ctxpage/conf-options.js`                                                              | Defaults, deep merge, proxy guards.                                                                   |
 | Content storage   | `ctxcontent/services/universe.storage.js`                                              | Key namespacing, Map/Set round-trip. 95%                                                              |
@@ -95,6 +96,8 @@ Where singleton can reset through own API, prefer that — `OGBIData.json = {…
 | Calculation core | `util/gameFormulas.js` | `consumption`, `minesProduction`, `research`, `building`, five `roi*` functions, `getBestRoi`. Characterisation only: values recorded before the Phase 3 move and unchanged after it. |
 | Service worker | `background.js` | Persistence across worker restart, alarm scheduling, notification clicks, per-domain sync. 81% |
 | Message analyzers | `ctxcontent/services/analyzer/*` | Tab dispatch for all five; parsing paths for harvest, trade, expedition fights. |
+| Pantry backup | `ctxpage/pantry/index.js` | What the `post` upload actually puts in the basket, plus the timestamp it records. |
+| Bridge token | `main.js` vs `util/service.callbackEvent.js` | The two hand-copied `createCallbackToken()` bodies compared as source. |
 
 **Fixtures** live in `test/fixtures/`. `ogamePage.js` build OGame 13 page fragments
 (planet bar, officer bar, meta tags) out of named pieces, not saved dump: real
@@ -114,6 +117,13 @@ Not covered, rough order of value:
 - **`SpyMessagesAnalyzer`** (1k lines) and **`ExpeditionMessagesAnalyzer`** — only `support()` and `clean()` covered. Parsing paths need full spy-report and expedition-message fixtures.
 - **`ctxcontent/data-helper.js`** — `update()` orchestration and `loading` race behind issue #131.
 - `util/translate.js`, `util/stalk.js`, `util/flying.js`, `util/needs.js`.
+
+**Two of these tests read source, not behaviour.** `test/util/store-access.test.js` and
+`test/util/callback-token-twins.test.js` scan `src/` as text. That is deliberate: the
+failures they guard against - a `this.json` alias resolving to `undefined` in a module,
+the two token generators drifting apart - break no build, no lint and no bundle, and
+surface only as a feature quietly doing nothing on a real page. Same reasoning as
+`test/ctxpage/module-wiring.test.js` and `test/src-references.test.js`.
 
 ## Conventions
 

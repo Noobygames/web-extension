@@ -62,7 +62,6 @@ function eventBox(context) {
                 let object = arrival.slice(-1) == "M" ? planet.moon : planet;
                 if (object.coordinates == coords) {
                   for (let id in movement.fleet) object[id] += movement.fleet[id];
-                  OGBIData.Save();
                 }
               }
             });
@@ -88,13 +87,12 @@ function eventBox(context) {
                     updateresourceDetail(context.overviewContext);
                   }
                 }
-                OGBIData.Save();
               }
             });
           }
         });
-        OGBIData.json.needsUpdate = update;
-        OGBIData.Save();
+        // The setter's write-through persists the arrival bookkeeping done above.
+        OGBIData.needsUpdate = update;
         if (update) {
           updateEmpireData(context.empireContext);
         }

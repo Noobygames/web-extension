@@ -89,8 +89,7 @@ async function updateEmpireData(context, force = false) {
     await updateInfo(context);
   }
   let stageForUpdate = () => {
-    OGBIData.json.needsUpdate = true;
-    OGBIData.Save();
+    OGBIData.needsUpdate = true;
   };
   // One delegated listener instead of a 100ms querySelectorAll poll that ran for the whole
   // session and, after its first pass, had nothing left to do. See util/stageForUpdate.js.
@@ -273,8 +272,7 @@ function updateInfo(context) {
     updateProductionProgress(context, true); //We just updated the empire data, so => true
     context.updateSpaceShipsPresence();
     context.setLoading(false);
-    OGBIData.json.needsUpdate = false;
-    OGBIData.Save();
+    OGBIData.needsUpdate = false;
     document.querySelector(".spinner").remove();
   });
 }

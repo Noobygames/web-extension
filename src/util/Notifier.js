@@ -79,7 +79,6 @@ class Notifier {
     if (!notificationResult) return;
 
     OGBIData.lastSyncNotification = notificationResult.SyncDate;
-    OGBIData.Save();
 
     this.logger.info(
       `Synchronized notifications: ${notificationResult.Saved.length} saved, ${notificationResult.Canceled.length} canceled`,

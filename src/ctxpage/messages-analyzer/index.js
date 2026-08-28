@@ -27,6 +27,7 @@
  * Do not add features here. Fixes that cannot wait go in the new analyzers.
  */
 import { createDOM, createDOMSanitized } from "../../util/dom.js";
+import OGBIData from "../../util/OGBIData.js";
 import { getLogger } from "../../util/logger.js";
 import DateTime from "../../util/dateTime.js";
 import Translator from "../../util/translate.js";
@@ -62,16 +63,19 @@ function analyzer() {
   }
 
   let normalized = ["Metal", "Crystal", "Deuterium", "AM"];
-  let ressources = this.json.resNames;
+  let ressources = OGBIData.json.resNames;
   let cyclosName = "";
   const updateTimeZone = () => {
-    this.json.options.timeZone &&
+    OGBIData.json.options.timeZone &&
       document.querySelectorAll("#content div li.msg").forEach((msg) => {
         const msgDate = msg.querySelector(".msg_date");
         if (!msgDate || msgDate.classList.contains("ogl-ready")) return;
 
         const serveTimestamp = DateTime.dateStrToDate(msgDate.textContent).getTime();
-        const localDateTime = getFormatedDate(serveTimestamp + this.json.timezoneDiff * 1e3, "[d].[m].[Y] [H]:[i]:[s]");
+        const localDateTime = getFormatedDate(
+          serveTimestamp + OGBIData.json.timezoneDiff * 1e3,
+          "[d].[m].[Y] [H]:[i]:[s]"
+        );
 
         msgDate.setAttribute("data-server-date", `${serveTimestamp}`);
         msgDate.textContent = localDateTime;
@@ -180,12 +184,12 @@ function analyzer() {
     const fleetAnalize = (subTabTrigger) => {
       logger.debug("action:%o, [%s]", `messages.fleets.${subTabTrigger.name}`, typeof subTabTrigger.trigger);
 
-      ressources = this.json.resNames;
+      ressources = OGBIData.json.resNames;
       if (!this.combats) this.combats = {};
       if (!this.expeditionsIds) this.expeditionsIds = {};
       cyclosName = "";
-      for (let i in this.json.shipNames) {
-        if (this.json.shipNames[i] == 209) cyclosName = i;
+      for (let i in OGBIData.json.shipNames) {
+        if (OGBIData.json.shipNames[i] == 209) cyclosName = i;
       }
 
       if (subTabTrigger.trigger) subTabTrigger.trigger();
@@ -197,9 +201,9 @@ function analyzer() {
     const subFleet22_Expeditions = (() => {
       const view = (msg, isNew = false) => {
         const id = msg.getAttribute("data-msg-id");
-        if (!(this.json.expeditions && this.json.expeditions[id])) return;
+        if (!(OGBIData.json.expeditions && OGBIData.json.expeditions[id])) return;
 
-        const expeditionData = this.json.expeditions[id];
+        const expeditionData = OGBIData.json.expeditions[id];
 
         if (expeditionData.result === "Unknown") {
           msg.querySelector(".ogl-unknown-warning") ||
@@ -262,12 +266,12 @@ function analyzer() {
             coords = coords.textContent.slice(1, -1);
             if (coords.split(":")[2] == 16) {
               // expeditions
-              if (id in this.json.expeditions && this.json.expeditions[id].result) {
+              if (id in OGBIData.json.expeditions && OGBIData.json.expeditions[id].result) {
                 if (msg.querySelector(".icon_favorited")) {
-                  this.json.expeditions[id].favorited = true;
-                  this.json.expeditions[id].date = new Date();
+                  OGBIData.json.expeditions[id].favorited = true;
+                  OGBIData.json.expeditions[id].date = new Date();
                 } else {
-                  this.json.expeditions[id].favorited = false;
+                  OGBIData.json.expeditions[id].favorited = false;
                 }
                 view(msg, true);
                 return;
@@ -281,7 +285,7 @@ function analyzer() {
                 .then((value) => value.response.type)
                 .then((type) => {
                   date = date.split(" ")[0].slice(0, -4) + date.split(" ")[0].slice(-2);
-                  let sums = this.json.expeditionSums[date];
+                  let sums = OGBIData.json.expeditionSums[date];
                   if (!sums) {
                     sums = {
                       found: [0, 0, 0, 0],
@@ -296,8 +300,6 @@ function analyzer() {
 
                   const objectNode = content.querySelector("a");
                   if (objectNode) {
-                    this.json.result = "Object";
-                    this.json["object"] = objectNode.textContent;
                     type = "Object";
                   }
 
@@ -317,7 +319,7 @@ function analyzer() {
                     fleetMatches.forEach((result) => {
                       const split = result.split(": ");
                       type = "Fleet";
-                      const id = this.json.shipNames[split[0]];
+                      const id = OGBIData.json.shipNames[split[0]];
                       const count = Number(split[1]);
                       sums.fleet[id] ? (sums.fleet[id] += count) : (sums.fleet[id] = count);
                     });
@@ -325,21 +327,21 @@ function analyzer() {
                   if (type !== "Unknown") {
                     sums.type[type] ? (sums.type[type] += 1) : (sums.type[type] = 1);
                   }
-                  this.json.expeditionSums[date] = sums;
-                  this.json.expeditions[id] = {
+                  OGBIData.json.expeditionSums[date] = sums;
+                  OGBIData.json.expeditions[id] = {
                     result: type,
                     date: new Date(DateTime.dateStrToDate(date)),
                     favorited: msg.querySelector(".icon_favorited") ? true : false,
                   };
                   view(msg, false);
-                  this.saveData();
+                  OGBIData.Save();
                 });
             } else {
               // discoveries
-              if (!this.json.discoveries[id]) {
+              if (!OGBIData.json.discoveries[id]) {
                 date = date.split(" ")[0].slice(0, -4) + date.split(" ")[0].slice(-2);
                 const lfFound = ["lifeform1", "lifeform2", "lifeform3", "lifeform4"];
-                let sums = this.json.discoveriesSums[date];
+                let sums = OGBIData.json.discoveriesSums[date];
                 if (!sums) {
                   sums = {
                     found: [0, 0, 0, 0],
@@ -372,15 +374,15 @@ function analyzer() {
                   });
 
                 sums.type[type] ? (sums.type[type] += 1) : (sums.type[type] = 1);
-                this.json.discoveriesSums[date] = sums;
-                this.json.discoveries[id] = {
+                OGBIData.json.discoveriesSums[date] = sums;
+                OGBIData.json.discoveries[id] = {
                   result: type,
                   date: new Date(DateTime.dateStrToDate(date)),
                   favorited: msg.querySelector(".icon_favorited") ? true : false,
                 };
-                this.saveData();
+                OGBIData.Save();
               }
-              msg.classList.add("ogk-" + this.json.discoveries[id].result.toLowerCase());
+              msg.classList.add("ogk-" + OGBIData.json.discoveries[id].result.toLowerCase());
             }
           }
         });
@@ -402,20 +404,20 @@ function analyzer() {
             if (!isCR) {
               msg.classList.add("ogk-combat-contact");
             }
-            if (id in this.json.combats) {
+            if (id in OGBIData.json.combats) {
               if (msg.querySelector(".icon_favorited")) {
-                this.json.combats[id].favorited = true;
-                this.json.combats[id].date = new Date();
+                OGBIData.json.combats[id].favorited = true;
+                OGBIData.json.combats[id].date = new Date();
               } else {
-                this.json.combats[id].favorited = false;
+                OGBIData.json.combats[id].favorited = false;
               }
-              if (this.json.combats[id].coordinates.position == 16) {
+              if (OGBIData.json.combats[id].coordinates.position == 16) {
                 msg.classList.add("ogk-expedition");
-              } else if (this.json.combats[id].isProbes) {
+              } else if (OGBIData.json.combats[id].isProbes) {
                 msg.classList.add("ogk-combat-probes");
-              } else if (this.json.combats[id].draw) {
+              } else if (OGBIData.json.combats[id].draw) {
                 msg.classList.add("ogk-combat-draw");
-              } else if (this.json.combats[id].win) {
+              } else if (OGBIData.json.combats[id].win) {
                 msg.classList.add("ogk-combat-win");
               } else {
                 msg.classList.add("ogk-combat");
@@ -428,8 +430,8 @@ function analyzer() {
                 if (cr === null) return;
                 let date = getFormatedDate(cr.timestamp, "[d].[m].[y]");
                 if (cr.coordinates.position == 16) {
-                  if (!this.json.expeditionSums[date]) {
-                    this.json.expeditionSums[date] = {
+                  if (!OGBIData.json.expeditionSums[date]) {
+                    OGBIData.json.expeditionSums[date] = {
                       found: [0, 0, 0, 0],
                       harvest: [0, 0],
                       fleet: {},
@@ -440,15 +442,15 @@ function analyzer() {
                     };
                   }
                   for (let [key, value] of Object.entries(cr.losses)) {
-                    if (this.json.expeditionSums[date].losses[key]) {
-                      this.json.expeditionSums[date].losses[key] += value;
+                    if (OGBIData.json.expeditionSums[date].losses[key]) {
+                      OGBIData.json.expeditionSums[date].losses[key] += value;
                     } else {
-                      this.json.expeditionSums[date].losses[key] = value;
+                      OGBIData.json.expeditionSums[date].losses[key] = value;
                     }
                   }
                 } else {
-                  if (!this.json.combatsSums[date]) {
-                    this.json.combatsSums[date] = {
+                  if (!OGBIData.json.combatsSums[date]) {
+                    OGBIData.json.combatsSums[date] = {
                       loot: [0, 0, 0],
                       harvest: [0, 0],
                       losses: {},
@@ -461,36 +463,36 @@ function analyzer() {
                     };
                   }
                   if (!cr.isProbes) {
-                    if (cr.win) this.json.combatsSums[date].wins += 1;
-                    if (cr.draw) this.json.combatsSums[date].draws += 1;
-                    this.json.combatsSums[date].count += 1;
-                    this.json.combatsSums[date].topCombats.push({
+                    if (cr.win) OGBIData.json.combatsSums[date].wins += 1;
+                    if (cr.draw) OGBIData.json.combatsSums[date].draws += 1;
+                    OGBIData.json.combatsSums[date].count += 1;
+                    OGBIData.json.combatsSums[date].topCombats.push({
                       debris: cr.debris.metalTotal + cr.debris.crystalTotal,
                       loot: (cr.loot.metal + cr.loot.crystal + cr.loot.deuterium) * (cr.win ? 1 : -1),
                       ennemi: cr.ennemi.name,
                       losses: cr.ennemi.losses,
                     });
-                    this.json.combatsSums[date].topCombats.sort(
+                    OGBIData.json.combatsSums[date].topCombats.sort(
                       (a, b) => b.debris + Math.abs(b.loot) - (a.debris + Math.abs(a.loot))
                     );
-                    if (this.json.combatsSums[date].topCombats.length > 3) {
-                      this.json.combatsSums[date].topCombats.pop();
+                    if (OGBIData.json.combatsSums[date].topCombats.length > 3) {
+                      OGBIData.json.combatsSums[date].topCombats.pop();
                     }
                   }
                   if (cr.win) {
-                    this.json.combatsSums[date].loot[0] += cr.loot.metal;
-                    this.json.combatsSums[date].loot[1] += cr.loot.crystal;
-                    this.json.combatsSums[date].loot[2] += cr.loot.deuterium;
+                    OGBIData.json.combatsSums[date].loot[0] += cr.loot.metal;
+                    OGBIData.json.combatsSums[date].loot[1] += cr.loot.crystal;
+                    OGBIData.json.combatsSums[date].loot[2] += cr.loot.deuterium;
                   } else {
-                    this.json.combatsSums[date].loot[0] -= cr.loot.metal;
-                    this.json.combatsSums[date].loot[1] -= cr.loot.crystal;
-                    this.json.combatsSums[date].loot[2] -= cr.loot.deuterium;
+                    OGBIData.json.combatsSums[date].loot[0] -= cr.loot.metal;
+                    OGBIData.json.combatsSums[date].loot[1] -= cr.loot.crystal;
+                    OGBIData.json.combatsSums[date].loot[2] -= cr.loot.deuterium;
                   }
                   for (let [key, value] of Object.entries(cr.losses)) {
-                    if (this.json.combatsSums[date].losses[key]) {
-                      this.json.combatsSums[date].losses[key] += value;
+                    if (OGBIData.json.combatsSums[date].losses[key]) {
+                      OGBIData.json.combatsSums[date].losses[key] += value;
                     } else {
-                      this.json.combatsSums[date].losses[key] = value;
+                      OGBIData.json.combatsSums[date].losses[key] = value;
                     }
                   }
                 }
@@ -505,7 +507,7 @@ function analyzer() {
                 } else {
                   msg.classList.add("ogk-combat");
                 }
-                this.json.combats[id] = {
+                OGBIData.json.combats[id] = {
                   timestamp: cr.timestamp,
                   favorited: msg.querySelector(".icon_favorited") ? true : false,
                   coordinates: cr.coordinates,
@@ -513,7 +515,7 @@ function analyzer() {
                   draw: cr.draw,
                   isProbes: cr.isProbes,
                 };
-                this.saveData();
+                OGBIData.Save();
               });
             }
           }, ix * 50);
@@ -531,11 +533,11 @@ function analyzer() {
         let id = document.querySelector("li[id=subtabs-nfFleet24].ui-state-active").getAttribute("aria-controls");
         document.querySelectorAll(`div[id=${id}] li.msg`).forEach((msg) => {
           let id = msg.getAttribute("data-msg-id");
-          if (id in this.json.harvests) {
-            if (this.json.harvests[id].coords.split(":")[2] == 16) {
+          if (id in OGBIData.json.harvests) {
+            if (OGBIData.json.harvests[id].coords.split(":")[2] == 16) {
               msg.classList.add("ogk-expedition");
             } else {
-              if (this.json.harvests[id].combat) {
+              if (OGBIData.json.harvests[id].combat) {
                 msg.classList.add("ogk-combat");
               } else {
                 msg.classList.add("ogk-harvest");
@@ -566,8 +568,8 @@ function analyzer() {
               }
             }
             if (coords.split(":")[2] == 16) {
-              if (!this.json.expeditionSums[date]) {
-                this.json.expeditionSums[date] = {
+              if (!OGBIData.json.expeditionSums[date]) {
+                OGBIData.json.expeditionSums[date] = {
                   found: [0, 0, 0, 0],
                   harvest: [0, 0],
                   fleet: {},
@@ -577,11 +579,11 @@ function analyzer() {
                   adjust: [0, 0, 0],
                 };
               }
-              this.json.expeditionSums[date].harvest[0] += met;
-              this.json.expeditionSums[date].harvest[1] += cri;
+              OGBIData.json.expeditionSums[date].harvest[0] += met;
+              OGBIData.json.expeditionSums[date].harvest[1] += cri;
             } else {
-              if (!this.json.combatsSums[date]) {
-                this.json.combatsSums[date] = {
+              if (!OGBIData.json.combatsSums[date]) {
+                OGBIData.json.combatsSums[date] = {
                   loot: [0, 0, 0],
                   losses: {},
                   harvest: [0, 0],
@@ -593,17 +595,17 @@ function analyzer() {
                   draws: 0,
                 };
               }
-              this.json.combatsSums[date].harvest[0] += met;
-              this.json.combatsSums[date].harvest[1] += cri;
+              OGBIData.json.combatsSums[date].harvest[0] += met;
+              OGBIData.json.combatsSums[date].harvest[1] += cri;
             }
-            this.json.harvests[id] = {
+            OGBIData.json.harvests[id] = {
               date: new Date(DateTime.dateStrToDate(date)),
               metal: met,
               crystal: cri,
               coords: coords,
               combat: combat,
             };
-            this.saveData();
+            OGBIData.Save();
           }
         });
       };

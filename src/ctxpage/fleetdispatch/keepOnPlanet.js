@@ -224,8 +224,7 @@ function keepOnPlanetDialog(coords, btn, context) {
       OGBIData.json.options.defaultKept = kept;
       OGBIData.json.options.defaultKeptMoon = defaultKeptMoon;
     }
-    OGBIData.json.needSync = true;
-    OGBIData.Save();
+    OGBIData.needSync = true;
     document.querySelector(".ogl-dialog .close-tooltip").click();
     location.reload();
   });
@@ -233,8 +232,7 @@ function keepOnPlanetDialog(coords, btn, context) {
     let resetBtn = box.appendChild(createDOM("button", { class: "btn_blue ogl-btn_red" }, Translator.translate(26)));
     resetBtn.addEventListener("click", () => {
       delete OGBIData.json.options.kept[coords];
-      OGBIData.json.needSync = true;
-      OGBIData.Save();
+      OGBIData.needSync = true;
       document.querySelector(".ogl-dialog .close-tooltip").click();
       location.reload();
     });
