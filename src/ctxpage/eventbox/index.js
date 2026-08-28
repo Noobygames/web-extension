@@ -3,6 +3,7 @@ import Translator from "../../util/translate.js";
 import OGBIData from "../../util/OGBIData.js";
 import { updateresourceDetail } from "../empireOverview/index.js";
 import { updateEmpireData } from "../empire/index.js";
+import flying from "../../util/flying.js";
 
 /**
  * The fleet-movement panel OGame drops in over the top bar, with OGI's own totals.
@@ -14,13 +15,13 @@ function eventBox(context) {
   let interval = setInterval(() => {
     if (document.querySelector("#eventboxLoading").style.display == "none") {
       clearInterval(interval);
-      const flying = flying();
-      if (JSON.stringify(OGBIData.json.flying.ids) != JSON.stringify(flying.ids)) {
+      const currentFlying = flying();
+      if (JSON.stringify(OGBIData.json.flying.ids) != JSON.stringify(currentFlying.ids)) {
         let gone = [];
         OGBIData.json.flying.ids &&
           OGBIData.json.flying.ids.forEach((mov) => {
             let found = false;
-            flying.ids.forEach((oldMov) => {
+            currentFlying.ids.forEach((oldMov) => {
               if (mov.id == oldMov.id) {
                 found = true;
               }
@@ -31,7 +32,7 @@ function eventBox(context) {
           });
         let added = [];
         OGBIData.json.flying.ids &&
-          flying.ids.forEach((mov) => {
+          currentFlying.ids.forEach((mov) => {
             let found = false;
             OGBIData.json.flying.ids.forEach((oldMov) => {
               if (mov.id == oldMov.id) {
@@ -99,7 +100,7 @@ function eventBox(context) {
         }
         OGBIData.json.needSync = true;
       }
-      OGBIData.json.flying = flying;
+      OGBIData.json.flying = currentFlying;
       OGBIData.Save();
       updateresourceDetail(context.overviewContext);
     }
