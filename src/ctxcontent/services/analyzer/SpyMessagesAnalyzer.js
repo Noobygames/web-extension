@@ -627,7 +627,7 @@ class SpyMessagesAnalyzer {
           stalk.stalk(nameColLink, p);
         }
 
-        Markerui.add(report.coords, colorsColContent, p.id, false);
+        Markerui.add(report.coords, colorsColContent, p.id);
         Markerui.display(colorsColContent, report.coords);
       });
 

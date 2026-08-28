@@ -94,7 +94,14 @@ function displayPlayer(parent, id) {
   }
 }
 
-function add(_context, coords, parent, id, _moon) {
+/**
+ * `parent` is the element the colour picker hangs off; `coords` keys the marker store.
+ *
+ * The two unused parameters this used to carry (`_context` first, `_moon` last) are gone:
+ * SpyMessagesAnalyzer called it without the leading one, so `parent` received the player
+ * id and every spy table threw "parent.addEventListener is not a function".
+ */
+function add(coords, parent, id) {
   const div = createDOM("div", { class: "ogl-colorChoice" });
   const markers = OGBIData.markers;
 

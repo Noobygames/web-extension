@@ -764,7 +764,7 @@ function targetList(context, show) {
 }
 
 function addMarkerUI(_context, coords, parent, id, _moon) {
-  markerui.add(_context, coords, parent, id, _moon);
+  markerui.add(coords, parent, id);
 }
 
 function stalk(sender, player, delay) {

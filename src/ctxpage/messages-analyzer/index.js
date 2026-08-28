@@ -50,6 +50,17 @@ const logger = getLogger("message-analyzer");
 function analyzer() {
   if (this.page !== "messages") return;
 
+  // OGame 13 rebuilt the messages tab strip: the `#tabs-nf*` ids and the `aria-controls`
+  // wiring `MessageTabTrigger` needs are gone, replaced by `.mainTabs > .singleTab` with
+  // `.tabImage.tb_fleets` and friends. Constructing MainTabs therefore threw on every
+  // messages page ("Message tab #tabs-nfFleets not found"), which aborted this function
+  // before it observed anything - so this whole path, `updateTimeZone()` included, has
+  // been inert on 13 regardless. Bail explicitly rather than throwing once per page load.
+  if (!document.querySelector("#tabs-nfFleets")) {
+    logger.debug("legacy messages analyzer skipped: pre-13 tab markup is gone");
+    return;
+  }
+
   let normalized = ["Metal", "Crystal", "Deuterium", "AM"];
   let ressources = this.json.resNames;
   let cyclosName = "";
