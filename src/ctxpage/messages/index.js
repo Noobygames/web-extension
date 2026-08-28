@@ -1,11 +1,10 @@
-import OGIObserver from "../../util/observer.js";
+import OGBIObserver from "../../util/observer.js";
 import { getLogger } from "../../util/logger.js";
 import SpyMessagesAnalyzer from "../../ctxcontent/services/analyzer/SpyMessagesAnalyzer.js";
 import ExpeditionMessagesAnalyzer from "../../ctxcontent/services/analyzer/ExpeditionMessagesAnalyzer.js";
 import FightMessagesAnalyzer from "../../ctxcontent/services/analyzer/FightMessagesAnalyzer.js";
 import HarvestMessagesAnalyzer from "../../ctxcontent/services/analyzer/HarvestMessagesAnalyzer.js";
 import TradeMessagesAnalyzer from "../../ctxcontent/services/analyzer/TradeMessagesAnalyzer.js";
-import OgamePageData from "../../util/OgamePageData.js";
 
 export const messagesTabs = Object.freeze({
   // Name: ID
@@ -27,7 +26,7 @@ class Messages {
   #analyzers;
 
   constructor() {
-    const obs = new OGIObserver();
+    const obs = new OGBIObserver();
     this.#logger = getLogger("messages");
 
     this.#analyzers = [

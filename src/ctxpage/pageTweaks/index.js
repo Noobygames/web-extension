@@ -1,31 +1,24 @@
 import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
+import { createDOM } from "../../util/dom.js";
+import { toFormattedNumber } from "../../util/numbers.js";
 import * as Numbers from "../../util/numbers.js";
 import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as wait from "../../util/wait.js";
-import * as time from "../../util/time.js";
-import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import DateTime from "../../util/dateTime.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import PlayerClass from "../../util/enum/playerClass.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import missionType from "../../util/enum/missionType.js";
 import { getOption } from "../conf-options.js";
-import { changeOGSelect } from "../../util/dom.js";
-import OGIObserver from "../../util/observer.js";
-import { pageSignal } from "../../util/abort.js";
+import { openPlanetList } from "../fleetdispatch/index.js";
+import { tooltip } from "../../util/tooltip.js";
+import * as needsUtil from "../../util/needs.js";
+import Notifier from "../../util/Notifier.js";
 
 /**
  * The small changes OGI makes to pages it does not otherwise own: the extra top-bar
  * links, the mobile navigation arrows, the quick planet list, the debris shortcut and
  * the message cleanup.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md. Not one module in spirit -
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. Not one module in spirit -
  * one file for the leftovers that were too small to justify their own, and each is
  * independent of the others.
  *
@@ -119,16 +112,16 @@ function uvlinks(context) {
         }
 
         const apiTechData = {
-          109: { level: OGIData.json.technology[109] },
-          110: { level: OGIData.json.technology[110] },
-          111: { level: OGIData.json.technology[111] },
-          115: { level: OGIData.json.technology[115] },
-          117: { level: OGIData.json.technology[117] },
-          118: { level: OGIData.json.technology[118] },
-          114: { level: OGIData.json.technology[114] },
+          109: { level: OGBIData.json.technology[109] },
+          110: { level: OGBIData.json.technology[110] },
+          111: { level: OGBIData.json.technology[111] },
+          115: { level: OGBIData.json.technology[115] },
+          117: { level: OGBIData.json.technology[117] },
+          118: { level: OGBIData.json.technology[118] },
+          114: { level: OGBIData.json.technology[114] },
         };
         linkButton.addEventListener("click", () => {
-          if (!OGIData.json.options.simulator) {
+          if (!OGBIData.json.options.simulator) {
             popupUtil.popup(
               null,
               DOM.createDOMSanitized("div", { class: "ogl-warning-dialog overmark" }, Translator.translate(169))
@@ -150,7 +143,7 @@ function uvlinks(context) {
             };
             const base64 = btoa(JSON.stringify(json));
             window.open(
-              `${OGIData.json.options.simulator}${context.univerviewLang}?SR_KEY=${key}#prefill=${base64}`,
+              `${OGBIData.json.options.simulator}${context.univerviewLang}?SR_KEY=${key}#prefill=${base64}`,
               "_blank"
             );
           }
@@ -187,27 +180,27 @@ function uvlinks(context) {
 }
 
 function cleanupMessages(context) {
-  for (let [id, result] of Object.entries(OGIData.json.expeditions)) {
+  for (let [id, result] of Object.entries(OGBIData.json.expeditions)) {
     if (!result.favorited && new Date() - new Date(result.date) > 5 * 24 * 60 * 60 * 1e3) {
-      delete OGIData.json.expeditions[id];
+      delete OGBIData.json.expeditions[id];
     }
   }
-  for (let [id, result] of Object.entries(OGIData.json.discoveries)) {
+  for (let [id, result] of Object.entries(OGBIData.json.discoveries)) {
     if (!result.favorited && new Date() - new Date(result.date) > 5 * 24 * 60 * 60 * 1e3) {
-      delete OGIData.json.discoveries[id];
+      delete OGBIData.json.discoveries[id];
     }
   }
-  for (let [id, result] of Object.entries(OGIData.json.combats)) {
+  for (let [id, result] of Object.entries(OGBIData.json.combats)) {
     if (!result.favorited && new Date() - new Date(result.timestamp) > 30 * 24 * 60 * 60 * 1e3) {
-      delete OGIData.json.combats[id];
+      delete OGBIData.json.combats[id];
     }
   }
-  for (let [id, result] of Object.entries(OGIData.json.harvests)) {
+  for (let [id, result] of Object.entries(OGBIData.json.harvests)) {
     if (new Date() - new Date(result.date) > 5 * 24 * 60 * 60 * 1e3) {
-      delete OGIData.json.harvests[id];
+      delete OGBIData.json.harvests[id];
     }
   }
-  OGIData.Save();
+  OGBIData.Save();
 }
 
 function quickPlanetList(context) {
@@ -257,7 +250,7 @@ function checkDebris(context) {
           );
         });
         element.querySelector(".microdebris").appendChild(frag);
-        if (total > OGIData.json.options.rvalLimit) {
+        if (total > OGBIData.json.options.rvalLimit) {
           element.classList.add("ogl-active");
         }
       }
@@ -277,7 +270,7 @@ function checkDebris(context) {
         );
       });
       debris16.replaceChildren(div);
-      if (total > OGIData.json.options.rvalLimit) {
+      if (total > OGBIData.json.options.rvalLimit) {
         debris16.classList.add("ogl-active");
       }
     }
@@ -405,7 +398,7 @@ function utilities(context) {
       // No timezoneDiff is added here on purpose: data-arrival-time / data-end-time are unix
       // timestamps and therefore already carry the correct instant. Adding the diff on top
       // double-corrects and pushes the display one offset too far (review of PR #485).
-      if (OGIData.json.options.timeZone) {
+      if (OGBIData.json.options.timeZone) {
         const absTime = fleet.querySelector(".absTime");
         const nextAbsTime = fleet.querySelector(".nextabsTime");
         const openCloseDetails = fleet.querySelector(".openCloseDetails");
@@ -430,7 +423,7 @@ function utilities(context) {
       let type = parseInt(fleet.getAttribute("data-mission-type"));
       let originCoords = fleet.querySelector(".originCoords").textContent;
       const isOriginMoon = !!fleet.querySelector(".originData .moon");
-      OGIData.empire.forEach((planet) => {
+      OGBIData.empire.forEach((planet) => {
         if (planet.coordinates == originCoords) {
           fleet.querySelector(".timer").classList.add("friendly");
           fleet.querySelector(".nextTimer") && fleet.querySelector(".nextTimer").classList.add("friendly");
@@ -478,7 +471,7 @@ function utilities(context) {
         // wall-clock text in the *server* timezone. new Date(y, m, d, ...) reads them as browser-local,
         // so the resulting instant is off by timezoneDiff whenever the two zones differ. With the OGI
         // timezone option on the user wants local time, so the diff has to be added back here.
-        const timeZoneChangeReverse = OGIData.json.options.timeZone ? OGIData.json.timezoneDiff : 0;
+        const timeZoneChangeReverse = OGBIData.json.options.timeZone ? OGBIData.json.timezoneDiff : 0;
         const baseTime =
           new Date(backDate.year, backDate.month - 1, backDate.day, backDate.h, backDate.m, backDate.s).getTime() +
           timeZoneChangeReverse * 1e3;
@@ -572,7 +565,7 @@ function utilities(context) {
 }
 
 function navigationArrows(context) {
-  if (context.isMobile && OGIData.json.options.navigationArrows) {
+  if (context.isMobile && OGBIData.json.options.navigationArrows) {
     let navPanel = document.querySelector("#links").appendChild(createDOM("div", { class: "ogk-navPanel" }));
     let left = navPanel.appendChild(createDOM("div", { class: "galaxy_icons ogk-nav left" }));
     left.addEventListener("click", () =>

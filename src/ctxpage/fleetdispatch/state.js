@@ -3,7 +3,7 @@
  *
  * An object rather than a dozen exported bindings: the parts live in separate files
  * after the Phase 3 split, and an imported binding cannot be reassigned from another
- * module. Every one of these was a field on OGInfinity that only this page ever read -
+ * module. Every one of these was a field on OGBeyondInfinity that only this page ever read -
  * one dispatch page per page load, which is the scope they have here.
  */
 export const fleetState = {
@@ -25,7 +25,7 @@ export const fleetState = {
   /**
    * Which shortcut set up the current dispatch.
    *
-   * These were `this.expedition` and `this.collect` on OGInfinity - the same two names
+   * These were `this.expedition` and `this.collect` on OGBeyondInfinity - the same two names
    * as the methods, which `start()` then overwrote with `false`. That is why each
    * method could only ever run once, and why they carry the `…Mode` suffix here.
    */

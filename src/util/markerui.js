@@ -1,14 +1,14 @@
 import { createDOM } from "./dom.js";
 import { tooltip } from "./tooltip.js";
 import Player from "./player.js";
-import OGIData from "./OGIData.js";
+import OGBIData from "./OGIData.js";
 import * as stalk from "./stalk.js";
 
 const colors = ["red", "orange", "yellow", "green", "blue", "violet", "gray", "brown"];
 
 function addPlayer(parent, playerId) {
   const div = createDOM("div", { class: "ogl-colorChoice" });
-  const playerMarkers = OGIData.playerMarkers;
+  const playerMarkers = OGBIData.playerMarkers;
 
   colors.forEach((color) => {
     const circle = div.appendChild(createDOM("div", { "data-marker": color }));
@@ -26,7 +26,7 @@ function addPlayer(parent, playerId) {
           delete playerMarkers[playerId];
 
           //remove markers for each planet is marked with the same color (colors can be overridden)
-          const coordsMarkers = OGIData.markers;
+          const coordsMarkers = OGBIData.markers;
           player.planets.forEach((planet) => {
             coordsMarkers[planet.coords] = coordsMarkers[planet.coords] || {};
 
@@ -35,7 +35,7 @@ function addPlayer(parent, playerId) {
               delete coordsMarkers[planet.coords];
             }
           });
-          OGIData.markers = coordsMarkers;
+          OGBIData.markers = coordsMarkers;
 
           // Update UI
           if (parent.getAttribute("data-context") === "players-highscore") {
@@ -47,14 +47,14 @@ function addPlayer(parent, playerId) {
           playerMarkers[playerId].color = color;
 
           /// Set markers for each planet
-          const coordsMarkers = OGIData.markers;
+          const coordsMarkers = OGBIData.markers;
           player.planets.forEach((planet) => {
             coordsMarkers[planet.coords] = coordsMarkers[planet.coords] || {};
             coordsMarkers[planet.coords].id = playerId;
             coordsMarkers[planet.coords].color = color;
             coordsMarkers[planet.coords].moon = planet.moon !== null && planet.moon !== undefined;
           });
-          OGIData.markers = coordsMarkers;
+          OGBIData.markers = coordsMarkers;
 
           // Update UI
           circle.classList.add("ogl-active");
@@ -69,7 +69,7 @@ function addPlayer(parent, playerId) {
           displayPlayer(parent, playerId);
         }
 
-        OGIData.playerMarkers = playerMarkers;
+        OGBIData.playerMarkers = playerMarkers;
 
         stalk.side();
       });
@@ -84,7 +84,7 @@ function addPlayer(parent, playerId) {
 function displayPlayer(parent, id) {
   const element = parent.closest("tr");
 
-  const playerMarkers = OGIData.playerMarkers;
+  const playerMarkers = OGBIData.playerMarkers;
   if (playerMarkers[id]) {
     element.classList.add("ogl-marked");
     element.setAttribute("data-marked", playerMarkers[id].color);
@@ -96,7 +96,7 @@ function displayPlayer(parent, id) {
 
 function add(coords, parent, id) {
   const div = createDOM("div", { class: "ogl-colorChoice" });
-  const markers = OGIData.markers;
+  const markers = OGBIData.markers;
 
   colors.forEach((color) => {
     const circle = div.appendChild(createDOM("div", { "data-marker": color }));
@@ -135,7 +135,7 @@ function add(coords, parent, id) {
           display(parent, coords);
         }
 
-        OGIData.markers = markers;
+        OGBIData.markers = markers;
 
         stalk.side();
       });
@@ -149,9 +149,9 @@ function add(coords, parent, id) {
 
 function display(parent, coords) {
   const element = parent.closest("tr");
-  if (OGIData.markers[coords]) {
+  if (OGBIData.markers[coords]) {
     element.classList.add("ogl-marked");
-    element.setAttribute("data-marked", OGIData.markers[coords].color);
+    element.setAttribute("data-marked", OGBIData.markers[coords].color);
   } else {
     element.classList.remove("ogl-marked");
     element.removeAttribute("data-marked");

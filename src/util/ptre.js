@@ -4,7 +4,7 @@ import Translator from "./translate.js";
 import { createDOM } from "./dom.js";
 import { formatToUnits } from "./numbers.js";
 import { popup } from "./popup.js";
-import OGIData from "./OGIData.js";
+import OGBIData from "./OGIData.js";
 
 const universe = window.location.host.replace(/\D/g, "");
 
@@ -13,7 +13,7 @@ export function action(frame, player) {
 
   let container = createDOM("div", { class: "ptreContent" });
 
-  if (!OGIData.options.ptreTK) {
+  if (!OGBIData.options.ptreTK) {
     container.textContent = Translator.translate(151);
     popup(null, container);
     return;
@@ -21,7 +21,7 @@ export function action(frame, player) {
 
   let cleanPlayerName = encodeURIComponent(player.name);
   ptreService
-    .getPlayerInfos(OgamePageData.gameLang, universe, OGIData.options.ptreTK, cleanPlayerName, player.id, frame)
+    .getPlayerInfos(OgamePageData.gameLang, universe, OGBIData.options.ptreTK, cleanPlayerName, player.id, frame)
     .then((result) => {
       if (result.code == 1) {
         let arrData = result.activity_array.succes == 1 ? JSON.parse(result.activity_array.activity_array) : null;

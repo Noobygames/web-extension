@@ -91,7 +91,7 @@ Where singleton can reset through own API, prefer that — `OGIData.json = {…}
 | Content storage   | `ctxcontent/services/universe.storage.js`                                              | Key namespacing, Map/Set round-trip. 95%                                                              |
 | API parsers       | `ctxcontent/helpers/universe.{planets,players,alliances}.js`                           | XML fixtures, `fetch` stubbed.                                                                        |
 
-| Page context seam | `util/pageContext.js` | Everything `OGInfinity` constructor read out of DOM. 100% |
+| Page context seam | `util/pageContext.js` | Everything `OGBeyondInfinity` constructor read out of DOM. 100% |
 | Calculation core | `util/gameFormulas.js` | `consumption`, `minesProduction`, `research`, `building`, five `roi*` functions, `getBestRoi`. Characterisation only: values recorded before the Phase 3 move and unchanged after it. |
 | Service worker | `background.js` | Persistence across worker restart, alarm scheduling, notification clicks, per-domain sync. 81% |
 | Message analyzers | `ctxcontent/services/analyzer/*` | Tab dispatch for all five; parsing paths for harvest, trade, expedition fights. |
@@ -102,7 +102,7 @@ overview page is ~400 KB markup and hide which attribute a test depend on.
 Every selector in there is one `src/` read. **OGame 13 markup only** - v12
 support dropped, no second variant to keep in step.
 
-**Reaching into `ogkush.js`.** Module export `OGInfinity` for tests only, and
+**Reaching into `ogkush.js`.** Module export `OGBeyondInfinity` for tests only, and
 `test/bundle.test.js` assert this stay the _only_ export of page bundle.
 Importing module run its boot IIFE, so test file `setupBrowser()` URL use
 `component=intro` - one of three pages IIFE bail out on before touching

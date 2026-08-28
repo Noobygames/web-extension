@@ -1,6 +1,6 @@
 import { getLogger } from "../../../util/logger.js";
 import { messagesTabs } from "../../../ctxpage/messages/index.js";
-import OGIData from "../../../util/OGIData.js";
+import OGBIData from "../../../util/OGIData.js";
 import MessageType from "../../../util/enum/messageType.js";
 import { toFormattedNumber } from "../../../util/numbers.js";
 import { createDOM } from "../../../util/dom.js";
@@ -53,7 +53,7 @@ class TradeMessagesAnalyzer {
     };
 
     this.#getTradesMessages().forEach((message) => {
-      const trades = { ...OGIData.trades };
+      const trades = { ...OGBIData.trades };
       const msgId = message.getAttribute("data-msg-id");
 
       if (trades[msgId]) {
@@ -69,7 +69,7 @@ class TradeMessagesAnalyzer {
         .toString()
         .padStart(2, "0")}.${newDate.getFullYear().toString().slice(2)}`;
 
-      const tradesSums = { ...OGIData.tradesSums };
+      const tradesSums = { ...OGBIData.tradesSums };
 
       if (!tradesSums[datePoint]) {
         tradesSums[datePoint] = {

@@ -1,6 +1,6 @@
 import { getLogger } from "../../../util/logger.js";
 import { messagesTabs } from "../../../ctxpage/messages/index.js";
-import OGIData from "../../../util/OGIData.js";
+import OGBIData from "../../../util/OGIData.js";
 import { createDOM } from "../../../util/dom.js";
 import { toFormattedNumber } from "../../../util/numbers.js";
 import { fleetCost } from "../../../util/fleetCost.js";
@@ -39,8 +39,8 @@ class ExpeditionMessagesAnalyzer {
 
   #parseExpeditions() {
     this.#getExpeditionsMessages().forEach((message) => {
-      const expeditions = OGIData.expeditions;
-      const expeditionSums = OGIData.expeditionSums;
+      const expeditions = OGBIData.expeditions;
+      const expeditionSums = OGBIData.expeditionSums;
       const msgId = message.getAttribute("data-msg-id");
 
       const sizeBlacklist = ["bhole", "void", "nothing", "fleetLost"];
@@ -267,8 +267,8 @@ class ExpeditionMessagesAnalyzer {
 
       expeditionSums[datePoint] = summary;
 
-      OGIData.expeditions = expeditions;
-      OGIData.expeditionSums = expeditionSums;
+      OGBIData.expeditions = expeditions;
+      OGBIData.expeditionSums = expeditionSums;
     });
   }
 
@@ -287,8 +287,8 @@ class ExpeditionMessagesAnalyzer {
     const messages = this.#getDiscoveryMessages();
 
     messages.forEach((message) => {
-      const discoveries = OGIData.discoveries;
-      const discoveriesSums = OGIData.discoveriesSums;
+      const discoveries = OGBIData.discoveries;
+      const discoveriesSums = OGBIData.discoveriesSums;
 
       const msgId = message.getAttribute("data-msg-id");
 
@@ -372,8 +372,8 @@ class ExpeditionMessagesAnalyzer {
       };
 
       displayLabel(message);
-      OGIData.discoveries = discoveries;
-      OGIData.discoveriesSums = discoveriesSums;
+      OGBIData.discoveries = discoveries;
+      OGBIData.discoveriesSums = discoveriesSums;
     });
   }
 }

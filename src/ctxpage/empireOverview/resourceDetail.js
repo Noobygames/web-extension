@@ -1,21 +1,10 @@
 import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
+import { createDOM } from "../../util/dom.js";
+import { toFormattedNumber } from "../../util/numbers.js";
 import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import { tabs } from "../../util/tabs.js";
-import { getOption } from "../conf-options.js";
-import { CARGO_SHIP_IDS } from "../../util/harvestPlanner.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { SUPPLIES_TECHID, FACILITIES_TECHID } from "../../util/gameConstants.js";
-import { building, consumption, minesProduction } from "../../util/gameFormulas.js";
+import OGBIData from "../../util/OGIData.js";
+import { tooltip } from "../../util/tooltip.js";
 
 /**
  * The resource panel that replaces OGame's own numbers in the top bar, and the update
@@ -40,7 +29,7 @@ function resourceDetail(context) {
       }
       rechts.style.right = "0px";
     });
-  if (!OGIData.json.options.empire || document.querySelectorAll("div[id*=planet-").length != OGIData.empire.length) {
+  if (!OGBIData.json.options.empire || document.querySelectorAll("div[id*=planet-").length != OGBIData.empire.length) {
     return;
   }
   document.querySelector(".ogl-overview-icon").classList.add("ogl-active");
@@ -50,22 +39,22 @@ function resourceDetail(context) {
   flying.appendChild(
     createDOM(
       "span",
-      { class: "tooltip ogl-metal", "data-title": toFormattedNumber(OGIData.json.flying.metal, 0) },
-      toFormattedNumber(OGIData.json.flying.metal, null, true)
+      { class: "tooltip ogl-metal", "data-title": toFormattedNumber(OGBIData.json.flying.metal, 0) },
+      toFormattedNumber(OGBIData.json.flying.metal, null, true)
     )
   );
   flying.appendChild(
     createDOM(
       "span",
-      { class: "tooltip ogl-crystal", "data-title": toFormattedNumber(OGIData.json.flying.crystal, 0) },
-      toFormattedNumber(OGIData.json.flying.crystal, null, true)
+      { class: "tooltip ogl-crystal", "data-title": toFormattedNumber(OGBIData.json.flying.crystal, 0) },
+      toFormattedNumber(OGBIData.json.flying.crystal, null, true)
     )
   );
   flying.appendChild(
     createDOM(
       "span",
-      { class: "tooltip ogl-deut", "data-title": toFormattedNumber(OGIData.json.flying.deuterium, 0) },
-      toFormattedNumber(OGIData.json.flying.deuterium, null, true)
+      { class: "tooltip ogl-deut", "data-title": toFormattedNumber(OGBIData.json.flying.deuterium, 0) },
+      toFormattedNumber(OGBIData.json.flying.deuterium, null, true)
     )
   );
   let flyingSum = createDOM("div", { class: "smallplanet smaller ogl-summary" });
@@ -80,7 +69,7 @@ function resourceDetail(context) {
   let mSumM = 0,
     cSumM = 0,
     dSumM = 0;
-  OGIData.empire.forEach((elem) => {
+  OGBIData.empire.forEach((elem) => {
     if (!elem) return;
     let planet = list.querySelector(`div[id=planet-${elem.id}]`);
     if (!planet) return;
@@ -216,9 +205,9 @@ function resourceDetail(context) {
       "span",
       {
         class: "tooltip ogl-metal",
-        "data-title": toFormattedNumber(Math.floor(mSumP + mSumM + OGIData.json.flying.metal)),
+        "data-title": toFormattedNumber(Math.floor(mSumP + mSumM + OGBIData.json.flying.metal)),
       },
-      toFormattedNumber(Math.floor(mSumP + mSumM + OGIData.json.flying.metal), null, true)
+      toFormattedNumber(Math.floor(mSumP + mSumM + OGBIData.json.flying.metal), null, true)
     )
   );
   sumres.appendChild(
@@ -226,9 +215,9 @@ function resourceDetail(context) {
       "span",
       {
         class: "tooltip ogl-crystal",
-        "data-title": toFormattedNumber(Math.floor(cSumP + cSumM + OGIData.json.flying.crystal)),
+        "data-title": toFormattedNumber(Math.floor(cSumP + cSumM + OGBIData.json.flying.crystal)),
       },
-      toFormattedNumber(Math.floor(cSumP + cSumM + OGIData.json.flying.crystal), null, true)
+      toFormattedNumber(Math.floor(cSumP + cSumM + OGBIData.json.flying.crystal), null, true)
     )
   );
   sumres.appendChild(
@@ -236,9 +225,9 @@ function resourceDetail(context) {
       "span",
       {
         class: "tooltip ogl-deut",
-        "data-title": toFormattedNumber(Math.floor(dSumP + dSumM + OGIData.json.flying.deuterium)),
+        "data-title": toFormattedNumber(Math.floor(dSumP + dSumM + OGBIData.json.flying.deuterium)),
       },
-      toFormattedNumber(Math.floor(dSumP + dSumM + OGIData.json.flying.deuterium), null, true)
+      toFormattedNumber(Math.floor(dSumP + dSumM + OGBIData.json.flying.deuterium), null, true)
     )
   );
 
@@ -246,9 +235,9 @@ function resourceDetail(context) {
   sum.appendChild(sumres);
 
   const valueSumStandardUnit = standardUnit.standardUnit([
-    mSumP + mSumM + OGIData.json.flying.metal,
-    cSumP + cSumM + OGIData.json.flying.crystal,
-    dSumP + dSumM + OGIData.json.flying.deuterium,
+    mSumP + mSumM + OGBIData.json.flying.metal,
+    cSumP + cSumM + OGBIData.json.flying.crystal,
+    dSumP + dSumM + OGBIData.json.flying.deuterium,
   ]);
   const sumresStandardUnit = createDOM("div", { class: "ogl-res ogl-sum-symbol tooltip" });
   sumresStandardUnit.appendChild(
@@ -287,7 +276,7 @@ function resourceDetail(context) {
   const flyingIcon = document.querySelector(".ogl-sum-symbol .icon_movement");
   const RTlistener = () => {
     const flyingDetails = {};
-    OGIData.json.flying.ids.forEach((mov) => {
+    OGBIData.json.flying.ids.forEach((mov) => {
       if (mov.resDest && mov.metal + mov.crystal + mov.deuterium > 0) {
         const coords = mov.back ? mov.origin : mov.dest;
         flyingDetails[coords] = flyingDetails[coords] || {
@@ -303,7 +292,7 @@ function resourceDetail(context) {
       }
     });
     if (!Object.keys(flyingDetails).length) return;
-    OGIData.empire.forEach((planet) => {
+    OGBIData.empire.forEach((planet) => {
       const indexPlanet = planet.coordinates.slice(1, -1) + "P";
       if (flyingDetails[indexPlanet]) {
         flyingDetails[indexPlanet].own = true;
@@ -358,7 +347,7 @@ function resourceDetail(context) {
 }
 
 function updateresourceDetail(context) {
-  if (!OGIData.json.options.empire) return;
+  if (!OGBIData.json.options.empire) return;
   if (!document.querySelector(".ogl-metal")) return;
   flying();
   let mSumP = 0,
@@ -367,7 +356,7 @@ function updateresourceDetail(context) {
   let mSumM = 0,
     cSumM = 0,
     dSumM = 0;
-  OGIData.empire.forEach((planet) => {
+  OGBIData.empire.forEach((planet) => {
     let planetNode = document.querySelector(`div[id=planet-${planet.id}]`);
     let isFullM = planet.metalStorage - planet.metal > 0 ? "" : " ogl-full";
     let isFullC = planet.crystalStorage - planet.crystal > 0 ? "" : " ogl-full";
@@ -438,68 +427,68 @@ function updateresourceDetail(context) {
     sumNodes[0].querySelectorAll(".ogl-deut")[1].setAttribute("class", "ogl-deut tooltip");
 
     sumNodes[1].querySelector(".ogl-metal").textContent = toFormattedNumber(
-      Math.floor(OGIData.json.flying.metal),
+      Math.floor(OGBIData.json.flying.metal),
       null,
       true
     );
     sumNodes[1]
       .querySelector(".ogl-metal")
-      .setAttribute("data-title", toFormattedNumber(Math.floor(OGIData.json.flying.metal)));
+      .setAttribute("data-title", toFormattedNumber(Math.floor(OGBIData.json.flying.metal)));
     sumNodes[1].querySelector(".ogl-metal").setAttribute("class", "ogl-metal tooltip");
 
     sumNodes[1].querySelector(".ogl-crystal").textContent = toFormattedNumber(
-      Math.floor(OGIData.json.flying.crystal),
+      Math.floor(OGBIData.json.flying.crystal),
       null,
       true
     );
     sumNodes[1]
       .querySelector(".ogl-crystal")
-      .setAttribute("data-title", toFormattedNumber(Math.floor(OGIData.json.flying.crystal)));
+      .setAttribute("data-title", toFormattedNumber(Math.floor(OGBIData.json.flying.crystal)));
     sumNodes[1].querySelector(".ogl-crystal").setAttribute("class", "ogl-crystal tooltip");
 
     sumNodes[1].querySelector(".ogl-deut").textContent = toFormattedNumber(
-      Math.floor(OGIData.json.flying.deuterium),
+      Math.floor(OGBIData.json.flying.deuterium),
       null,
       true
     );
     sumNodes[1]
       .querySelector(".ogl-deut")
-      .setAttribute("data-title", toFormattedNumber(Math.floor(OGIData.json.flying.deuterium)));
+      .setAttribute("data-title", toFormattedNumber(Math.floor(OGBIData.json.flying.deuterium)));
     sumNodes[1].querySelector(".ogl-deut").setAttribute("class", "ogl-deut tooltip");
 
     sumNodes[2].querySelector(".ogl-metal").textContent = toFormattedNumber(
-      Math.floor(mSumP + mSumM + OGIData.json.flying.metal),
+      Math.floor(mSumP + mSumM + OGBIData.json.flying.metal),
       null,
       true
     );
     sumNodes[2]
       .querySelector(".ogl-metal")
-      .setAttribute("data-title", toFormattedNumber(Math.floor(mSumP + mSumM + OGIData.json.flying.metal)));
+      .setAttribute("data-title", toFormattedNumber(Math.floor(mSumP + mSumM + OGBIData.json.flying.metal)));
     sumNodes[2].querySelector(".ogl-metal").setAttribute("class", "ogl-metal tooltip");
     sumNodes[2].querySelector(".ogl-crystal").textContent = toFormattedNumber(
-      Math.floor(cSumP + cSumM + OGIData.json.flying.crystal),
+      Math.floor(cSumP + cSumM + OGBIData.json.flying.crystal),
       null,
       true
     );
     sumNodes[2]
       .querySelector(".ogl-crystal")
-      .setAttribute("data-title", toFormattedNumber(Math.floor(cSumP + cSumM + OGIData.json.flying.crystal)));
+      .setAttribute("data-title", toFormattedNumber(Math.floor(cSumP + cSumM + OGBIData.json.flying.crystal)));
     sumNodes[2].querySelector(".ogl-crystal").setAttribute("class", "ogl-crystal tooltip");
     sumNodes[2].querySelector(".ogl-deut").textContent = toFormattedNumber(
-      Math.floor(dSumP + dSumM + OGIData.json.flying.deuterium),
+      Math.floor(dSumP + dSumM + OGBIData.json.flying.deuterium),
       null,
       true
     );
     sumNodes[2]
       .querySelector(".ogl-deut")
-      .setAttribute("data-title", toFormattedNumber(Math.floor(dSumP + dSumM + OGIData.json.flying.deuterium)));
+      .setAttribute("data-title", toFormattedNumber(Math.floor(dSumP + dSumM + OGBIData.json.flying.deuterium)));
     sumNodes[2].querySelector(".ogl-deut").setAttribute("class", "ogl-deut tooltip");
   });
 
   const valueSumStandardUnit = standardUnit.standardUnit([
-    mSumP + mSumM + OGIData.json.flying.metal,
-    cSumP + cSumM + OGIData.json.flying.crystal,
-    dSumP + dSumM + OGIData.json.flying.deuterium,
+    mSumP + mSumM + OGBIData.json.flying.metal,
+    cSumP + cSumM + OGBIData.json.flying.crystal,
+    dSumP + dSumM + OGBIData.json.flying.deuterium,
   ]);
   const sumMSU = document.querySelector(".ogl-sum-symbol.tooltip").nextElementSibling;
   sumMSU.title = `${toFormattedNumber(Math.floor(valueSumStandardUnit))} ${standardUnit.unitType()}`;

@@ -1,54 +1,25 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as utilTooltip from "../../util/tooltip.js";
+import { createDOM, createSVG } from "../../util/dom.js";
 import * as wait from "../../util/wait.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import AllianceClass from "../../util/enum/allianceClass.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
+import OGBIData from "../../util/OGIData.js";
 import { pageSignal } from "../../util/abort.js";
+import { updateresourceDetail } from "../empireOverview/index.js";
+import ogiMode from "../../util/enum/ogiMode.js";
 // Re-exported so ogkush.js keeps one import path per page, and so the split parts
 // stay reachable from the module graph.
 export { updateLifeform } from "./lifeform.js";
 export { ProcessProductionProgressData, updateProductionProgress } from "./production.js";
-import { updateresourceDetail } from "../empireOverview/index.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { RESEARCH_INFO } from "../../util/enum/researchInfo.js";
-import {
-  CRAWLER_OVERLOAD_MAX,
-  CRYSTAL_GENERAL_INCOMING,
-  CRYSTAL_POS_BONUS,
-  ENGINEER_ENERGY_BONUS,
-  GEOLOGIST_CRAWLER_BONUS,
-  GEOLOGIST_RESOURCE_BONUS,
-  IONTECHNOLOGY_BONUS,
-  MAX_CRAWLERS_PER_MINE,
-  METAL_GENERAL_INCOMING,
-  METAL_POS_BONUS,
-  OFFICER_ENERGY_BONUS,
-  OFFICER_RESOURCE_BONUS,
-  PLASMATECH_BONUS,
-  TRADER_ENERGY_BONUS,
-  TRADER_RESOURCE_BONUS,
-  SUPPLIES_TECHID,
-  FACILITIES_TECHID,
-} from "../../util/gameConstants.js";
-import { building, consumption, minesProduction, research } from "../../util/gameFormulas.js";
-import ogiMode from "../../util/enum/ogiMode.js";
 
 import { updateEmpireProduction, updateProductionProgress } from "./production.js";
 import { updateLifeformPlanetBonus } from "./lifeform.js";
+import { watchForEmpireChanges } from "../../util/stageForUpdate.js";
+import Notifier from "../../util/Notifier.js";
 
 /**
  * Reading the empire: the background fetch of the standalone empire page and the
  * refresh throttle around it.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md, then split. This file keeps
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md, then split. This file keeps
  * the fetch itself and the throttle that decides whether it happens at all; the
  * derived production numbers and the lifeform bonuses have files of their own.
  *
@@ -57,6 +28,32 @@ import { updateLifeformPlanetBonus } from "./lifeform.js";
  * of the rule that decides whether a page load refreshes, and the document_start
  * prefetch shares it - a second copy would drift and double the call count.
  */
+const EMPIRE_PLANETS_PARAMS = new URLSearchParams({ page: "standalone", component: "empire" });
+const EMPIRE_MOONS_PARAMS = new URLSearchParams({ page: "standalone", component: "empire", planetType: "1" });
+
+/**
+ * One request for the standalone empire page, parsed out of the inline
+ * `createImperiumHtml` call the page carries.
+ *
+ * @param {URLSearchParams} href
+ * @returns {Promise<object>}
+ */
+const empireRequest = (href) =>
+  fetch(`?${href.toString()}`, { signal: pageSignal() })
+    .then((response) => response.text())
+    .then((string) =>
+      JSON.parse(
+        string.substring(string.indexOf("createImperiumHtml") + 47, string.indexOf("initEmpire") - 16),
+        (key, value) => {
+          if (value === "0") return 0;
+          return value;
+        }
+      )
+    );
+
+/** @type {Promise<object>|null} in-flight prefetch of the empire planets page */
+let empirePrefetch = null;
+
 function empireRefreshDue(json, mode, force = false) {
   const timeSinceLastUpdate = new Date() - new Date(json?.lastEmpireUpdate);
   return !!(
@@ -74,7 +71,7 @@ function startEmpirePrefetch(rawURL) {
   // Only the moon half of the refresh needs the DOM, and that half stays in
   // getEmpireInfo(). The planets page is the one carrying every planet's
   // resources, i.e. the numbers the user sees arrive late.
-  if (!empireRefreshDue(OGIData.json, mode)) return;
+  if (!empireRefreshDue(OGBIData.json, mode)) return;
   empirePrefetch = empireRequest(EMPIRE_PLANETS_PARAMS);
   // Nothing awaits it yet; without this the rejection of an aborted page load
   // surfaces as an unhandled one.
@@ -88,12 +85,12 @@ function takeEmpirePrefetch() {
 }
 
 async function updateEmpireData(context, force = false) {
-  if (empireRefreshDue(OGIData.json, context.mode, force)) {
+  if (empireRefreshDue(OGBIData.json, context.mode, force)) {
     await updateInfo(context);
   }
   let stageForUpdate = () => {
-    OGIData.json.needsUpdate = true;
-    OGIData.Save();
+    OGBIData.json.needsUpdate = true;
+    OGBIData.Save();
   };
   // One delegated listener instead of a 100ms querySelectorAll poll that ran for the whole
   // session and, after its first pass, had nothing left to do. See util/stageForUpdate.js.
@@ -264,11 +261,11 @@ function updateInfo(context) {
     .querySelector("#countColonies")
     .appendChild(createDOM("div", { class: "spinner" }).appendChild(svg).parentElement);
   return getEmpireInfo(context).then((empire) => {
-    for (const techId in OGIData.json.technology) {
-      OGIData.json.technology[techId] = empire[0][techId];
+    for (const techId in OGBIData.json.technology) {
+      OGBIData.json.technology[techId] = empire[0][techId];
     }
-    OGIData.empire = empire;
-    OGIData.json.lastEmpireUpdate = new Date();
+    OGBIData.empire = empire;
+    OGBIData.json.lastEmpireUpdate = new Date();
     updateLifeformPlanetBonus(context);
     updateEmpireProduction(context);
     updateresourceDetail(context.overviewContext);
@@ -276,8 +273,8 @@ function updateInfo(context) {
     updateProductionProgress(context, true); //We just updated the empire data, so => true
     context.updateSpaceShipsPresence();
     context.setLoading(false);
-    OGIData.json.needsUpdate = false;
-    OGIData.Save();
+    OGBIData.json.needsUpdate = false;
+    OGBIData.Save();
     document.querySelector(".spinner").remove();
   });
 }

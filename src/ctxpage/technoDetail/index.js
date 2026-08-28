@@ -1,42 +1,19 @@
 import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
+import { createDOM } from "../../util/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as popupUtil from "../../util/popup.js";
 import * as wait from "../../util/wait.js";
-import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import OGIObserver from "../../util/observer.js";
+import OGBIData from "../../util/OGIData.js";
 import AllianceClass from "../../util/enum/allianceClass.js";
 import PlayerClass from "../../util/enum/playerClass.js";
 import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import { pageSignal } from "../../util/abort.js";
-import { getOption } from "../conf-options.js";
 import * as needsUtil from "../../util/needs.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { RESEARCH_INFO } from "../../util/enum/researchInfo.js";
+import * as time from "../../util/time.js";
 import {
-  CRAWLER_OVERLOAD_MAX,
-  CRYSTAL_GENERAL_INCOMING,
-  CRYSTAL_POS_BONUS,
   ENGINEER_ENERGY_BONUS,
-  FACILITIES_TECHID,
-  GEOLOGIST_CRAWLER_BONUS,
-  GEOLOGIST_RESOURCE_BONUS,
   IONTECHNOLOGY_BONUS,
-  MAX_CRAWLERS_PER_MINE,
-  METAL_GENERAL_INCOMING,
-  METAL_POS_BONUS,
   OFFICER_ENERGY_BONUS,
-  OFFICER_RESOURCE_BONUS,
-  PLASMATECH_BONUS,
-  SUPPLIES_TECHID,
   TRADER_ENERGY_BONUS,
-  TRADER_RESOURCE_BONUS,
 } from "../../util/gameConstants.js";
 import {
   building,
@@ -54,7 +31,7 @@ import {
  * The detail panel OGame opens for a building or a technology, with OGI's additions:
  * what the next levels cost, what they produce, and how long each pays for itself.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md. Not in that plan's module
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. Not in that plan's module
  * table - at 879 lines it was the largest thing left in the class after the eight
  * listed modules had gone, and the plan's own exit criterion cannot be met without it.
  */
@@ -85,8 +62,8 @@ function technoDetail(context) {
     let xhrAbortSignal = null;
     let updateResearchDetails = (technoId, baselvl, tolvl) => {
       let object = context.current.isMoon
-        ? OGIData.json.empire[context.current.index].moon
-        : OGIData.json.empire[context.current.index];
+        ? OGBIData.json.empire[context.current.index].moon
+        : OGBIData.json.empire[context.current.index];
       let durationDiv = document.querySelector(".build_duration");
       let timeDiv = document.querySelector(".build_duration time");
       let timeSumDiv =
@@ -127,14 +104,14 @@ function technoDetail(context) {
                   roi === Infinity
                     ? Translator.translate(118)
                     : `${Translator.translate(119)}: ${toFormattedNumber(
-                        OGIData.json.options.tradeRate[0]
-                      )}:${toFormattedNumber(OGIData.json.options.tradeRate[1])}:${toFormattedNumber(
-                        OGIData.json.options.tradeRate[2]
+                        OGBIData.json.options.tradeRate[0]
+                      )}:${toFormattedNumber(OGBIData.json.options.tradeRate[1])}:${toFormattedNumber(
+                        OGBIData.json.options.tradeRate[2]
                       )}`,
               })
             );
           roiTimeDiv.textContent = roi === Infinity ? "∞" : formatTimeWrapper(roi, 2, true, " ", false, "");
-        } else if (OGIData.json.lifeFormProductionBoostFromResearch[technoId]) {
+        } else if (OGBIData.json.lifeFormProductionBoostFromResearch[technoId]) {
           let roi = roiLfResearch(technoId, baselvl, tolvl, object);
           let roiDiv =
             durationDiv.parentNode.querySelector(".roi_duration") ||
@@ -149,9 +126,9 @@ function technoDetail(context) {
               createDOM("time", {
                 class: "value tooltip",
                 "data-title": `${Translator.translate(119)}: ${toFormattedNumber(
-                  OGIData.json.options.tradeRate[0]
-                )}:${toFormattedNumber(OGIData.json.options.tradeRate[1])}:${toFormattedNumber(
-                  OGIData.json.options.tradeRate[2]
+                  OGBIData.json.options.tradeRate[0]
+                )}:${toFormattedNumber(OGBIData.json.options.tradeRate[1])}:${toFormattedNumber(
+                  OGBIData.json.options.tradeRate[2]
                 )}`,
               })
             );
@@ -177,7 +154,7 @@ function technoDetail(context) {
       resSum[3] = techno.cost[3];
       timeSum += techno.time;
       if (context.page == "lfbuildings") {
-        if (OGIData.json.lifeFormProductionBoostFromBuildings[technoId] && baselvl <= tolvl) {
+        if (OGBIData.json.lifeFormProductionBoostFromBuildings[technoId] && baselvl <= tolvl) {
           let roi = roiLfBuilding(technoId, baselvl, tolvl, object);
           let roiDiv =
             durationDiv.parentNode.querySelector(".roi_duration") ||
@@ -192,9 +169,9 @@ function technoDetail(context) {
               createDOM("time", {
                 class: "value tooltip",
                 "data-title": `${Translator.translate(119)}: ${toFormattedNumber(
-                  OGIData.json.options.tradeRate[0]
-                )}:${toFormattedNumber(OGIData.json.options.tradeRate[1])}:${toFormattedNumber(
-                  OGIData.json.options.tradeRate[2]
+                  OGBIData.json.options.tradeRate[0]
+                )}:${toFormattedNumber(OGBIData.json.options.tradeRate[1])}:${toFormattedNumber(
+                  OGBIData.json.options.tradeRate[2]
                 )}`,
               })
             );
@@ -203,8 +180,8 @@ function technoDetail(context) {
           durationDiv.parentNode.querySelector(".roi_duration").replaceChildren();
         }
         let consDiv = document.querySelector(".additional_energy_consumption span");
-        if (consDiv && OGIData.json.empire[context.current.index]) {
-          let temp = OGIData.json.empire[context.current.index].db_par2 + 40;
+        if (consDiv && OGBIData.json.empire[context.current.index]) {
+          let temp = OGBIData.json.empire[context.current.index].db_par2 + 40;
           let baseCons = consumption(technoId, baselvl - 1);
           let currentCons = consumption(technoId, tolvl);
           let diff = currentEnergy - (currentCons - baseCons);
@@ -216,11 +193,11 @@ function technoDetail(context) {
           if (diff < 0) {
             let energyBonus =
               (context.engineer ? ENGINEER_ENERGY_BONUS : 0) +
-              (context.playerClass == PlayerClass.MINER ? OGIData.json.minerBonusEnergy : 0) +
+              (context.playerClass == PlayerClass.MINER ? OGBIData.json.minerBonusEnergy : 0) +
               (context.allOfficers ? OFFICER_ENERGY_BONUS : 0) +
-              (OGIData.json.allianceClass == AllianceClass.MINER ? TRADER_ENERGY_BONUS : 0) +
-              (OGIData.json.lifeformBonus.productionBonus?.[3] || 0) +
-              (OGIData.json.lifeformPlanetBonus[context.current.id]?.productionBonus[3] || 0);
+              (OGBIData.json.allianceClass == AllianceClass.MINER ? TRADER_ENERGY_BONUS : 0) +
+              (OGBIData.json.lifeformBonus.productionBonus?.[3] || 0) +
+              (OGBIData.json.lifeformPlanetBonus[context.current.id]?.productionBonus[3] || 0);
             let satsNeeded = Math.ceil(-diff / (1 + energyBonus) / Math.floor((temp + 140) / 6));
             let link =
               "https://" +
@@ -242,8 +219,8 @@ function technoDetail(context) {
           (document.querySelector(".narrow") && document.querySelector(".ogk-production")) ||
           document.querySelector(".narrow").appendChild(createDOM("li", { class: "ogk-production" }));
         let energyDiv = document.querySelector(".energy_production span");
-        if (consDiv && OGIData.json.empire[context.current.index]) {
-          let temp = OGIData.json.empire[context.current.index].db_par2 + 40;
+        if (consDiv && OGBIData.json.empire[context.current.index]) {
+          let temp = OGBIData.json.empire[context.current.index].db_par2 + 40;
           let pos = context.current.coords.split(":")[2];
           let currentProd = minesProduction(technoId, baselvl - 1, pos, temp);
           let baseProd = minesProduction(technoId, tolvl, pos, temp);
@@ -259,11 +236,11 @@ function technoDetail(context) {
           if (diff < 0) {
             let energyBonus =
               (context.engineer ? ENGINEER_ENERGY_BONUS : 0) +
-              (context.playerClass == PlayerClass.MINER ? OGIData.json.minerBonusEnergy : 0) +
+              (context.playerClass == PlayerClass.MINER ? OGBIData.json.minerBonusEnergy : 0) +
               (context.allOfficers ? OFFICER_ENERGY_BONUS : 0) +
-              (OGIData.json.allianceClass == AllianceClass.MINER ? TRADER_ENERGY_BONUS : 0) +
-              (OGIData.json.lifeformBonus.productionBonus?.[3] || 0) +
-              (OGIData.json.lifeformPlanetBonus[context.current.id]?.productionBonus[3] || 0);
+              (OGBIData.json.allianceClass == AllianceClass.MINER ? TRADER_ENERGY_BONUS : 0) +
+              (OGBIData.json.lifeformBonus.productionBonus?.[3] || 0) +
+              (OGBIData.json.lifeformPlanetBonus[context.current.id]?.productionBonus[3] || 0);
             let satsNeeded = Math.ceil(Math.floor(-diff / (1 + energyBonus)) / Math.floor((temp + 140) / 6));
             let satsSpan = createDOM("span");
             satsSpan.replaceChildren(
@@ -288,8 +265,8 @@ function technoDetail(context) {
             }${toFormattedNumber(parseInt(baseProd - currentProd))})</span></span>`
           );
         }
-        if (energyDiv && OGIData.json.empire[context.current.index]) {
-          let temp = OGIData.json.empire[context.current.index].db_par2 + 40;
+        if (energyDiv && OGBIData.json.empire[context.current.index]) {
+          let temp = OGBIData.json.empire[context.current.index].db_par2 + 40;
           let pos = context.current.coords.split(":")[2];
           let currentProd = minesProduction(technoId, baselvl - 1, pos, temp);
           let baseProd = minesProduction(technoId, tolvl, pos, temp);
@@ -355,7 +332,7 @@ function technoDetail(context) {
             );
 
           if (baselvl <= tolvl) {
-            let roi = roiMine(technoId, tolvl, OGIData.json.empire[context.current.index], context.playerBonuses);
+            let roi = roiMine(technoId, tolvl, OGBIData.json.empire[context.current.index], context.playerBonuses);
             roiDiv.replaceChildren(createDOM("strong", {}, `${Translator.translate(50)}:`));
             let roiTimeDiv =
               roiDiv.querySelector(".roi_duration time") ||
@@ -363,9 +340,9 @@ function technoDetail(context) {
                 createDOM("time", {
                   class: "value tooltip",
                   "data-title": `${Translator.translate(119)}: ${toFormattedNumber(
-                    OGIData.json.options.tradeRate[0]
-                  )}:${toFormattedNumber(OGIData.json.options.tradeRate[1])}:${toFormattedNumber(
-                    OGIData.json.options.tradeRate[2]
+                    OGBIData.json.options.tradeRate[0]
+                  )}:${toFormattedNumber(OGBIData.json.options.tradeRate[1])}:${toFormattedNumber(
+                    OGBIData.json.options.tradeRate[2]
                   )}`,
                 })
               );
@@ -378,7 +355,7 @@ function technoDetail(context) {
       }
       timeDiv.textContent = formatTimeWrapper(techno.time, 2, true, " ", false, "");
       let currentDate = new Date();
-      let timeZoneChange = OGIData.json.options.timeZone ? 0 : OGIData.json.timezoneDiff;
+      let timeZoneChange = OGBIData.json.options.timeZone ? 0 : OGBIData.json.timezoneDiff;
       let finishDate = new Date(currentDate.getTime() + (techno.time - timeZoneChange) * 1e3);
       if (baselvl <= tolvl) {
         const dateTxt = getFormatedDate(finishDate.getTime(), "[d].[m] - [G]:[i]:[s]");
@@ -395,7 +372,7 @@ function technoDetail(context) {
       let missing = [];
       let demolish = [];
       if (baselvl - 1 > tolvl) {
-        demolish = techno.cost.map((x) => Math.floor(x * (1 - IONTECHNOLOGY_BONUS * OGIData.json.technology[121])));
+        demolish = techno.cost.map((x) => Math.floor(x * (1 - IONTECHNOLOGY_BONUS * OGBIData.json.technology[121])));
       }
       if (techno.cost[0] != 0) {
         let metal = document.querySelector(".costs .metal");
@@ -539,15 +516,15 @@ function technoDetail(context) {
                 toFormattedNumber(missing[3], null, true)
               )
             );
-          if (missing[3] < 0 && baselvl == tolvl && OGIData.json.empire[context.current.index]) {
+          if (missing[3] < 0 && baselvl == tolvl && OGBIData.json.empire[context.current.index]) {
             let energyBonus =
               (context.engineer ? ENGINEER_ENERGY_BONUS : 0) +
-              (context.playerClass == PlayerClass.MINER ? OGIData.json.minerBonusEnergy : 0) +
+              (context.playerClass == PlayerClass.MINER ? OGBIData.json.minerBonusEnergy : 0) +
               (context.allOfficers ? OFFICER_ENERGY_BONUS : 0) +
-              (OGIData.json.allianceClass == AllianceClass.MINER ? TRADER_ENERGY_BONUS : 0) +
-              (OGIData.json.lifeformBonus.productionBonus?.[3] || 0) +
-              (OGIData.json.lifeformPlanetBonus[context.current.id]?.productionBonus[3] || 0);
-            let temp = OGIData.json.empire[context.current.index].db_par2 + 40;
+              (OGBIData.json.allianceClass == AllianceClass.MINER ? TRADER_ENERGY_BONUS : 0) +
+              (OGBIData.json.lifeformBonus.productionBonus?.[3] || 0) +
+              (OGBIData.json.lifeformPlanetBonus[context.current.id]?.productionBonus[3] || 0);
+            let temp = OGBIData.json.empire[context.current.index].db_par2 + 40;
             let satsNeeded = Math.ceil(-missing[3] / (1 + energyBonus) / Math.floor((temp + 140) / 6));
             let link =
               "https://" +
@@ -658,7 +635,7 @@ function technoDetail(context) {
           if (technologyId == shipEnum.Crawler) {
             energyDiv = document.querySelector(".additional_energy_consumption span");
             base =
-              energyDiv.getAttribute("data-value") * (1 - OGIData.json.lifeformBonus.crawlerBonus?.consumption || 1);
+              energyDiv.getAttribute("data-value") * (1 - OGBIData.json.lifeformBonus.crawlerBonus?.consumption || 1);
           } else if (technologyId == shipEnum.SolarSatellite) {
             energyDiv = document.querySelector(".energy_production span");
             base = energyDiv.querySelector("span").getAttribute("data-value");
@@ -718,25 +695,25 @@ function technoDetail(context) {
             });
             timeDiv.textContent = formatTimeWrapper(baseTime * value, 2, true, " ", false, "");
             let currentDate = new Date();
-            let timeZoneChange = OGIData.json.options.timeZone ? 0 : OGIData.json.timezoneDiff;
+            let timeZoneChange = OGBIData.json.options.timeZone ? 0 : OGBIData.json.timezoneDiff;
             let finishDate = new Date(currentDate.getTime() + (baseTime * value - timeZoneChange) * 1e3);
             const dateTxt = getFormatedDate(finishDate.getTime(), "[d].[m] - [G]:[i]:[s]");
             timeDiv.appendChild(createDOM("div", { class: "ogl-date" }, dateTxt));
             if (technologyId == shipEnum.SolarSatellite) {
               let energyBonus =
                 (context.engineer ? ENGINEER_ENERGY_BONUS : 0) +
-                (context.playerClass == PlayerClass.MINER ? OGIData.json.minerBonusEnergy : 0) +
+                (context.playerClass == PlayerClass.MINER ? OGBIData.json.minerBonusEnergy : 0) +
                 (context.allOfficers ? OFFICER_ENERGY_BONUS : 0) +
-                (OGIData.json.allianceClass == AllianceClass.MINER ? TRADER_ENERGY_BONUS : 0) +
-                (OGIData.json.lifeformBonus.productionBonus?.[3] || 0) +
-                (OGIData.json.lifeformPlanetBonus[context.current.id]?.productionBonus[3] || 0);
+                (OGBIData.json.allianceClass == AllianceClass.MINER ? TRADER_ENERGY_BONUS : 0) +
+                (OGBIData.json.lifeformBonus.productionBonus?.[3] || 0) +
+                (OGBIData.json.lifeformPlanetBonus[context.current.id]?.productionBonus[3] || 0);
               let diff = Number(currentEnergy) + Math.round(value * base);
               energyDiv.replaceChildren(
                 document.createTextNode(`${toFormattedNumber(value * base)}`),
                 createDOM("span", { class: `${diff < 0 ? "overmark" : "undermark"}` }, ` (${toFormattedNumber(diff)})`)
               );
-              if (Number(currentEnergy) < 0 && OGIData.json.empire[context.current.index]) {
-                let temp = OGIData.json.empire[context.current.index].db_par2 + 40;
+              if (Number(currentEnergy) < 0 && OGBIData.json.empire[context.current.index]) {
+                let temp = OGBIData.json.empire[context.current.index].db_par2 + 40;
                 let satsNeeded = Math.ceil(-Number(currentEnergy) / (1 + energyBonus) / Math.floor((temp + 140) / 6));
                 let satsSpan = createDOM("span");
                 satsSpan.replaceChildren(
@@ -760,12 +737,12 @@ function technoDetail(context) {
               if (diff < 0) {
                 let energyBonus =
                   (context.engineer ? ENGINEER_ENERGY_BONUS : 0) +
-                  (context.playerClass == PlayerClass.MINER ? OGIData.json.minerBonusEnergy : 0) +
+                  (context.playerClass == PlayerClass.MINER ? OGBIData.json.minerBonusEnergy : 0) +
                   (context.allOfficers ? OFFICER_ENERGY_BONUS : 0) +
-                  (OGIData.json.allianceClass == AllianceClass.MINER ? TRADER_ENERGY_BONUS : 0) +
-                  (OGIData.json.lifeformBonus.productionBonus?.[3] || 0) +
-                  (OGIData.json.lifeformPlanetBonus[context.current.id]?.productionBonus[3] || 0);
-                let temp = OGIData.json.empire[context.current.index].db_par2 + 40;
+                  (OGBIData.json.allianceClass == AllianceClass.MINER ? TRADER_ENERGY_BONUS : 0) +
+                  (OGBIData.json.lifeformBonus.productionBonus?.[3] || 0) +
+                  (OGBIData.json.lifeformPlanetBonus[context.current.id]?.productionBonus[3] || 0);
+                let temp = OGBIData.json.empire[context.current.index].db_par2 + 40;
                 let satsNeeded = Math.ceil(-diff / (1 + energyBonus) / Math.floor((temp + 140) / 6));
                 let satsSpan = createDOM("span");
                 satsSpan.replaceChildren(
@@ -860,8 +837,8 @@ function technoDetail(context) {
             : 0;
           let baseTechno;
           let object = context.current.isMoon
-            ? OGIData.json.empire[context.current.index].moon
-            : OGIData.json.empire[context.current.index];
+            ? OGBIData.json.empire[context.current.index].moon
+            : OGBIData.json.empire[context.current.index];
           if (context.page == "research" || context.page == "lfresearch") {
             baseTechno = research(
               technologyId,
@@ -872,7 +849,7 @@ function technoDetail(context) {
               object
             );
           } else if (
-            (OGIData.json.empire[context.current.index] && context.page == "supplies") ||
+            (OGBIData.json.empire[context.current.index] && context.page == "supplies") ||
             context.page == "facilities" ||
             context.page == "lfbuildings"
           ) {

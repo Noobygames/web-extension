@@ -1,28 +1,12 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as wait from "../../util/wait.js";
-import * as time from "../../util/time.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import Translator from "../../util/translate.js";
-import DateTime from "../../util/dateTime.js";
-import OGIData from "../../util/OGIData.js";
+import { createDOM } from "../../util/dom.js";
+import OGBIData from "../../util/OGIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import missionType from "../../util/enum/missionType.js";
-import { getOption } from "../conf-options.js";
-import { pageSignal } from "../../util/abort.js";
 import { ensureLZString } from "../../util/lzstring.js";
 
 /**
  * Backing the local store up to a Pantry bucket, and the toast that reports it.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md.
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md.
  *
  * Compliance note (AGENTS.md 1.9): this sends the player's own OGI data to a service
  * the player configured themselves, from a button they pressed. It is not automatic
@@ -46,9 +30,9 @@ async function getObjLastElements(context, obj, elementsToReturn) {
 
 async function checkPantrySync(context, pantryKey) {
   let pantryBasketTime = null;
-  let lastLocalSync = OGIData.json.pantrySync;
+  let lastLocalSync = OGBIData.json.pantrySync;
   let pantrySyncObj = null;
-  if (!pantryKey || !OGIData.json.needSync || (lastLocalSync && Date.now() - lastLocalSync < 60000)) {
+  if (!pantryKey || !OGBIData.json.needSync || (lastLocalSync && Date.now() - lastLocalSync < 60000)) {
     return;
   }
   // Pantry sync is the only consumer of LZString, and most sessions never
@@ -158,9 +142,9 @@ async function pantrySync(context, pantryKey, mainSyncObj, action = "merge") {
         }
 
         if (success) {
-          OGIData.json.pantrySync = mainSyncJsonObj.pantrySync;
-          OGIData.Save();
-          console.info("[OGInfinity] - Pantry synchronisation complete");
+          OGBIData.json.pantrySync = mainSyncJsonObj.pantrySync;
+          OGBIData.Save();
+          console.info("[OGBeyondInfinity] - Pantry synchronisation complete");
         }
       })
       .catch(() => {
@@ -169,21 +153,21 @@ async function pantrySync(context, pantryKey, mainSyncObj, action = "merge") {
   } else {
     document.getElementById("ogi-pantry-sync").remove();
 
-    OGIData.json = {
-      ...OGIData.json,
+    OGBIData.json = {
+      ...OGBIData.json,
       ...mainSyncObj,
     };
 
-    OGIData.json.pantrySync = Date.now();
-    OGIData.Save();
-    console.info("[OGInfinity] - Pantry synchronisation complete");
-    let toastText = "OGInfinity - Pantry synchronisation complete.";
+    OGBIData.json.pantrySync = Date.now();
+    OGBIData.Save();
+    console.info("[OGBeyondInfinity] - Pantry synchronisation complete");
+    let toastText = "OGBeyondInfinity - Pantry synchronisation complete.";
     showToast(context, toastText, "success", "done", null, 3500);
     sessionStorage.removeItem("lastPantryTry");
   }
   if (!success) {
-    console.warn(`[OGInfinity] - Pantry Synch failed with error ${errorCode} => ${errorMsg}`);
-    let toastText = "OGInfinity - Synch failed";
+    console.warn(`[OGBeyondInfinity] - Pantry Synch failed with error ${errorCode} => ${errorMsg}`);
+    let toastText = "OGBeyondInfinity - Synch failed";
     if (errorCode === 400 && errorMsg.includes("pantry with id")) {
       toastText += ": Invalid Pantry Key";
     } else if (errorCode === 413 && errorMsg.includes("Too Large")) {

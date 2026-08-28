@@ -1,6 +1,6 @@
 import { getLogger } from "../../../util/logger.js";
 import { messagesTabs } from "../../../ctxpage/messages/index.js";
-import OGIData from "../../../util/OGIData.js";
+import OGBIData from "../../../util/OGIData.js";
 import MessageType from "../../../util/enum/messageType.js";
 import ship from "../../../util/enum/ship.js";
 import { toFormattedNumber } from "../../../util/numbers.js";
@@ -40,7 +40,7 @@ class HarvestMessagesAnalyzer {
   }
 
   #parseHarvestMessages() {
-    const reaperTechnology = OGIData.ships?.[ship.Reaper] || {};
+    const reaperTechnology = OGBIData.ships?.[ship.Reaper] || {};
 
     const isExpedition = (message) => {
       const coordsAttr = message.querySelector(".rawMessageData")?.getAttribute("data-raw-targetcoordinates");
@@ -79,7 +79,7 @@ class HarvestMessagesAnalyzer {
     };
 
     this.#getHarvestsMessages().forEach((message) => {
-      const harvests = OGIData.harvests;
+      const harvests = OGBIData.harvests;
       const msgId = message.getAttribute("data-msg-id");
 
       addClass(message);
@@ -99,7 +99,7 @@ class HarvestMessagesAnalyzer {
         .padStart(2, "0")}.${newDate.getFullYear().toString().slice(2)}`;
 
       if (isExpedition(message)) {
-        const expeditionSums = OGIData.expeditionSums;
+        const expeditionSums = OGBIData.expeditionSums;
         if (!expeditionSums[datePoint]) {
           expeditionSums[datePoint] = {
             found: [0, 0, 0, 0],
@@ -119,9 +119,9 @@ class HarvestMessagesAnalyzer {
         expeditionSums[datePoint].harvest[1] += harvestedResources?.crystal || 0;
         expeditionSums[datePoint].harvest[2] += harvestedResources?.deuterium || 0;
 
-        OGIData.expeditionSums = expeditionSums;
+        OGBIData.expeditionSums = expeditionSums;
       } else {
-        const combatsSums = OGIData.combatsSums;
+        const combatsSums = OGBIData.combatsSums;
 
         if (!combatsSums[datePoint]) {
           combatsSums[datePoint] = {
@@ -144,7 +144,7 @@ class HarvestMessagesAnalyzer {
         combatsSums[datePoint].harvest[1] += harvestedResources?.crystal || 0;
         combatsSums[datePoint].harvest[2] += harvestedResources?.deuterium || 0;
 
-        OGIData.combatsSums = combatsSums;
+        OGBIData.combatsSums = combatsSums;
       }
 
       harvests[msgId] = {
@@ -158,7 +158,7 @@ class HarvestMessagesAnalyzer {
 
       addStandardUnit(harvests[msgId], message);
 
-      OGIData.harvests = harvests;
+      OGBIData.harvests = harvests;
     });
   }
 }

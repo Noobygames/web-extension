@@ -2,7 +2,7 @@
  * `util/gameFormulas.js` - the game's arithmetic.
  *
  * These began life in `test/ogkush.calculations.test.js`, pinned against
- * `OGInfinity.prototype`. Phase 3 of refactoring.md moved the functions into this
+ * `OGBeyondInfinity.prototype`. Phase 3 of refactoring.md moved the functions into this
  * module; the tests moved with them and **every expected value is unchanged**. That
  * is what verifies the move: the numbers were recorded before it and still hold
  * after it.
@@ -347,7 +347,7 @@ test("KNOWN BUG: roiMine charges the target level once per level instead of summ
 // --------------------------------------------------------------------------
 
 test("a collector pays off a mine faster than a player with no class", () => {
-  // `player` replaced `this.playerClass` when the formulas left OGInfinity. This is
+  // `player` replaced `this.playerClass` when the formulas left OGBeyondInfinity. This is
   // what says the argument is actually wired through rather than ignored.
   const planet = planetRow();
   withEmpire([planet]);

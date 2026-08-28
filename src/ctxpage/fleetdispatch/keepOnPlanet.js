@@ -1,6 +1,6 @@
 import { createDOM, createDOMSanitized } from "../../util/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 import Translator from "../../util/translate.js";
 import shipEnum from "../../util/enum/ship.js";
 
@@ -8,7 +8,7 @@ import shipEnum from "../../util/enum/ship.js";
  * The "keep on planet" dialog: how many resources and ships a planet is never to send
  * away, edited per planet or as the default for all of them.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md. It sits under
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. It sits under
  * `ctxpage/fleetdispatch/` because that is where the rule is applied, even though the
  * settings page is the other place that opens it - which is exactly why it could not
  * stay a method on the page controller.
@@ -22,12 +22,12 @@ function keepOnPlanetDialog(coords, btn, context) {
   let kept;
   let defaultKeptMoon;
   if (coords) {
-    kept = OGIData.json.options.kept[coords];
+    kept = OGBIData.json.options.kept[coords];
   } else {
-    defaultKeptMoon = OGIData.json.options.defaultKeptMoon;
+    defaultKeptMoon = OGBIData.json.options.defaultKeptMoon;
   }
-  if (!kept) kept = OGIData.json.options.defaultKept;
-  if (!defaultKeptMoon) defaultKeptMoon = OGIData.json.options.defaultKept; //initialize with defaultKept values if not set
+  if (!kept) kept = OGBIData.json.options.defaultKept;
+  if (!defaultKeptMoon) defaultKeptMoon = OGBIData.json.options.defaultKept; //initialize with defaultKept values if not set
   let container = createDOM("div");
   if (coords) {
     container.appendChild(
@@ -219,22 +219,22 @@ function keepOnPlanetDialog(coords, btn, context) {
     kept[2] = fromFormattedNumber(deutInputPlanet.value, true);
     if (context.hasLifeforms) kept[3] = fromFormattedNumber(foodInputPlanet.value, true);
     if (coords) {
-      OGIData.json.options.kept[coords] = kept;
+      OGBIData.json.options.kept[coords] = kept;
     } else {
-      OGIData.json.options.defaultKept = kept;
-      OGIData.json.options.defaultKeptMoon = defaultKeptMoon;
+      OGBIData.json.options.defaultKept = kept;
+      OGBIData.json.options.defaultKeptMoon = defaultKeptMoon;
     }
-    OGIData.json.needSync = true;
-    OGIData.Save();
+    OGBIData.json.needSync = true;
+    OGBIData.Save();
     document.querySelector(".ogl-dialog .close-tooltip").click();
     location.reload();
   });
   if (coords) {
     let resetBtn = box.appendChild(createDOM("button", { class: "btn_blue ogl-btn_red" }, Translator.translate(26)));
     resetBtn.addEventListener("click", () => {
-      delete OGIData.json.options.kept[coords];
-      OGIData.json.needSync = true;
-      OGIData.Save();
+      delete OGBIData.json.options.kept[coords];
+      OGBIData.json.needSync = true;
+      OGBIData.Save();
       document.querySelector(".ogl-dialog .close-tooltip").click();
       location.reload();
     });

@@ -1,21 +1,14 @@
 import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
+import { createDOM } from "../../util/dom.js";
+import { toFormattedNumber } from "../../util/numbers.js";
 import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
 import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
+import OGBIData from "../../util/OGIData.js";
 import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import { tabs } from "../../util/tabs.js";
-import { getOption } from "../conf-options.js";
 import { CARGO_SHIP_IDS } from "../../util/harvestPlanner.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { SUPPLIES_TECHID, FACILITIES_TECHID } from "../../util/gameConstants.js";
-import { building, consumption, minesProduction } from "../../util/gameFormulas.js";
+import RecyclingYieldCalculator from "../../util/recyclingYieldCalculator.js";
+import { planHarvest } from "../../util/harvestPlanner.js";
 
 /** The four tables the overview popup shows, one per tab. */
 function minesOverview(context) {
@@ -39,7 +32,7 @@ function minesOverview(context) {
   let minLocMetal = "";
   let minLocCrystal = "";
   let minLocDeuterium = "";
-  OGIData.empire.forEach((planet) => {
+  OGBIData.empire.forEach((planet) => {
     let current = false;
     if (planet.coordinates.slice(1, -1) == context.current.coords) {
       current = true;
@@ -212,10 +205,10 @@ function minesOverview(context) {
     if (current) td.classList.add("ogl-current");
   });
   header.appendChild(createDOM("th", { class: "ogl-sum-symbol" }, "Σ"));
-  let sumlvl = (key) => OGIData.empire.reduce((a, b) => a + Number(b[key]), 0);
-  let sumhour = (key) => OGIData.empire.reduce((a, b) => a + Number(b.production.hourly[key]), 0);
-  let sumday = (key) => OGIData.empire.reduce((a, b) => a + Number(b.production.daily[key]), 0);
-  let sumweek = (key) => OGIData.empire.reduce((a, b) => a + Number(b.production.weekly[key]), 0);
+  let sumlvl = (key) => OGBIData.empire.reduce((a, b) => a + Number(b[key]), 0);
+  let sumhour = (key) => OGBIData.empire.reduce((a, b) => a + Number(b.production.hourly[key]), 0);
+  let sumday = (key) => OGBIData.empire.reduce((a, b) => a + Number(b.production.daily[key]), 0);
+  let sumweek = (key) => OGBIData.empire.reduce((a, b) => a + Number(b.production.weekly[key]), 0);
   let td = metalRow.appendChild(createDOM("td"));
   td.appendChild(
     createDOM(
@@ -231,7 +224,7 @@ function minesOverview(context) {
           ""
         )} ${minLocMetal}`,
       },
-      toFormattedNumber(sumlvl(1) / OGIData.empire.length, 1)
+      toFormattedNumber(sumlvl(1) / OGBIData.empire.length, 1)
     )
   );
   td.appendChild(
@@ -279,7 +272,7 @@ function minesOverview(context) {
           ""
         )} ${minLocCrystal}`,
       },
-      toFormattedNumber(sumlvl(2) / OGIData.empire.length, 1)
+      toFormattedNumber(sumlvl(2) / OGBIData.empire.length, 1)
     )
   );
   td.appendChild(
@@ -327,7 +320,7 @@ function minesOverview(context) {
           ""
         )} ${minLocDeuterium}`,
       },
-      toFormattedNumber(sumlvl(3) / OGIData.empire.length, 1)
+      toFormattedNumber(sumlvl(3) / OGBIData.empire.length, 1)
     )
   );
   td.appendChild(
@@ -386,7 +379,7 @@ function fleetOverview(context, moon) {
   td.appendChild(moonIcon);
   row.appendChild(td);
 
-  OGIData.empire.forEach((planet) => {
+  OGBIData.empire.forEach((planet) => {
     let name = moon ? (planet.moon ? planet.moon.name : "-") : planet.name;
     let link = `?page=ingame&component=fleetdispatch&cp=${planet.id}`;
     if (moon && planet.moon) link = `?page=ingame&component=fleetdispatch&cp=${planet.moon.id}`;
@@ -421,7 +414,7 @@ function fleetOverview(context, moon) {
     let th = row.appendChild(createDOM("th"));
     th.appendChild(createDOM("th", { class: "ogl-option ogl-fleet-ship ogl-fleet-" + id }));
     let sum = 0;
-    OGIData.empire.forEach((planet) => {
+    OGBIData.empire.forEach((planet) => {
       let current = false;
       if (planet.coordinates.slice(1, -1) == context.current.coords) {
         current = true;
@@ -492,7 +485,7 @@ function fleetOverview(context, moon) {
 
   let totalYield = 0;
   let totalDisplay = 0;
-  OGIData.empire.forEach((planet) => {
+  OGBIData.empire.forEach((planet) => {
     let current = false;
     if (planet.coordinates.slice(1, -1) == context.current.coords) {
       current = true;
@@ -501,8 +494,8 @@ function fleetOverview(context, moon) {
 
     const fleetYield = RecyclingYieldCalculator.CalculateRecyclingYieldFleetFromEmpireData(
       planet,
-      OGIData.universeSettingsTooltip.debrisFactor,
-      OGIData.universeSettingsTooltip.deuteriumInDebris
+      OGBIData.universeSettingsTooltip.debrisFactor,
+      OGBIData.universeSettingsTooltip.deuteriumInDebris
     );
 
     const fleetAmount = moon
@@ -517,7 +510,7 @@ function fleetOverview(context, moon) {
           fleetYield.planetFleetRecyclingYield.deut,
         ];
 
-    const limit = moon === true ? OGIData.options.rvalSelfLimitMoon : OGIData.options.rvalSelfLimitPlanet;
+    const limit = moon === true ? OGBIData.options.rvalSelfLimitMoon : OGBIData.options.rvalSelfLimitPlanet;
 
     const standardUnitSum = standardUnit.standardUnit(fleetAmount);
     const labelClass = standardUnitSum >= limit ? "ogk-label ogi-warning" : "ogk-label ogi-info";
@@ -573,7 +566,7 @@ function defenseOverview(context, moon) {
   td.appendChild(planetIcon);
   td.appendChild(moonIcon);
   row.appendChild(td);
-  OGIData.empire.forEach((planet) => {
+  OGBIData.empire.forEach((planet) => {
     let name = moon ? (planet.moon ? planet.moon.name : "-") : planet.name;
     let link = `?page=ingame&component=defenses&cp=${planet.id}`;
     if (moon && planet.moon) link = `?page=ingame&component=defenses&cp=${planet.moon.id}`;
@@ -595,7 +588,7 @@ function defenseOverview(context, moon) {
     let th = row.appendChild(createDOM("th"));
     th.appendChild(createDOM("th", { class: "ogl-option ogl-fleet-ship tooltip ogl-fleet-" + id }));
     let sum = 0;
-    OGIData.empire.forEach((planet) => {
+    OGBIData.empire.forEach((planet) => {
       let current = false;
       if (planet.coordinates.slice(1, -1) == context.current.coords) {
         current = true;
@@ -642,22 +635,22 @@ function defenseOverview(context, moon) {
 function harvestOverview(context) {
   const content = createDOM("div", { class: "ogl-harvest-content" });
 
-  const bank = OGIData.json.options.collect.target;
+  const bank = OGBIData.json.options.collect.target;
   const bankCoordinates = `[${bank.galaxy}:${bank.system}:${bank.position}]`;
 
   const capacities = {};
   CARGO_SHIP_IDS.forEach((id) => {
-    capacities[id] = Number(OGIData.json.ships?.[id]?.cargoCapacity) || 0;
+    capacities[id] = Number(OGBIData.json.ships?.[id]?.cargoCapacity) || 0;
   });
 
-  const keptForCurrent = OGIData.json.options.defaultKept || {};
+  const keptForCurrent = OGBIData.json.options.defaultKept || {};
   const keep = {
     metal: Number(keptForCurrent[1]) || 0,
     crystal: Number(keptForCurrent[2]) || 0,
     deuterium: Number(keptForCurrent[3]) || 0,
   };
 
-  const planets = OGIData.empire.map((planet) => ({
+  const planets = OGBIData.empire.map((planet) => ({
     id: planet.id,
     name: planet.name,
     coordinates: planet.coordinates,
@@ -685,7 +678,7 @@ function harvestOverview(context) {
   plans.forEach((plan) => {
     const row = createDOM("tr", plan.feasible ? {} : { class: "ogl-harvest-short" });
 
-    const link = `?page=ingame&component=fleetdispatch&cp=${plan.planet.id}&galaxy=${bank.galaxy}&system=${bank.system}&position=${bank.position}&type=${bank.type}&mission=${OGIData.json.options.collect.mission}&oglMode=0`;
+    const link = `?page=ingame&component=fleetdispatch&cp=${plan.planet.id}&galaxy=${bank.galaxy}&system=${bank.system}&position=${bank.position}&type=${bank.type}&mission=${OGBIData.json.options.collect.mission}&oglMode=0`;
     row.appendChild(
       DOM.createDOMSanitized(
         "td",

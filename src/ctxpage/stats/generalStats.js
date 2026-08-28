@@ -1,63 +1,12 @@
 import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { tabs } from "../../util/tabs.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import * as time from "../../util/time.js";
-import * as wait from "../../util/wait.js";
-import DateTime from "../../util/dateTime.js";
+import { createDOM } from "../../util/dom.js";
+import { toFormattedNumber } from "../../util/numbers.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 import PlayerClass from "../../util/enum/playerClass.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import dataHelper from "../../util/dataHelper.js";
 import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import missionType from "../../util/enum/missionType.js";
-import itemType from "../../util/enum/itemType.js";
-import itemImageID from "../../util/enum/itemImageID.js";
 import AllianceClass from "../../util/enum/allianceClass.js";
-import { fleetCost } from "../../util/fleetCost.js";
-import flying from "../../util/flying.js";
-import { getOption } from "../../ctxpage/conf-options.js";
 import { generateMMORPGLink } from "../../util/mmorpgStats.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { RESEARCH_INFO } from "../../util/enum/researchInfo.js";
-import {
-  CRAWLER_OVERLOAD_MAX,
-  CRYSTAL_GENERAL_INCOMING,
-  CRYSTAL_POS_BONUS,
-  ENGINEER_ENERGY_BONUS,
-  FACILITIES_TECHID,
-  GEOLOGIST_CRAWLER_BONUS,
-  GEOLOGIST_RESOURCE_BONUS,
-  IONTECHNOLOGY_BONUS,
-  MAX_CRAWLERS_PER_MINE,
-  METAL_GENERAL_INCOMING,
-  METAL_POS_BONUS,
-  OFFICER_ENERGY_BONUS,
-  OFFICER_RESOURCE_BONUS,
-  PLASMATECH_BONUS,
-  SHIP_EXPEDITION_POINTS,
-  SUPPLIES_TECHID,
-  TRADER_ENERGY_BONUS,
-  TRADER_RESOURCE_BONUS,
-} from "../../util/gameConstants.js";
-import {
-  building,
-  consumption,
-  getBestRoi,
-  minesProduction,
-  research,
-  roiAstrophysics,
-  roiLfBuilding,
-  roiLfResearch,
-  roiMine,
-  roiPlasmatechnology,
-} from "../../util/gameFormulas.js";
 
 import { statsState } from "./state.js";
 import { APIStringToClipboard } from "./boxes.js";
@@ -94,7 +43,7 @@ function generalStats(player) {
       playerClassName = "";
   }
   let allianceClassName;
-  switch (OGIData.json.allianceClass) {
+  switch (OGBIData.json.allianceClass) {
     case AllianceClass.MINER:
       allianceClassName = "trader";
       break;
@@ -192,13 +141,13 @@ function generalStats(player) {
   div.appendChild(createDOM("span", {}, Translator.translate(95)));
   div.appendChild(createDOM("a", { class: "ogl-option ogl-fleet-ship ogl-tech-" + 114 }));
   div.appendChild(
-    createDOM("span").appendChild(createDOM("strong", {}, `${toFormattedNumber(OGIData.json.technology[114])}`))
+    createDOM("span").appendChild(createDOM("strong", {}, `${toFormattedNumber(OGBIData.json.technology[114])}`))
       .parentElement
   );
   div.appendChild(createDOM("span", {}, Translator.translate(94)));
   div.appendChild(createDOM("a", { class: "ogl-option ogl-fleet-ship ogl-tech-" + 108 }));
   div.appendChild(
-    createDOM("span").appendChild(createDOM("strong", {}, `${toFormattedNumber(OGIData.json.technology[108] || 0)}`))
+    createDOM("span").appendChild(createDOM("strong", {}, `${toFormattedNumber(OGBIData.json.technology[108] || 0)}`))
       .parentElement
   );
   let fleetTech = techDetail.appendChild(createDOM("div", { class: "ogk-tech" }));
@@ -207,7 +156,7 @@ function generalStats(player) {
     if (id == 109) fleetTech.appendChild(createDOM("div", {}, Translator.translate(86)));
     fleetTech.appendChild(createDOM("a", { class: "ogl-option ogl-fleet-ship ogl-tech-" + id }));
     fleetTech.appendChild(
-      createDOM("span").appendChild(createDOM("strong", {}, `${toFormattedNumber(OGIData.json.technology[id])}`))
+      createDOM("span").appendChild(createDOM("strong", {}, `${toFormattedNumber(OGBIData.json.technology[id])}`))
         .parentElement
     );
   });
@@ -223,9 +172,9 @@ function generalStats(player) {
     dprodh = 0,
     dprodd = 0,
     dprodw = 0;
-  let sum = OGIData.empire.length;
+  let sum = OGBIData.empire.length;
   sum &&
-    OGIData.empire.forEach((planet) => {
+    OGBIData.empire.forEach((planet) => {
       mlvl += Number(planet[1]);
       mprodh += Number(planet.production.hourly[0] || 0);
       mprodd += Number(planet.production.daily[0] || 0);
@@ -326,7 +275,7 @@ function generalStats(player) {
   );
   innerAstro.appendChild(
     createDOM("span").appendChild(
-      createDOM("strong", {}, `${toFormattedNumber(OGIData.json.technology[124]) || toFormattedNumber(0)}`)
+      createDOM("strong", {}, `${toFormattedNumber(OGBIData.json.technology[124]) || toFormattedNumber(0)}`)
     ).parentElement
   );
   let innerEnergy = prod.appendChild(
@@ -338,7 +287,7 @@ function generalStats(player) {
   );
   innerEnergy.appendChild(
     createDOM("span").appendChild(
-      createDOM("strong", {}, `${toFormattedNumber(OGIData.json.technology[113]) || toFormattedNumber(0)}`)
+      createDOM("strong", {}, `${toFormattedNumber(OGBIData.json.technology[113]) || toFormattedNumber(0)}`)
     ).parentElement
   );
   let innerPlasma = prod.appendChild(
@@ -350,7 +299,7 @@ function generalStats(player) {
   );
   innerPlasma.appendChild(
     createDOM("span").appendChild(
-      createDOM("strong", {}, `${toFormattedNumber(OGIData.json.technology[122]) || toFormattedNumber(0)}`)
+      createDOM("strong", {}, `${toFormattedNumber(OGBIData.json.technology[122]) || toFormattedNumber(0)}`)
     ).parentElement
   );
   let fleetDetail = details.appendChild(createDOM("div", { class: "ogk-box" }));
@@ -366,11 +315,11 @@ function generalStats(player) {
       let flyingCount = flying.fleet[id];
       let sum = 0;
       if (flyingCount) sum = flyingCount;
-      OGIData.empire.forEach((planet) => {
+      OGBIData.empire.forEach((planet) => {
         if (planet) sum += Number(planet[id]);
         if (planet.moon) sum += Number(planet.moon[id]);
       });
-      transport += sum * OGIData.json.ships[id].cargoCapacity;
+      transport += sum * OGBIData.json.ships[id].cargoCapacity;
       totalSum += sum;
       let shipDiv = fleet.appendChild(createDOM("div"));
       shipDiv.appendChild(createDOM("a", { class: "ogl-option ogl-fleet-ship ogl-fleet-" + id }));
@@ -403,7 +352,7 @@ function generalStats(player) {
       `${Translator.translate(47)}: <strong>${toFormattedNumber(transport, null, transport >= 1e6)}</strong>`
     )
   );
-  const rcpower = OGIData.json.ships[shipEnum.Recycler].cargoCapacity * cyclos;
+  const rcpower = OGBIData.json.ships[shipEnum.Recycler].cargoCapacity * cyclos;
   fleetInfo.appendChild(
     DOM.createDOMSanitized(
       "span",

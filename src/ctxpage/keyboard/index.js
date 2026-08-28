@@ -1,29 +1,13 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as wait from "../../util/wait.js";
-import * as time from "../../util/time.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import Translator from "../../util/translate.js";
-import DateTime from "../../util/dateTime.js";
-import OGIData from "../../util/OGIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import missionType from "../../util/enum/missionType.js";
-import { getOption } from "../conf-options.js";
+import OGBIData from "../../util/OGIData.js";
 import ogiMode from "../../util/enum/ogiMode.js";
-import { changeOGSelect } from "../../util/dom.js";
+import debounce from "../../util/debounce.js";
 
 /**
  * The keyboard shortcuts: planet and moon navigation, the resource fillers, the
  * dispatch actions.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md. Every shortcut still maps
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. Every shortcut still maps
  * to one action - AGENTS.md 1.1 requires that, and nothing here batches or defers.
  */
 
@@ -44,7 +28,7 @@ function keyboardActions(context) {
   document.addEventListener("keydown", (event) => {
     if (avoidIn.some((avoidInClass) => document.activeElement.classList.contains(avoidInClass))) return;
     if (event.key == "Escape") {
-      if (OGIData.json.welcome) return;
+      if (OGBIData.json.welcome) return;
       closeDialog();
     }
     if (context.page == "galaxy") {

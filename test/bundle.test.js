@@ -76,7 +76,7 @@ test("the page bundle exports only the test seam, the content bundle only main",
   // after its dynamic import, so that one has to survive bundling or the content
   // half never starts.
   const pageExports = (pageBundle.match(/^\s*export\s.*$/gm) || []).map((line) => line.trim());
-  assert.deepEqual(pageExports, ["export { OGInfinity };"]);
+  assert.deepEqual(pageExports, ["export { OGBeyondInfinity };"]);
   assert.match(contentBundle, /^export \{ main \};$/m);
 });
 

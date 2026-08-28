@@ -3,10 +3,10 @@ import PlayerClass from "./enum/playerClass.js";
 import ogiMode from "./enum/ogiMode.js";
 
 /**
- * Everything `OGInfinity` used to read out of the DOM inside its own constructor,
+ * Everything `OGBeyondInfinity` used to read out of the DOM inside its own constructor,
  * as one plain object.
  *
- * This exists to give the class a seam. Before it, `new OGInfinity()` dereferenced
+ * This exists to give the class a seam. Before it, `new OGBeyondInfinity()` dereferenced
  * `meta[name="ogame-player-id"]` on its very first line, so the class could not be
  * constructed anywhere except a fully rendered OGame page - which is why
  * `bundle.test.js` only ever got as far as asserting that the constructor throws.

@@ -2,10 +2,10 @@
  * The game's arithmetic: what a building or research costs, how long it takes, what a
  * mine produces, and how long an upgrade takes to pay for itself.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md. The bodies are unchanged;
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. The bodies are unchanged;
  * the only edits were the ones needed to drop `this`:
  *
- * - `this.json` became `OGIData.json` - `OGInfinity.init()` assigns one to the other,
+ * - `this.json` became `OGIData.json` - `OGBeyondInfinity.init()` assigns one to the other,
  *   so it was always the same object.
  * - `this.saveData()` became `OGIData.Save()`, which is what it did.
  * - `this.playerClass` / `this.geologist` / `this.allOfficers` became an explicit
@@ -32,7 +32,7 @@ import {
 } from "./gameConstants.js";
 import PlayerClass from "./enum/playerClass.js";
 import AllianceClass from "./enum/allianceClass.js";
-import OGIData from "./OGIData.js";
+import OGBIData from "./OGIData.js";
 
 export function consumption(id, lvl) {
   if (!BUIDLING_INFO[id].baseCons || !BUIDLING_INFO[id].factorCons) return 0;
@@ -69,11 +69,11 @@ export function minesProduction(id, lvl, position, temp) {
     prod *= 1.44 - 0.004 * temp;
   }
   if (id == 12) {
-    prod = 30 * lvl * Math.pow(1.05 + OGIData.json.technology[113] * 0.01, lvl);
+    prod = 30 * lvl * Math.pow(1.05 + OGBIData.json.technology[113] * 0.01, lvl);
   }
   prod = prod * positionBonus;
   if (id == 1 || id == 2 || id == 3) {
-    prod = prod * OGIData.json.speed;
+    prod = prod * OGBIData.json.speed;
   }
   return Math.floor(prod);
 }
@@ -90,8 +90,8 @@ export function research(id, lvl, technocrat, explorer, acceleration, object = n
   if (object) {
     if (id < 11001) {
       let labs = [];
-      let igfn = OGIData.json.technology[123];
-      OGIData.empire.forEach((planet) => labs.push(planet[31]));
+      let igfn = OGBIData.json.technology[123];
+      OGBIData.empire.forEach((planet) => labs.push(planet[31]));
       if (object.type == 3) {
         labLvl = 0;
       } else {
@@ -103,12 +103,12 @@ export function research(id, lvl, technocrat, explorer, acceleration, object = n
         .slice(0, igfn)
         .map((x) => (labLvl += x));
     } else {
-      costLFBonus += OGIData.json.lifeformPlanetBonus[object.id]?.technologyCostReduction || 0;
-      timeLFBonus += OGIData.json.lifeformPlanetBonus[object.id]?.technologyTimeReduction || 0;
+      costLFBonus += OGBIData.json.lifeformPlanetBonus[object.id]?.technologyCostReduction || 0;
+      timeLFBonus += OGBIData.json.lifeformPlanetBonus[object.id]?.technologyTimeReduction || 0;
     }
     const key = id < 11201 ? id : "LfResearch";
-    costLFBonus += OGIData.json.lifeformBonus.technologyCostReduction?.[key] || 0;
-    timeLFBonus = Math.min(0.99, timeLFBonus + (OGIData.json.lifeformBonus.technologyTimeReduction?.[key] || 0));
+    costLFBonus += OGBIData.json.lifeformBonus.technologyCostReduction?.[key] || 0;
+    timeLFBonus = Math.min(0.99, timeLFBonus + (OGBIData.json.lifeformBonus.technologyTimeReduction?.[key] || 0));
     costFactor -= costLFBonus;
     timeFactor -= timeLFBonus;
   }
@@ -134,12 +134,12 @@ export function research(id, lvl, technocrat, explorer, acceleration, object = n
   ];
   if (RESEARCH_INFO[id].baseCost[3])
     cost.push(RESEARCH_INFO[id].baseCost[3] * Math.pow(RESEARCH_INFO[id].factorEnergy, lvl - 1));
-  let time = ((cost[0] + cost[1]) / (OGIData.json.speed * 1000 * (1 + labLvl)) / OGIData.json.researchDivisor) * 3600;
+  let time = ((cost[0] + cost[1]) / (OGBIData.json.speed * 1000 * (1 + labLvl)) / OGBIData.json.researchDivisor) * 3600;
   if (technocrat) time -= time * 0.25;
-  if (explorer) time -= time * 0.25 * (1 + OGIData.json.lifeformBonus.classBonus.explorer);
+  if (explorer) time -= time * 0.25 * (1 + OGBIData.json.lifeformBonus.classBonus.explorer);
   if (acceleration) time -= time * 0.25;
   if (RESEARCH_INFO[id].factorTime)
-    time = (RESEARCH_INFO[id].baseTime * Math.pow(RESEARCH_INFO[id].factorTime, lvl) * lvl) / OGIData.json.speed;
+    time = (RESEARCH_INFO[id].baseTime * Math.pow(RESEARCH_INFO[id].factorTime, lvl) * lvl) / OGBIData.json.speed;
   time *= timeFactor;
   if (id == 124) time = Math.round(time / 100) * 100;
   return {
@@ -157,12 +157,12 @@ export function building(id, lvl, object = null) {
   if (id >= 11101) lvl = Math.max(lvl, 1); // needed for demolish to lvl 0
 
   if (object) {
-    costFactor -= OGIData.json.lifeformPlanetBonus[object.id]?.buildingCostReduction?.[id] || 0;
-    timeFactor -= OGIData.json.lifeformPlanetBonus[object.id]?.buildingTimeReduction?.[id] || 0;
+    costFactor -= OGBIData.json.lifeformPlanetBonus[object.id]?.buildingCostReduction?.[id] || 0;
+    timeFactor -= OGBIData.json.lifeformPlanetBonus[object.id]?.buildingTimeReduction?.[id] || 0;
   }
 
-  costFactor -= OGIData.json.lifeformBonus.technologyCostReduction?.[id] || 0;
-  timeFactor -= OGIData.json.lifeformBonus.technologyTimeReduction?.[id] || 0;
+  costFactor -= OGBIData.json.lifeformBonus.technologyCostReduction?.[id] || 0;
+  timeFactor -= OGBIData.json.lifeformBonus.technologyTimeReduction?.[id] || 0;
 
   let cost = [
     Math.floor(
@@ -200,7 +200,7 @@ export function building(id, lvl, object = null) {
           (1 + robotic) *
           Math.pow(2, nanite) *
           (![15, 41, 42, 43].includes(id) ? Math.max(4 - lvl / 2, 1) : 1) *
-          OGIData.json.speed)) *
+          OGBIData.json.speed)) *
         3600
     ),
     1
@@ -214,7 +214,7 @@ export function building(id, lvl, object = null) {
       Math.round(
         Math.floor(
           (BUIDLING_INFO[id].baseTime * Math.pow(BUIDLING_INFO[id].factorTime, lvl) * lvl) /
-            ((1 + robotic) * Math.pow(2, nanite) * OGIData.json.speed)
+            ((1 + robotic) * Math.pow(2, nanite) * OGBIData.json.speed)
         ) * timeFactor
       ),
       lvl
@@ -233,12 +233,12 @@ export function building(id, lvl, object = null) {
 }
 
 export function roiPlasmatechnology(tolvl) {
-  let plasma = OGIData.json.technology[122];
+  let plasma = OGBIData.json.technology[122];
   let plasmaBonus = PLASMATECH_BONUS.map((x) => x * (tolvl - plasma));
 
-  let tradeRate = OGIData.json.options.tradeRate;
+  let tradeRate = OGBIData.json.options.tradeRate;
   let prodDiffMSE = 0;
-  OGIData.empire.forEach((planet) => {
+  OGBIData.empire.forEach((planet) => {
     let pos = planet.position;
     let temp = planet.db_par2 + 40;
     let prodDiff = [
@@ -259,16 +259,16 @@ export function roiPlasmatechnology(tolvl) {
 
 export function roiLfResearch(technoId, baselvl, tolvl, object) {
   // console.log(`roiLfResearch(${technoId}, ${baselvl}, ${tolvl}, ${object})`);
-  if (!OGIData.json.lifeFormProductionBoostFromResearch[technoId]) return;
+  if (!OGBIData.json.lifeFormProductionBoostFromResearch[technoId]) return;
   let techBonusFromLifeformLevel =
-    0.001 * OGIData.json.lifeformBonus.lifeformLevel?.[OGIData.json.selectedLifeforms[object.id]] || 0;
-  let bonus = OGIData.json.lifeFormProductionBoostFromResearch[technoId].map(
+    0.001 * OGBIData.json.lifeformBonus.lifeformLevel?.[OGBIData.json.selectedLifeforms[object.id]] || 0;
+  let bonus = OGBIData.json.lifeFormProductionBoostFromResearch[technoId].map(
     (x) => (x / 100) * (1 + techBonusFromLifeformLevel) * (tolvl - baselvl + 1)
   );
 
-  let tradeRate = OGIData.json.options.tradeRate;
+  let tradeRate = OGBIData.json.options.tradeRate;
   let prodDiffMSE = 0;
-  OGIData.empire.forEach((planet) => {
+  OGBIData.empire.forEach((planet) => {
     let pos = planet.position;
     let temp = planet.db_par2 + 40;
     let prodDiff = [
@@ -289,9 +289,11 @@ export function roiLfResearch(technoId, baselvl, tolvl, object) {
 
 export function roiLfBuilding(technoId, baselvl, tolvl, object) {
   // console.log(`roiLfBuilding(${technoId}, ${baselvl}, ${tolvl}, ${object})`);
-  if (!OGIData.json.lifeFormProductionBoostFromBuildings[technoId]) return;
-  let bonus = OGIData.json.lifeFormProductionBoostFromBuildings[technoId].map((x) => (x / 100) * (tolvl - baselvl + 1));
-  let tradeRate = OGIData.json.options.tradeRate;
+  if (!OGBIData.json.lifeFormProductionBoostFromBuildings[technoId]) return;
+  let bonus = OGBIData.json.lifeFormProductionBoostFromBuildings[technoId].map(
+    (x) => (x / 100) * (tolvl - baselvl + 1)
+  );
+  let tradeRate = OGBIData.json.options.tradeRate;
   let pos = object.position;
   let temp = object.db_par2 + 40;
   let prodDiff = [
@@ -315,7 +317,7 @@ export function roiLfBuilding(technoId, baselvl, tolvl, object) {
  * of it so that a call without `object` cannot bind the player to it by accident.
  */
 export function roiAstrophysics(baselvl, tolvl, player, object = null) {
-  let tradeRate = OGIData.json.options.tradeRate;
+  let tradeRate = OGBIData.json.options.tradeRate;
   let numPlanets = Math.round((baselvl - 1) / 2) + 1;
   let newNumPlanets = Math.round(tolvl / 2) + 1;
   let newPlanets = newNumPlanets - numPlanets;
@@ -325,11 +327,11 @@ export function roiAstrophysics(baselvl, tolvl, player, object = null) {
       .cost.map((x, n) => (x * tradeRate[0]) / tradeRate[n])
       .reduce((sum, cur) => sum + cur, 0);
   }
-  if (!OGIData.json.averageMines || !OGIData.json.totalProd) {
+  if (!OGBIData.json.averageMines || !OGBIData.json.totalProd) {
     getBestRoi(player);
   }
-  let avgMineLvl = OGIData.json.averageMines;
-  let totalProdMSE = OGIData.json.totalProd
+  let avgMineLvl = OGBIData.json.averageMines;
+  let totalProdMSE = OGBIData.json.totalProd
     .map((x, n) => (x * tradeRate[0]) / tradeRate[n])
     .reduce((sum, cur) => sum + cur, 0);
   let constructionCostMSE = 0;
@@ -354,15 +356,15 @@ export function roiAstrophysics(baselvl, tolvl, player, object = null) {
 }
 
 export function roiMine(technoId, tolvl, object, player) {
-  let baseProd = [30 * OGIData.json.speed, 15 * OGIData.json.speed, 0];
+  let baseProd = [30 * OGBIData.json.speed, 15 * OGBIData.json.speed, 0];
   let pos = object.position;
   let temp = object.db_par2 + 40;
-  let plasmaBonus = PLASMATECH_BONUS.map((x) => x * OGIData.json.technology[122]);
-  let crawlerCount = OGIData.json.options.limitCrawler ? object[217] : 1000000;
-  let lifeFormBonus = OGIData.json.lifeformBonus.productionBonus || [0, 0, 0];
-  let lifeFormPlanetBonus = OGIData.json.lifeformPlanetBonus[object.id]?.productionBonus || [0, 0, 0];
+  let plasmaBonus = PLASMATECH_BONUS.map((x) => x * OGBIData.json.technology[122]);
+  let crawlerCount = OGBIData.json.options.limitCrawler ? object[217] : 1000000;
+  let lifeFormBonus = OGBIData.json.lifeformBonus.productionBonus || [0, 0, 0];
+  let lifeFormPlanetBonus = OGBIData.json.lifeformPlanetBonus[object.id]?.productionBonus || [0, 0, 0];
   let crawlerPercent = Math.min(
-    OGIData.json.options.crawlerPercent || 1,
+    OGBIData.json.options.crawlerPercent || 1,
     player.playerClass == PlayerClass.MINER ? CRAWLER_OVERLOAD_MAX : 1
   );
   let currentMineLvls = [Number(object[1]), Number(object[2]), Number(object[3])];
@@ -372,14 +374,14 @@ export function roiMine(technoId, tolvl, object, player) {
     crawlerCount
   );
   let crawlerBonus =
-    OGIData.json.resourceBuggyProductionBoost *
+    OGBIData.json.resourceBuggyProductionBoost *
     (player.playerClass == PlayerClass.MINER
-      ? 1 + OGIData.json.minerBonusAdditionalCrawler * (1 + OGIData.json.lifeformBonus.classBonus.miner)
+      ? 1 + OGBIData.json.minerBonusAdditionalCrawler * (1 + OGBIData.json.lifeformBonus.classBonus.miner)
       : 1) *
-    (1 + OGIData.json.lifeformBonus.crawlerBonus?.production || 1);
+    (1 + OGBIData.json.lifeformBonus.crawlerBonus?.production || 1);
   let currentCrawlerBonus = Math.min(
     currentCrawlerCount * crawlerPercent * crawlerBonus,
-    OGIData.json.resourceBuggyMaxProductionBoost
+    OGBIData.json.resourceBuggyMaxProductionBoost
   );
   let currentMineProd = [
     minesProduction(1, currentMineLvls[0], pos, temp),
@@ -396,12 +398,12 @@ export function roiMine(technoId, tolvl, object, player) {
     (x) =>
       x *
       (player.playerClass == PlayerClass.MINER
-        ? OGIData.json.minerBonusResourceProduction * (1 + OGIData.json.lifeformBonus.classBonus.miner)
+        ? OGBIData.json.minerBonusResourceProduction * (1 + OGBIData.json.lifeformBonus.classBonus.miner)
         : 0)
   );
   let currentGeologistProd = currentMineProd.map((x) => x * (player.geologist ? GEOLOGIST_RESOURCE_BONUS : 0));
   let currentAllyClassProd = currentMineProd.map(
-    (x) => x * (OGIData.json.allianceClass == AllianceClass.MINER ? TRADER_RESOURCE_BONUS : 0)
+    (x) => x * (OGBIData.json.allianceClass == AllianceClass.MINER ? TRADER_RESOURCE_BONUS : 0)
   );
   let currentOfficersProd = currentMineProd.map((x) => x * (player.allOfficers ? OFFICER_RESOURCE_BONUS : 0));
   let currentLifeFormProd = [
@@ -461,7 +463,7 @@ export function roiMine(technoId, tolvl, object, player) {
   );
   let newCrawlerBonus = Math.min(
     newCrawlerCount * crawlerPercent * crawlerBonus,
-    OGIData.json.resourceBuggyMaxProductionBoost
+    OGBIData.json.resourceBuggyMaxProductionBoost
   );
   let newMineProd = [
     minesProduction(1, newMineLvls[0], pos, temp),
@@ -478,12 +480,12 @@ export function roiMine(technoId, tolvl, object, player) {
     (x) =>
       x *
       (player.playerClass == PlayerClass.MINER
-        ? OGIData.json.minerBonusResourceProduction * (1 + OGIData.json.lifeformBonus.classBonus.miner)
+        ? OGBIData.json.minerBonusResourceProduction * (1 + OGBIData.json.lifeformBonus.classBonus.miner)
         : 0)
   );
   let newGeologistProd = newMineProd.map((x) => x * (player.geologist ? GEOLOGIST_RESOURCE_BONUS : 0));
   let newAllyClassProd = newMineProd.map(
-    (x) => x * (OGIData.json.allianceClass == AllianceClass.MINER ? TRADER_RESOURCE_BONUS : 0)
+    (x) => x * (OGBIData.json.allianceClass == AllianceClass.MINER ? TRADER_RESOURCE_BONUS : 0)
   );
   let newOfficersProd = newMineProd.map((x) => x * (player.allOfficers ? OFFICER_RESOURCE_BONUS : 0));
   let newLifeFormProd = [
@@ -539,7 +541,7 @@ export function roiMine(technoId, tolvl, object, player) {
     newTotalProd[1] - currentTotalProd[1],
     newTotalProd[2] - currentTotalProd[2],
   ];
-  let tradeRate = OGIData.json.options.tradeRate;
+  let tradeRate = OGBIData.json.options.tradeRate;
   let prodDiffMSE = prodDiff.map((x, n) => (x * tradeRate[0]) / tradeRate[n]).reduce((sum, cur) => sum + cur, 0);
   let buildingCostMSE = 0;
   for (let lvl = currentMineLvls[technoId - 1] + 1; lvl <= tolvl; lvl++) {
@@ -551,16 +553,16 @@ export function roiMine(technoId, tolvl, object, player) {
 }
 
 export function getBestRoi(player) {
-  let astro = OGIData.json.technology[124];
+  let astro = OGBIData.json.technology[124];
   let roi = [];
   let totalProd = { metal: 0, crystal: 0, deuterium: 0 };
   let avgMineLvl = { metal: 0, crystal: 0, deuterium: 0 };
   let maxMineLvl = { metal: 0, crystal: 0, deuterium: 0 };
-  let numPlanets = OGIData.json.empire.length;
+  let numPlanets = OGBIData.json.empire.length;
 
-  OGIData.empire.forEach((planet) => {
+  OGBIData.empire.forEach((planet) => {
     let coords = planet.coordinates.slice(1, -1);
-    let planetProductionProgress = OGIData.json.productionProgress[coords] || {
+    let planetProductionProgress = OGBIData.json.productionProgress[coords] || {
       technoId: 0,
       tolvl: 0,
       endDate: new Date().toGMTString(),
@@ -622,12 +624,12 @@ export function getBestRoi(player) {
   avgMineLvl.crystal /= numPlanets;
   avgMineLvl.deuterium /= numPlanets;
 
-  OGIData.json.averageMines = [avgMineLvl.metal, avgMineLvl.crystal, avgMineLvl.deuterium];
-  OGIData.json.totalProd = [totalProd.metal, totalProd.crystal, totalProd.deuterium];
-  OGIData.Save();
+  OGBIData.json.averageMines = [avgMineLvl.metal, avgMineLvl.crystal, avgMineLvl.deuterium];
+  OGBIData.json.totalProd = [totalProd.metal, totalProd.crystal, totalProd.deuterium];
+  OGBIData.Save();
 
-  let researchProgress = OGIData.json.researchProgress.technoId
-    ? OGIData.json.researchProgress
+  let researchProgress = OGBIData.json.researchProgress.technoId
+    ? OGBIData.json.researchProgress
     : { technoId: 0, tolvl: 0, endDate: new Date().toGMTString() };
   for (let l = (astro + 1) % 2 == 1 ? 1 : 2; l <= 10; l += 2) {
     let newAstro = astro + l;
@@ -649,7 +651,7 @@ export function getBestRoi(player) {
   }
 
   for (let l = 1; l <= 5; l++) {
-    let newLvl = OGIData.json.technology[122] + l;
+    let newLvl = OGBIData.json.technology[122] + l;
     roi.push({
       time: roiPlasmatechnology(newLvl),
       technoId: 122,

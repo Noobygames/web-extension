@@ -6,7 +6,7 @@
  * writable and the extension loses everything it has not persisted yet - which is why
  * `start()` checks the total on every page load and clears the other keys past 4.5 MB.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md; both the settings dialog
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md; both the settings dialog
  * and the boot path need it, so it could not stay a method on either.
  */
 export function getLocalStorageSize() {

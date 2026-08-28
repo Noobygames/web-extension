@@ -1,8 +1,8 @@
 import { createDOM } from "./dom.js";
-import OGIData from "./OGIData.js";
+import OGBIData from "./OGIData.js";
 
 const senders = [];
-let keepTooltip = OGIData.keepTooltip || true;
+let keepTooltip = OGBIData.keepTooltip || true;
 let currentSender = null;
 
 export function tooltip(sender, content, autoHide, side, timer, mouseoverEnable = false) {
@@ -37,7 +37,7 @@ export function tooltip(sender, content, autoHide, side, timer, mouseoverEnable 
     ) {
       tooltip.classList.remove("ogl-active");
       keepTooltip = false;
-      OGIData.keepTooltip = keepTooltip;
+      OGBIData.keepTooltip = keepTooltip;
     }
   });
 

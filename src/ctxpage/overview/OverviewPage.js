@@ -1,7 +1,7 @@
 import { getOption, setOption } from "../conf-options.js";
 import { createDOM } from "../../util/dom.js";
 import { getLogger } from "../../util/logger.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 
 class OverviewPage {
   logger;
@@ -18,7 +18,7 @@ class OverviewPage {
     const display = getOption(optionName);
 
     if (toggle) {
-      const options = OGIData.options;
+      const options = OGBIData.options;
 
       //toggle the display
       planet.setAttribute(attributeName, !display);
@@ -26,7 +26,7 @@ class OverviewPage {
       //save the display preference
       setOption(optionName, !display);
       options[optionName] = !display;
-      OGIData.options = options;
+      OGBIData.options = options;
     } else {
       planet.setAttribute(attributeName, display);
     }

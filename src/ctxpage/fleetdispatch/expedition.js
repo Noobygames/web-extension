@@ -11,7 +11,7 @@ import * as wait from "../../util/wait.js";
 import * as time from "../../util/time.js";
 import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import dataHelper from "../../util/dataHelper.js";
 import shipEnum from "../../util/enum/ship.js";
@@ -33,17 +33,22 @@ import {
   EXPEDITION_TOP1_POINTS,
 } from "../../util/gameConstants.js";
 import { building, research } from "../../util/gameFormulas.js";
+import itemImageID from "../../util/enum/itemImageID.js";
+import itemType from "../../util/enum/itemType.js";
+import { calcNeededShips, selectShips } from "./index.js";
+import { planExpeditionFleets } from "../../util/expeditionBalancer.js";
+import { addTemplateSelector } from "./templates.js";
 
 /**
  * The fleet-dispatch page: the rebuilt dispatcher UI, the expedition and collect
  * shortcuts, the custom-mission buttons, and the cargo-selection helpers.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md. This is the module that
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. This is the module that
  * plan rates highest-risk, and the reason is not its size: several functions in here
  * patch OGame's own `FleetDispatcher` prototype, and inside those patches `this` is
  * the FleetDispatcher, not the page controller. Nothing that reads `this.mission`,
  * `this.sendFleetUrl`, `this.loca`, `this.appendTokenParams` and friends was
- * rewritten - only the members that belonged to `OGInfinity`.
+ * rewritten - only the members that belonged to `OGBeyondInfinity`.
  *
  * Compliance note (AGENTS.md 1.1 and 1.2): everything here still runs from one user
  * gesture. No button in this module sends more than one fleet, and nothing schedules
@@ -66,7 +71,7 @@ function expedition(context) {
   ) {
     if (!document.querySelector("#allornone .allornonewrap")) return;
     const btnExpe = createDOM("button", {
-      class: `ogl-expedition ${OGIData.json.options.expedition.cargoShip == 202 ? "smallCargo" : "largeCargo"}`,
+      class: `ogl-expedition ${OGBIData.json.options.expedition.cargoShip == 202 ? "smallCargo" : "largeCargo"}`,
     });
     document.querySelector("#allornone .secondcol").appendChild(btnExpe);
     const optionsContainerDiv = createDOM("div");
@@ -76,62 +81,62 @@ function expedition(context) {
     const smallCargo = optionsDiv.appendChild(
       createDOM("div", { class: "ogl-option ogl-fleet-ship choice ogl-fleet-202" })
     );
-    smallCargo.classList.toggle("highlight", OGIData.json.options.expedition.cargoShip == 202);
+    smallCargo.classList.toggle("highlight", OGBIData.json.options.expedition.cargoShip == 202);
     const largeCargo = optionsDiv.appendChild(
       createDOM("div", { class: "ogl-option ogl-fleet-ship choice ogl-fleet-203" })
     );
-    largeCargo.classList.toggle("highlight", OGIData.json.options.expedition.cargoShip == 203);
+    largeCargo.classList.toggle("highlight", OGBIData.json.options.expedition.cargoShip == 203);
     smallCargo.addEventListener("click", () => updateCargoShip(202));
     largeCargo.addEventListener("click", () => updateCargoShip(203));
     const updateCargoShip = (ship) => {
       btnExpe.classList = `ogl-expedition ${ship == 202 ? "smallCargo" : "largeCargo"}`;
       smallCargo.classList.toggle("highlight", ship == 202);
       largeCargo.classList.toggle("highlight", ship == 203);
-      OGIData.json.options.expedition.cargoShip = ship;
-      OGIData.Save();
+      OGBIData.json.options.expedition.cargoShip = ship;
+      OGBIData.Save();
     };
 
     const sendProbe = optionsDiv.appendChild(
       createDOM("div", { class: "ogl-option ogl-fleet-ship choice ogl-fleet-210" })
     );
-    sendProbe.classList.toggle("highlight", OGIData.json.options.expedition.sendProbe);
+    sendProbe.classList.toggle("highlight", OGBIData.json.options.expedition.sendProbe);
     sendProbe.addEventListener("click", () => {
       sendProbe.classList.toggle("highlight");
-      OGIData.json.options.expedition.sendProbe = !OGIData.json.options.expedition.sendProbe;
-      OGIData.Save();
+      OGBIData.json.options.expedition.sendProbe = !OGBIData.json.options.expedition.sendProbe;
+      OGBIData.Save();
     });
 
     const sendCombat = optionsDiv.appendChild(
       createDOM("div", {
-        class: `ogl-option ogl-fleet-ship choice ogl-fleet-${OGIData.json.options.expedition.combatShip}`,
+        class: `ogl-option ogl-fleet-ship choice ogl-fleet-${OGBIData.json.options.expedition.combatShip}`,
       })
     );
-    sendCombat.classList.toggle("highlight", OGIData.json.options.expedition.sendCombat);
+    sendCombat.classList.toggle("highlight", OGBIData.json.options.expedition.sendCombat);
     sendCombat.addEventListener("click", () => {
       sendCombat.classList.toggle("highlight");
-      OGIData.json.options.expedition.sendCombat = !OGIData.json.options.expedition.sendCombat;
-      OGIData.Save();
+      OGBIData.json.options.expedition.sendCombat = !OGBIData.json.options.expedition.sendCombat;
+      OGBIData.Save();
     });
 
     const expeditionRotation = optionsDiv.appendChild(
       createDOM("div", { class: "ogl-option choice-expedition-icon expedition-rotation" })
     );
-    expeditionRotation.classList.toggle("highlight", OGIData.json.options.expedition.rotation);
+    expeditionRotation.classList.toggle("highlight", OGBIData.json.options.expedition.rotation);
     expeditionRotation.addEventListener("click", () => {
       expeditionRotation.classList.toggle("highlight");
-      OGIData.json.options.expedition.rotation = !OGIData.json.options.expedition.rotation;
-      OGIData.Save();
+      OGBIData.json.options.expedition.rotation = !OGBIData.json.options.expedition.rotation;
+      OGBIData.Save();
     });
 
     if (context.commander || context.admiral) {
       const expeditionFleet = optionsDiv.appendChild(
         createDOM("div", { class: "ogl-option choice-expedition-icon expedition-fleet" })
       );
-      expeditionFleet.classList.toggle("highlight", OGIData.json.options.expedition.standardFleet);
+      expeditionFleet.classList.toggle("highlight", OGBIData.json.options.expedition.standardFleet);
       expeditionFleet.addEventListener("click", () => {
         expeditionFleet.classList.toggle("highlight");
-        OGIData.json.options.expedition.standardFleet = !OGIData.json.options.expedition.standardFleet;
-        OGIData.Save();
+        OGBIData.json.options.expedition.standardFleet = !OGBIData.json.options.expedition.standardFleet;
+        OGBIData.Save();
       });
     }
 
@@ -140,19 +145,19 @@ function expedition(context) {
       const element = combatShipDiv.appendChild(
         createDOM("div", { class: `ogl-option ogl-fleet-ship choice ogl-fleet-${ship}` })
       );
-      element.classList.toggle("highlight", ship == OGIData.json.options.expedition.combatShip);
+      element.classList.toggle("highlight", ship == OGBIData.json.options.expedition.combatShip);
       element.addEventListener("click", () => updateCombatShip(ship));
     });
 
     const updateCombatShip = (ship) => {
       sendCombat.classList = `ogl-option ogl-fleet-ship choice ogl-fleet-${ship}`;
-      sendCombat.classList.toggle("highlight", OGIData.json.options.expedition.sendCombat);
+      sendCombat.classList.toggle("highlight", OGBIData.json.options.expedition.sendCombat);
       for (const children of combatShipDiv.children) {
         const id = Number(children.className.match(/(?<=ogl-fleet-)\d+/)[0]);
         children.classList.toggle("highlight", id == ship);
       }
-      OGIData.json.options.expedition.combatShip = ship;
-      OGIData.Save();
+      OGBIData.json.options.expedition.combatShip = ship;
+      OGBIData.Save();
     };
 
     // add mx buttons to choose fleet template
@@ -176,23 +181,23 @@ function expedition(context) {
       fleetState.collectMode = false;
       document.querySelector("#missionsDiv").setAttribute("data", "false");
 
-      let level = EXPEDITION_TOP1_POINTS.findIndex((points) => points > OGIData.json.topScore);
+      let level = EXPEDITION_TOP1_POINTS.findIndex((points) => points > OGBIData.json.topScore);
       level = level !== -1 ? level : EXPEDITION_TOP1_POINTS.length;
       const maxExpeditionPoints = EXPEDITION_EXPEDITION_POINTS[level];
       let maxResources = EXPEDITION_MAX_RESOURCES[level];
 
       if (context.playerClass == PlayerClass.EXPLORER) {
         // explorer class bonus
-        maxResources *= (1 + OGIData.json.explorerBonusIncreasedExpeditionOutcome) * OGIData.json.speed;
+        maxResources *= (1 + OGBIData.json.explorerBonusIncreasedExpeditionOutcome) * OGBIData.json.speed;
         // LF character class bonus
-        maxResources *= 1 + (OGIData.json.lifeformBonus.classBonus?.explorer || 0);
+        maxResources *= 1 + (OGBIData.json.lifeformBonus.classBonus?.explorer || 0);
       }
       // LF expedition bonus
-      maxResources *= 1 + (OGIData.json.lifeformBonus.expeditionBonus || 0);
+      maxResources *= 1 + (OGBIData.json.lifeformBonus.expeditionBonus || 0);
       // expedition resource boost item bonus
       let resourceBoostItemBonus = 0;
       // expedition resource boost item has global effect, we look in the planet 1
-      const html = new window.DOMParser().parseFromString(OGIData.empire[0].equipment_html, "text/html");
+      const html = new window.DOMParser().parseFromString(OGBIData.empire[0].equipment_html, "text/html");
       const itemDivs = html.querySelectorAll(".item_img");
       itemDivs.forEach((div) => {
         const style = div.getAttribute("style");
@@ -247,7 +252,7 @@ function expedition(context) {
         warningText += Translator.translate(110) + "<br>";
       }
 
-      if (OGIData.json.options.expedition.sendProbe) {
+      if (OGBIData.json.options.expedition.sendProbe) {
         if (availableShips[210]) {
           selectedShips[210] = 1;
         } else {
@@ -255,8 +260,8 @@ function expedition(context) {
         }
       }
 
-      if (OGIData.json.options.expedition.sendCombat) {
-        let combatShip = OGIData.json.options.expedition.combatShip;
+      if (OGBIData.json.options.expedition.sendCombat) {
+        let combatShip = OGBIData.json.options.expedition.combatShip;
         if (!availableShips[combatShip]) {
           const combatShipPriority = [218, 213, 211, 215, 207, 206, 205, 204];
           combatShip = combatShipPriority.find((ship) => availableShips[ship]);
@@ -265,7 +270,7 @@ function expedition(context) {
               combatShip = 0;
             }
           } else if (combatShip == 204) {
-            if (selectedShips[219] || (OGIData.json.options.expedition.cargoShip == 203 && availableShips[203])) {
+            if (selectedShips[219] || (OGBIData.json.options.expedition.cargoShip == 203 && availableShips[203])) {
               combatShip = 0;
             }
           }
@@ -281,23 +286,23 @@ function expedition(context) {
       let cargoCapacity = 0;
       for (const ship in selectedShips) {
         expeditionPoints += selectedShips[ship] * SHIP_EXPEDITION_POINTS[ship];
-        cargoCapacity += selectedShips[ship] * OGIData.json.ships[ship].cargoCapacity;
+        cargoCapacity += selectedShips[ship] * OGBIData.json.ships[ship].cargoCapacity;
       }
-      maxResources = Math.floor(maxResources * OGIData.json.options.expedition.limitCargo);
+      maxResources = Math.floor(maxResources * OGBIData.json.options.expedition.limitCargo);
       // minimum cargo ships needed to fulfill expedition points
       const minSC = Math.ceil((maxExpeditionPoints - expeditionPoints) / SHIP_EXPEDITION_POINTS[202]);
       const minLC = Math.ceil((maxExpeditionPoints - expeditionPoints) / SHIP_EXPEDITION_POINTS[203]);
       // always fulfill expedition points, cargo ships needed to fulfill desired maximum resources cargo space
       const maxSC = Math.max(minSC, calcNeededShips(context, { fret: 202, resources: maxResources - cargoCapacity }));
       const maxLC = Math.max(minLC, calcNeededShips(context, { fret: 203, resources: maxResources - cargoCapacity }));
-      const cargoShip = OGIData.json.options.expedition.cargoShip;
+      const cargoShip = OGBIData.json.options.expedition.cargoShip;
       let cargoShipsNeeded = cargoShip === 202 ? maxSC : maxLC;
 
       // Balanced dispatch: spread the cargo parked here across the expedition slots that are
       // actually free, so the first fleet does not swallow ships the later ones still need.
       // The minimum keeps every proposed fleet able to reach the top expedition tier - below
       // that it is better to fill fewer expeditions properly.
-      if (OGIData.json.options.expedition.balancedDispatch) {
+      if (OGBIData.json.options.expedition.balancedDispatch) {
         const minimumPerFleet = Math.ceil(maxExpeditionPoints / SHIP_EXPEDITION_POINTS[cargoShip]);
         const balanced = planExpeditionFleets({
           maxExpeditions: fleetDispatcher.maxExpeditionCount,
@@ -324,7 +329,7 @@ function expedition(context) {
         // select as many cargo ships as we can if there are not enough available
         const cargoShipExpeditionPoints = availableShips[cargoShip] * SHIP_EXPEDITION_POINTS[cargoShip];
         const remainingExpeditionPoints = maxExpeditionPoints - expeditionPoints - cargoShipExpeditionPoints;
-        const cargoShipCargoCapacity = availableShips[cargoShip] * OGIData.json.ships[cargoShip].cargoCapacity;
+        const cargoShipCargoCapacity = availableShips[cargoShip] * OGBIData.json.ships[cargoShip].cargoCapacity;
         const remainingCargoCapacity = maxResources - cargoCapacity - cargoShipCargoCapacity;
         const otherCargoShip = cargoShip === 202 ? 203 : 202;
         const maxOtherCargoShip = Math.max(
@@ -339,18 +344,18 @@ function expedition(context) {
       // use fleet templates if activated and available
       let timeFleetTemplate = null;
       let speedFleetTemplate = null;
-      if (OGIData.json.options.expedition.standardFleet) {
+      if (OGBIData.json.options.expedition.standardFleet) {
         // standardFleetType is new in this feature; configs saved before it exists carry an id
         // with no type. Treating null as "either list" keeps those users' template working -
         // templateApplied then stops the commander pass from overriding an admiral match, the
         // same precedence the pre-split code had.
         let templateApplied = false;
-        const configuredType = OGIData.json.options.expedition.standardFleetType;
+        const configuredType = OGBIData.json.options.expedition.standardFleetType;
         const selectShipsFromFleetTemplate = (fleetTemplate, templateType) => {
           if (templateApplied) return;
           if (configuredType == null || configuredType === templateType) {
             for (const template of fleetTemplate) {
-              if (template.id === Number(OGIData.json.options.expedition.standardFleetId)) {
+              if (template.id === Number(OGBIData.json.options.expedition.standardFleetId)) {
                 if (template.fleetSpeed) speedFleetTemplate = template.fleetSpeed;
                 if (template.expeditionTime) timeFleetTemplate = template.expeditionTime;
                 let enoughShips = true;
@@ -380,7 +385,7 @@ function expedition(context) {
       }
 
       // select expedition time and speed, using default options and templates
-      const expeditionTime = timeFleetTemplate ? timeFleetTemplate : OGIData.json.options.expedition.defaultTime;
+      const expeditionTime = timeFleetTemplate ? timeFleetTemplate : OGBIData.json.options.expedition.defaultTime;
       const expeditionSpeed = (speedFleetTemplate ? speedFleetTemplate : 100) / 10;
       document.querySelector("#expeditiontime").value = expeditionTime;
       const dropdown = document.querySelector("#expeditiontime + .dropdown > a");
@@ -417,7 +422,7 @@ function expedition(context) {
       if (originSystem != destinationSystem) {
         link += `&galaxy=${fleetDispatcher.targetPlanet.galaxy}&system=${fleetDispatcher.targetPlanet.system}`;
         link += "&position=16";
-      } else if (OGIData.json.options.expedition.rotation) {
+      } else if (OGBIData.json.options.expedition.rotation) {
         const planetSystems = [];
         document
           .querySelectorAll(".planet-koords")
@@ -446,7 +451,7 @@ function expedition(context) {
           ? moonSystems.some((moon) => moon != originSystem)
           : planetSystems.some((planet) => planet != originSystem);
 
-        if (moreExpeditionPlaces && sameExpeditionDestination >= OGIData.json.options.expedition.rotationAfter) {
+        if (moreExpeditionPlaces && sameExpeditionDestination >= OGBIData.json.options.expedition.rotationAfter) {
           const rotate = (planet) => planet.nextElementSibling || context.planetList[0];
           let nextPlanet = context.current.planet;
           // if same system, try the next planet until we find a different system

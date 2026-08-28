@@ -1,5 +1,5 @@
 import OgamePageData from "./OgamePageData.js";
-import OGIData from "./OGIData.js";
+import OGBIData from "./OGIData.js";
 import { getLogger } from "./logger.js";
 import MissionType from "./enum/missionType.js";
 
@@ -2657,7 +2657,7 @@ class Translator {
   logger = getLogger("Translator");
 
   #getTranslations() {
-    const translations = OGIData.json.translations ?? {};
+    const translations = OGBIData.json.translations ?? {};
     if (!translations.lfTypeNames) translations.lfTypeNames = {};
     if (!translations.tech) translations.tech = {};
     if (!translations.text) translations.text = {};
@@ -2670,8 +2670,8 @@ class Translator {
     return translation?.[type]?.[id]?.[currentLanguage()] || translation?.[type]?.[id]?.en || "";
   }
   translate(id, type = "text") {
-    if (OGIData.json.translations && type === "tech") {
-      return OGIData.json.translations.tech[id];
+    if (OGBIData.json.translations && type === "tech") {
+      return OGBIData.json.translations.tech[id];
     }
     return this.#translate(id, type);
   }
@@ -2737,7 +2737,7 @@ class Translator {
       translations.lastUpdate = new Date().toISOString();
       translations.language = currentLanguage();
 
-      OGIData.json.translations = translations;
+      OGBIData.json.translations = translations;
 
       this.logger.debug(`Translations (${currentLanguage()}) updated`);
     } else {
@@ -2759,7 +2759,7 @@ class Translator {
           const lifeformIcon = lfName.parentElement.querySelector(".lifeform1, .lifeform2, .lifeform3, .lifeform4");
           translations.lfTypeNames[lfName.textContent.trim()] = lifeformIcon.classList[1];
         });
-        OGIData.json.translations = translations;
+        OGBIData.json.translations = translations;
         // last fetch has to be from current planet/moon else Ogame switches on next refresh
         if (currentPosition.isMoon) fetch(currentPosition.planet.querySelector(".moonlink").href);
       });

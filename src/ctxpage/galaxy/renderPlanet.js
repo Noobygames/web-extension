@@ -1,11 +1,12 @@
-import { createDOM, createDOMSanitized } from "../../util/dom.js";
-import OGIData from "../../util/OGIData.js";
-import Translator from "../../util/translate.js";
+import { createDOM } from "../../util/dom.js";
+import OGBIData from "../../util/OGIData.js";
+import { probingWarning } from "../settings/index.js";
+import { setHighlightCoords } from "../../util/highlightTarget.js";
 
 /**
  * One planet row for the target list and the marker overlays.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md. Its own file rather than
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. Its own file rather than
  * part of `galaxy/index.js` because it is a renderer with no state of its own - the
  * only thing it reads besides its arguments is the marker table in the store.
  */
@@ -74,7 +75,7 @@ function renderPlanet(context, coords, main, scanned, moon, deleted) {
     mIcon.classList.add("ogl-active");
     moonDiv.classList.add("ogl-active");
   }
-  let targeted = OGIData.json.markers[coords.join(":")];
+  let targeted = OGBIData.json.markers[coords.join(":")];
   if (targeted) {
     a.classList.add("ogl-marked");
     a.setAttribute("data-marked", targeted.color);

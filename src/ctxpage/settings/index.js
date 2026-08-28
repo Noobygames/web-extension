@@ -1,30 +1,22 @@
 import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
+import { createDOM, createSVG } from "../../util/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
 import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as wait from "../../util/wait.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import VERSION from "../../util/version.js";
-import shipEnum from "../../util/enum/ship.js";
-import missionType from "../../util/enum/missionType.js";
-import planetType from "../../util/enum/planetType.js";
-import itemType from "../../util/enum/itemType.js";
-import { getOption, setOption, getOptions } from "../conf-options.js";
+import { getOption, setOption } from "../conf-options.js";
 import { applyWideLayout, normalizeZoomFactor } from "../wide-layout.js";
 import { keepOnPlanetDialog } from "../fleetdispatch/keepOnPlanet.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import { tabs } from "../../util/tabs.js";
 import { getLocalStorageSize, purgeLocalStorage } from "../../util/localStorageUsage.js";
+import { pageContextRequest } from "../../util/service.callbackEvent.js";
 
 /**
  * The settings dialog, the first-run welcome popup, and the notice explaining why the
  * direct-probe icons are inert.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md. `this.json` became
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. `this.json` became
  * `OGIData.json`; the two page facts the dialog reads - whether the commander is
  * active and which universe this is - arrive as an explicit `context`.
  *
@@ -194,7 +186,7 @@ function settings(context) {
   dataDiv.appendChild(createDOM("hr"));
   let universe = dataDiv.appendChild(createDOM("div"));
   let universeSettingsTooltip = "";
-  for (let [key, value] of Object.entries(OGIData.json.universeSettingsTooltip)) {
+  for (let [key, value] of Object.entries(OGBIData.json.universeSettingsTooltip)) {
     universeSettingsTooltip += `<span>${key}: ${value}</span><br>`;
   }
   universe.appendChild(createDOM("h1", { class: "tooltip", title: universeSettingsTooltip }, Translator.translate(9)));
@@ -205,17 +197,17 @@ function settings(context) {
         style: "display: flex;justify-content: space-between; align-items: center;",
       },
       `${Translator.translate(10, "text", false)}: ` +
-        toFormattedNumber(OGIData.json.topScore, null, true) +
+        toFormattedNumber(OGBIData.json.topScore, null, true) +
         `<br/>${Translator.translate(11, "text", false)}: ` +
-        toFormattedNumber(OGIData.json.speed) +
+        toFormattedNumber(OGBIData.json.speed) +
         `<br/>${Translator.translate(136, "text", false)}: ` +
-        toFormattedNumber(OGIData.json.speedResearch) +
+        toFormattedNumber(OGBIData.json.speedResearch) +
         `<br/>${Translator.translate(12, "text", false)}: ` +
-        toFormattedNumber(OGIData.json.speedFleetWar) +
+        toFormattedNumber(OGBIData.json.speedFleetWar) +
         `<br/>${Translator.translate(13, "text", false)}: ` +
-        toFormattedNumber(OGIData.json.speedFleetPeaceful) +
+        toFormattedNumber(OGBIData.json.speedFleetPeaceful) +
         `<br/>${Translator.translate(14, "text", false)}: ` +
-        toFormattedNumber(OGIData.json.speedFleetHolding)
+        toFormattedNumber(OGBIData.json.speedFleetHolding)
     )
   );
   let srvDatasBtn = createDOM("button", { class: "btn_blue update" }, Translator.translate(23));
@@ -224,7 +216,7 @@ function settings(context) {
   dataDiv.appendChild(createDOM("hr"));
   let featureSettings = dataDiv.appendChild(createDOM("div", { style: "display: grid;" }));
   featureSettings.appendChild(createDOM("h1", {}, Translator.translate(103)));
-  if (OGIData.json.timezoneDiff != 0) {
+  if (OGBIData.json.timezoneDiff != 0) {
     let spanZone = featureSettings.appendChild(
       createDOM(
         "span",
@@ -234,10 +226,10 @@ function settings(context) {
     );
     let timeZoneCheck = spanZone.appendChild(createDOM("input", { type: "checkbox" }));
     timeZoneCheck.addEventListener("change", () => {
-      OGIData.json.options.timeZone = timeZoneCheck.checked;
-      OGIData.Save();
+      OGBIData.json.options.timeZone = timeZoneCheck.checked;
+      OGBIData.Save();
     });
-    if (OGIData.json.options.timeZone) {
+    if (OGBIData.json.options.timeZone) {
       timeZoneCheck.checked = true;
     }
   }
@@ -285,10 +277,10 @@ function settings(context) {
   );
   let timerCheck = optiondiv.appendChild(createDOM("input", { type: "checkbox" }));
   timerCheck.addEventListener("change", () => {
-    OGIData.json.options.activitytimers = timerCheck.checked;
-    OGIData.Save();
+    OGBIData.json.options.activitytimers = timerCheck.checked;
+    OGBIData.Save();
   });
-  if (OGIData.json.options.activitytimers) {
+  if (OGBIData.json.options.activitytimers) {
     timerCheck.checked = true;
   }
 
@@ -301,10 +293,10 @@ function settings(context) {
   );
   let lessAggressiveEmpireAutomaticUpdateBox = optiondiv.appendChild(createDOM("input", { type: "checkbox" }));
   lessAggressiveEmpireAutomaticUpdateBox.addEventListener("change", () => {
-    OGIData.json.options.lessAggressiveEmpireAutomaticUpdate = lessAggressiveEmpireAutomaticUpdateBox.checked;
-    OGIData.Save();
+    OGBIData.json.options.lessAggressiveEmpireAutomaticUpdate = lessAggressiveEmpireAutomaticUpdateBox.checked;
+    OGBIData.Save();
   });
-  if (OGIData.json.options.lessAggressiveEmpireAutomaticUpdate) {
+  if (OGBIData.json.options.lessAggressiveEmpireAutomaticUpdate) {
     lessAggressiveEmpireAutomaticUpdateBox.checked = true;
   }
   let fleetActivity = featureSettings.appendChild(
@@ -314,13 +306,13 @@ function settings(context) {
       `<label for="fleet-activity">${Translator.translate(
         134
       )}</label>\n        <input type="checkbox" id="fleet-activity" name="fleet-activity" ${
-        OGIData.json.options.fleetActivity ? "checked" : ""
+        OGBIData.json.options.fleetActivity ? "checked" : ""
       }>`
     )
   );
   fleetActivity.querySelector("#fleet-activity").addEventListener("click", (e) => {
     const isChecked = e.currentTarget.checked;
-    OGIData.json.options.fleetActivity = isChecked;
+    OGBIData.json.options.fleetActivity = isChecked;
   });
   let showProgressIndicators = featureSettings.appendChild(
     DOM.createDOMSanitized(
@@ -329,13 +321,13 @@ function settings(context) {
       `<label for="progress-indicator">${Translator.translate(
         146
       )}</label>\n        <input type="checkbox" id="progress-indicator" name="progress-indicator" ${
-        OGIData.json.options.showProgressIndicators ? "checked" : ""
+        OGBIData.json.options.showProgressIndicators ? "checked" : ""
       }>`
     )
   );
   showProgressIndicators.querySelector("#progress-indicator").addEventListener("click", (e) => {
     const isChecked = e.currentTarget.checked;
-    OGIData.json.options.showProgressIndicators = isChecked;
+    OGBIData.json.options.showProgressIndicators = isChecked;
   });
   let navigationArrows = featureSettings.appendChild(
     DOM.createDOMSanitized(
@@ -344,13 +336,13 @@ function settings(context) {
       `<label for="fleet-activity">${Translator.translate(
         138
       )}</label>\n        <input type="checkbox" id="nav-arrows" name="fleet-activity" ${
-        OGIData.json.options.navigationArrows ? "checked" : ""
+        OGBIData.json.options.navigationArrows ? "checked" : ""
       }>`
     )
   );
   navigationArrows.querySelector("#nav-arrows").addEventListener("click", (e) => {
     const isChecked = e.currentTarget.checked;
-    OGIData.json.options.navigationArrows = isChecked;
+    OGBIData.json.options.navigationArrows = isChecked;
   });
   // Wide-screen layout: stretch the fixed-width game column on monitors >= 1600px.
   let wideLayout = featureSettings.appendChild(
@@ -401,7 +393,7 @@ function settings(context) {
     createDOM("input", {
       type: "text",
       class: "ogl-rvalInput ogl-formatInput tooltip",
-      value: toFormattedNumber(OGIData.json.options.rvalLimit),
+      value: toFormattedNumber(OGBIData.json.options.rvalLimit),
     })
   );
 
@@ -416,7 +408,7 @@ function settings(context) {
     createDOM("input", {
       type: "text",
       class: "ogl-rvalInput ogl-formatInput tooltip",
-      value: toFormattedNumber(OGIData.json.options.rvalSelfLimitPlanet),
+      value: toFormattedNumber(OGBIData.json.options.rvalSelfLimitPlanet),
     })
   );
   optiondiv = featureSettings.appendChild(
@@ -430,7 +422,7 @@ function settings(context) {
     createDOM("input", {
       type: "text",
       class: "ogl-rvalInput ogl-formatInput tooltip",
-      value: toFormattedNumber(OGIData.json.options.rvalSelfLimitMoon),
+      value: toFormattedNumber(OGBIData.json.options.rvalSelfLimitMoon),
     })
   );
 
@@ -439,7 +431,7 @@ function settings(context) {
     createDOM("input", {
       type: "text",
       class: "ogl-rvalInput ogl-formatInput",
-      value: OGIData.json.options.expedition.defaultTime,
+      value: OGBIData.json.options.expedition.defaultTime,
     })
   );
   optiondiv = featureSettings.appendChild(createDOM("span", {}, Translator.translate(149)));
@@ -447,7 +439,7 @@ function settings(context) {
     createDOM("input", {
       type: "text",
       class: "ogl-rvalInput ogl-formatInput",
-      value: Math.round(100 * OGIData.json.options.expedition.limitCargo),
+      value: Math.round(100 * OGBIData.json.options.expedition.limitCargo),
     })
   );
   optiondiv = featureSettings.appendChild(createDOM("span", {}, Translator.translate(150)));
@@ -455,7 +447,7 @@ function settings(context) {
     createDOM("input", {
       type: "text",
       class: "ogl-rvalInput ogl-formatInput",
-      value: OGIData.json.options.expedition.rotationAfter,
+      value: OGBIData.json.options.expedition.rotationAfter,
     })
   );
   // Balanced expedition dispatch (roadmap Feature C). Off by default: it changes the ship count
@@ -467,12 +459,12 @@ function settings(context) {
       `<label for="balanced-dispatch" title="${Translator.translate(242)}">${Translator.translate(
         241
       )}</label>\n        <input type="checkbox" id="balanced-dispatch" name="balanced-dispatch" ${
-        OGIData.json.options.expedition.balancedDispatch ? "checked" : ""
+        OGBIData.json.options.expedition.balancedDispatch ? "checked" : ""
       }>`
     )
   );
   balancedDispatch.querySelector("#balanced-dispatch").addEventListener("click", (e) => {
-    OGIData.json.options.expedition.balancedDispatch = e.currentTarget.checked;
+    OGBIData.json.options.expedition.balancedDispatch = e.currentTarget.checked;
   });
 
   optiondiv = featureSettings.appendChild(DOM.createDOM("span", {}, Translator.translate(181)));
@@ -639,15 +631,15 @@ function settings(context) {
     var reader = new FileReader();
     reader.onload = (evt) => {
       let json = JSON.parse(evt.target.result);
-      OGIData.json = json;
-      OGIData.json.pantrySync = Date.now();
-      OGIData.Save();
+      OGBIData.json = json;
+      OGBIData.json.pantrySync = Date.now();
+      OGBIData.Save();
       document.location = document.location.origin + "/game/index.php?page=ingame&component=overview ";
     };
     reader.readAsText(event.target.files[0], "UTF-8");
   });
   exportBtn.addEventListener("click", () => {
-    const data = Object.assign({}, OGIData.json);
+    const data = Object.assign({}, OGBIData.json);
     download(data, `oginfinity-${OgamePageData.gameLang}-${context.universe}.data`);
   });
   let resetBtn = dataBtns.appendChild(createDOM("button", { class: "btn_blue ogl-btn_red" }, Translator.translate(26)));
@@ -674,31 +666,31 @@ function settings(context) {
   );
   let own3 = missionDiv.appendChild(
     createDOM("div", {
-      class: `ogl-mission-icon ogl-mission-3 ${OGIData.json.options.harvestMission == 3 ? "ogl-active" : ""}`,
+      class: `ogl-mission-icon ogl-mission-3 ${OGBIData.json.options.harvestMission == 3 ? "ogl-active" : ""}`,
     })
   );
   let own4 = missionDiv.appendChild(
     createDOM("div", {
-      class: `ogl-mission-icon ogl-mission-4 ${OGIData.json.options.harvestMission == 4 ? "ogl-active" : ""}`,
+      class: `ogl-mission-icon ogl-mission-4 ${OGBIData.json.options.harvestMission == 4 ? "ogl-active" : ""}`,
     })
   );
   own3.addEventListener("click", () => {
     own4.classList.remove("ogl-active");
     own3.classList.add("ogl-active");
-    OGIData.json.options.harvestMission = 3;
-    OGIData.Save();
+    OGBIData.json.options.harvestMission = 3;
+    OGBIData.Save();
   });
   own4.addEventListener("click", () => {
     own3.classList.remove("ogl-active");
     own4.classList.add("ogl-active");
-    OGIData.json.options.harvestMission = 4;
-    OGIData.Save();
+    OGBIData.json.options.harvestMission = 4;
+    OGBIData.Save();
   });
   none.addEventListener("click", () => {
     own4.classList.remove("ogl-active");
     own3.classList.remove("ogl-active");
-    OGIData.json.options.harvestMission = 0;
-    OGIData.Save();
+    OGBIData.json.options.harvestMission = 0;
+    OGBIData.Save();
   });
 
   span = standardMissions.appendChild(
@@ -714,28 +706,28 @@ function settings(context) {
   );
   let other3 = missionDiv.appendChild(
     createDOM("div", {
-      class: `ogl-mission-icon ogl-mission-3 ${OGIData.json.options.foreignMission == 3 ? "ogl-active" : ""}`,
+      class: `ogl-mission-icon ogl-mission-3 ${OGBIData.json.options.foreignMission == 3 ? "ogl-active" : ""}`,
     })
   );
   let other1 = missionDiv.appendChild(
     createDOM("div", {
-      class: `ogl-mission-icon ogl-mission-1 ${OGIData.json.options.foreignMission == 1 ? "ogl-active" : ""}`,
+      class: `ogl-mission-icon ogl-mission-1 ${OGBIData.json.options.foreignMission == 1 ? "ogl-active" : ""}`,
     })
   );
   other1.addEventListener("click", () => {
     other3.classList.remove("ogl-active");
     other1.classList.add("ogl-active");
-    OGIData.json.options.foreignMission = 1;
+    OGBIData.json.options.foreignMission = 1;
   });
   other3.addEventListener("click", () => {
     other1.classList.remove("ogl-active");
     other3.classList.add("ogl-active");
-    OGIData.json.options.foreignMission = 3;
+    OGBIData.json.options.foreignMission = 3;
   });
   none.addEventListener("click", () => {
     other1.classList.remove("ogl-active");
     other3.classList.remove("ogl-active");
-    OGIData.json.options.foreignMission = 0;
+    OGBIData.json.options.foreignMission = 0;
   });
   span = standardMissions.appendChild(
     createDOM(
@@ -750,28 +742,28 @@ function settings(context) {
   );
   let expe15 = missionDiv.appendChild(
     createDOM("div", {
-      class: `ogl-mission-icon ogl-mission-15 ${OGIData.json.options.expeditionMission == 15 ? "ogl-active" : ""}`,
+      class: `ogl-mission-icon ogl-mission-15 ${OGBIData.json.options.expeditionMission == 15 ? "ogl-active" : ""}`,
     })
   );
   let expe6 = missionDiv.appendChild(
     createDOM("div", {
-      class: `ogl-mission-icon ogl-mission-6 ${OGIData.json.options.expeditionMission == 6 ? "ogl-active" : ""}`,
+      class: `ogl-mission-icon ogl-mission-6 ${OGBIData.json.options.expeditionMission == 6 ? "ogl-active" : ""}`,
     })
   );
   expe15.addEventListener("click", () => {
     expe6.classList.remove("ogl-active");
     expe15.classList.add("ogl-active");
-    OGIData.json.options.expeditionMission = 15;
+    OGBIData.json.options.expeditionMission = 15;
   });
   expe6.addEventListener("click", () => {
     expe15.classList.remove("ogl-active");
     expe6.classList.add("ogl-active");
-    OGIData.json.options.expeditionMission = 6;
+    OGBIData.json.options.expeditionMission = 6;
   });
   none.addEventListener("click", () => {
     expe15.classList.remove("ogl-active");
     expe6.classList.remove("ogl-active");
-    OGIData.json.options.expeditionMission = 0;
+    OGBIData.json.options.expeditionMission = 0;
   });
 
   settingDiv.appendChild(createDOM("hr"));
@@ -790,7 +782,7 @@ function settings(context) {
   nbCustomMissionsSelect.value = getOption("nbCustomMissions");
   nbCustomMissionsDiv.appendChild(nbCustomMissionsSelect);
 
-  if (OGIData.json.options.customMissions) {
+  if (OGBIData.json.options.customMissions) {
     let resetCustomMissions = customMissions.appendChild(
       createDOM("div", { style: "margin-top: 15px; display:grid; grid-template-columns: auto 1fr" })
     );
@@ -803,33 +795,33 @@ function settings(context) {
 
     const getresetBuittonClass = (customMissionId) => {
       const customMissionClass = `ogk-customMission ogk-customMission-${customMissionId}`;
-      const missionClass = OGIData.json.options.customMissions[customMissionId].mission == 4 ? "statio" : "";
+      const missionClass = OGBIData.json.options.customMissions[customMissionId].mission == 4 ? "statio" : "";
 
       const shipClass =
-        OGIData.json.options.customMissions[customMissionId].ship === "select-most"
+        OGBIData.json.options.customMissions[customMissionId].ship === "select-most"
           ? "select-most"
-          : OGIData.json.options.customMissions[customMissionId].ship === "sendall"
+          : OGBIData.json.options.customMissions[customMissionId].ship === "sendall"
           ? "sendall"
-          : OGIData.json.options.customMissions[customMissionId].ship == 202
+          : OGBIData.json.options.customMissions[customMissionId].ship == 202
           ? "smallCargo"
-          : OGIData.json.options.customMissions[customMissionId].ship == 219
+          : OGBIData.json.options.customMissions[customMissionId].ship == 219
           ? "pathFinder"
           : "largeCargo";
       return `${customMissionClass} ${missionClass} ${shipClass}`;
     };
 
     for (let customMissionId = 1; customMissionId <= 5; customMissionId++) {
-      if (OGIData.json.options.customMissions[customMissionId]) {
+      if (OGBIData.json.options.customMissions[customMissionId]) {
         let btnReset = resetButtonsDiv.appendChild(
           createDOM("button", {
             class: getresetBuittonClass(customMissionId),
-            "data-marked": OGIData.json.options.customMissions[customMissionId].color,
+            "data-marked": OGBIData.json.options.customMissions[customMissionId].color,
           })
         );
         btnReset.addEventListener("click", () => {
           let reset = confirm(Translator.translate(197));
           if (reset) {
-            OGIData.json.options.customMissions[customMissionId] = {
+            OGBIData.json.options.customMissions[customMissionId] = {
               ship: 202,
               mission: 4,
               rotation: false,
@@ -839,8 +831,8 @@ function settings(context) {
               color: "orange",
             };
             btnReset.classList = getresetBuittonClass(customMissionId);
-            btnReset.setAttribute("data-marked", OGIData.json.options.customMissions[customMissionId].color);
-            OGIData.Save();
+            btnReset.setAttribute("data-marked", OGBIData.json.options.customMissions[customMissionId].color);
+            OGBIData.Save();
           }
         });
       }
@@ -853,7 +845,7 @@ function settings(context) {
   let ptreSection = settingDiv.appendChild(createDOM("div", { style: "display: grid;" }));
   ptreSection.appendChild(createDOM("h1", {}, "PTRE settings"));
 
-  const savedPtreKey = OGIData.json.options.ptreTK;
+  const savedPtreKey = OGBIData.json.options.ptreTK;
   const ptreEnabled =
     typeof savedPtreKey === "string" && savedPtreKey.startsWith("TM") && savedPtreKey.replace(/-/g, "").length === 18;
 
@@ -875,7 +867,7 @@ function settings(context) {
     createDOM("input", {
       type: "password",
       class: "ogl-ptreTeamKey tooltip",
-      value: OGIData.json.options.ptreTK ?? "",
+      value: OGBIData.json.options.ptreTK ?? "",
       placeholder: "TM-XXXX-XXXX-XXXX-XXXX",
     })
   );
@@ -936,7 +928,7 @@ function settings(context) {
     createDOM("input", {
       type: "password",
       class: "ogl-pantryKey tooltip",
-      value: OGIData.json.options.pantryKey ?? "",
+      value: OGBIData.json.options.pantryKey ?? "",
       placeholder: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
     })
   );
@@ -949,28 +941,28 @@ function settings(context) {
     createDOM("option", { value: "https://simulator.ogame-tools.com/" }, "Ogame Tools - Simulator"),
     createDOM("option", { value: "https://webapp-universe.net/ogf/change_language/" }, "OGF")
   );
-  simulatorInput.value = OGIData.json.options.simulator;
+  simulatorInput.value = OGBIData.json.options.simulator;
   simulator.appendChild(simulatorInput);
   settingDiv.appendChild(saveBtn);
   saveBtn.addEventListener("click", () => {
-    OGIData.json.options.importExportReminderMode = importExportReminderMode?.value;
-    OGIData.json.options.rvalLimit = fromFormattedNumber(rvalInput.value, true);
-    OGIData.json.options.rvalSelfLimitPlanet = fromFormattedNumber(rvalSelfInputPlanet.value, true);
-    OGIData.json.options.rvalSelfLimitMoon = fromFormattedNumber(rvalSelfInputMoon.value, true);
+    OGBIData.json.options.importExportReminderMode = importExportReminderMode?.value;
+    OGBIData.json.options.rvalLimit = fromFormattedNumber(rvalInput.value, true);
+    OGBIData.json.options.rvalSelfLimitPlanet = fromFormattedNumber(rvalSelfInputPlanet.value, true);
+    OGBIData.json.options.rvalSelfLimitMoon = fromFormattedNumber(rvalSelfInputMoon.value, true);
     if (ptreInput.value && ptreInput.value.replace(/-/g, "").length === 18 && ptreInput.value.startsWith("TM")) {
-      OGIData.json.options.ptreTK = ptreInput.value;
+      OGBIData.json.options.ptreTK = ptreInput.value;
     } else {
-      OGIData.json.options.ptreTK = "";
+      OGBIData.json.options.ptreTK = "";
       // TODO: Display an error message "Invalid PTRE Team Key Format. TK should look like: TM-XXXX-XXXX-XXXX-XXXX"
     }
-    pageContextRequest("ptre", "setTeamKey", OGIData.json.options.ptreTK || "").catch((err) =>
+    pageContextRequest("ptre", "setTeamKey", OGBIData.json.options.ptreTK || "").catch((err) =>
       console.warn("[OGI][PTRE] setTeamKey failed", err)
     );
-    OGIData.json.options.pantryKey = pantryInput.value.trim();
-    OGIData.json.options.simulator = simulatorInput.value;
-    OGIData.json.options.expedition.defaultTime = Math.max(1, Math.min(~~expeditionDefaultTime.value, 16));
-    OGIData.json.options.expedition.limitCargo = Math.max(1, Math.min(~~expeditionLimitCargo.value, 500)) / 100;
-    OGIData.json.options.expedition.rotationAfter = Math.max(1, Math.min(~~expeditionRotationAfter.value, 16));
+    OGBIData.json.options.pantryKey = pantryInput.value.trim();
+    OGBIData.json.options.simulator = simulatorInput.value;
+    OGBIData.json.options.expedition.defaultTime = Math.max(1, Math.min(~~expeditionDefaultTime.value, 16));
+    OGBIData.json.options.expedition.limitCargo = Math.max(1, Math.min(~~expeditionLimitCargo.value, 500)) / 100;
+    OGBIData.json.options.expedition.rotationAfter = Math.max(1, Math.min(~~expeditionRotationAfter.value, 16));
     setOption("standardUnitBase", standardUnitInput.value);
     setOption("alertHostileIncomingMode", alertHostileIncomingMode.value);
     setOption("regularConstructionsIconsDisplayMode", regularConstructionsIconsInput.value);
@@ -982,8 +974,8 @@ function settings(context) {
     setOption("wideZoomFactor", normalizeZoomFactor(wideZoomFactorInput.value));
     applyWideLayout();
 
-    OGIData.json.needSync = true;
-    OGIData.Save();
+    OGBIData.json.needSync = true;
+    OGBIData.Save();
     document.querySelector(".ogl-dialog .close-tooltip").click();
   });
   resetBtn.addEventListener("click", () => {
@@ -991,7 +983,7 @@ function settings(context) {
     if (reset) {
       let json = {};
       if (!cacheBox.children[1].checked) {
-        json = Object.assign({}, OGIData.json);
+        json = Object.assign({}, OGBIData.json);
       }
       json.harvests = {};
       json.options = {};
@@ -1012,49 +1004,49 @@ function settings(context) {
         purgeLocalStorage();
       }
       if (!expeditionsBox.children[1].checked) {
-        json.expeditionSums = OGIData.json.expeditionSums;
-        json.expeditions = OGIData.json.expeditions;
-        for (let id in OGIData.json.harvests) {
-          if (OGIData.json.harvests[id].coords.split(":")[2] == 16) {
-            json.harvests[id] = OGIData.json.harvests[id];
+        json.expeditionSums = OGBIData.json.expeditionSums;
+        json.expeditions = OGBIData.json.expeditions;
+        for (let id in OGBIData.json.harvests) {
+          if (OGBIData.json.harvests[id].coords.split(":")[2] == 16) {
+            json.harvests[id] = OGBIData.json.harvests[id];
           }
         }
-        for (let id in OGIData.json.combats) {
-          if (OGIData.json.combats[id].coordinates.position == 16) {
-            json.combats[id] = OGIData.json.combats[id];
+        for (let id in OGBIData.json.combats) {
+          if (OGBIData.json.combats[id].coordinates.position == 16) {
+            json.combats[id] = OGBIData.json.combats[id];
           }
         }
       }
       if (!discoveriesBox.children[1].checked) {
-        json.discoveriesSums = OGIData.json.discoveriesSums;
-        json.discoveries = OGIData.json.discoveries;
+        json.discoveriesSums = OGBIData.json.discoveriesSums;
+        json.discoveries = OGBIData.json.discoveries;
       }
       if (!combatsBox.children[1].checked) {
-        json.combatsSums = OGIData.json.combatsSums;
-        for (let id in OGIData.json.combats) {
-          if (OGIData.json.combats[id].coordinates.position != 16) {
-            json.combats[id] = OGIData.json.combats[id];
+        json.combatsSums = OGBIData.json.combatsSums;
+        for (let id in OGBIData.json.combats) {
+          if (OGBIData.json.combats[id].coordinates.position != 16) {
+            json.combats[id] = OGBIData.json.combats[id];
           }
         }
-        for (let id in OGIData.json.harvests) {
-          if (OGIData.json.harvests[id].coords.split(":")[2] != 16) {
-            json.harvests[id] = OGIData.json.harvests[id];
+        for (let id in OGBIData.json.harvests) {
+          if (OGBIData.json.harvests[id].coords.split(":")[2] != 16) {
+            json.harvests[id] = OGBIData.json.harvests[id];
           }
         }
       }
       if (!targetsBox.children[1].checked) {
-        json.markers = OGIData.json.markers;
+        json.markers = OGBIData.json.markers;
       }
       if (!spiesBox.children[1].checked) {
-        json.spies = OGIData.json.spies;
+        json.spies = OGBIData.json.spies;
       }
       if (!OptionsBox.children[1].checked) {
-        json.options = OGIData.json.options;
+        json.options = OGBIData.json.options;
         json.options.empire = false;
       }
-      OGIData.json = json;
-      OGIData.json.needSync = false;
-      OGIData.Save();
+      OGBIData.json = json;
+      OGBIData.json.needSync = false;
+      OGBIData.Save();
       document.location = document.location.origin + "/game/index.php?page=ingame&component=overview ";
     }
   });

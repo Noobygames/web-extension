@@ -16,7 +16,7 @@ const read = (file) => fs.readFileSync(path.join(projectRoot, file), "utf8");
 /**
  * The files Phase 3 created, listed rather than globbed.
  *
- * `ctxpage/` also holds modules that were never part of OGInfinity - the message
+ * `ctxpage/` also holds modules that were never part of OGBeyondInfinity - the message
  * analyzers, `conf-options.js`, `wide-layout.js` - and the legacy `messages-analyzer`,
  * which is still invoked as `ctxMessageAnalyzer.call(this)` and therefore uses `this`
  * on purpose. Globbing would sweep those in and make both guards meaningless.

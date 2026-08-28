@@ -11,7 +11,7 @@ import * as wait from "../../util/wait.js";
 import * as time from "../../util/time.js";
 import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import dataHelper from "../../util/dataHelper.js";
 import shipEnum from "../../util/enum/ship.js";
@@ -33,17 +33,18 @@ import {
   EXPEDITION_TOP1_POINTS,
 } from "../../util/gameConstants.js";
 import { building, research } from "../../util/gameFormulas.js";
+import { openPlanetList, selectAllShips, selectBestCargoShip, selectMostShips, selectShips } from "./index.js";
 
 /**
  * The fleet-dispatch page: the rebuilt dispatcher UI, the expedition and collect
  * shortcuts, the custom-mission buttons, and the cargo-selection helpers.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md. This is the module that
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. This is the module that
  * plan rates highest-risk, and the reason is not its size: several functions in here
  * patch OGame's own `FleetDispatcher` prototype, and inside those patches `this` is
  * the FleetDispatcher, not the page controller. Nothing that reads `this.mission`,
  * `this.sendFleetUrl`, `this.loca`, `this.appendTokenParams` and friends was
- * rewritten - only the members that belonged to `OGInfinity`.
+ * rewritten - only the members that belonged to `OGBeyondInfinity`.
  *
  * Compliance note (AGENTS.md 1.1 and 1.2): everything here still runs from one user
  * gesture. No button in this module sends more than one fleet, and nothing schedules
@@ -87,14 +88,14 @@ function customMissions(context) {
 
     //get the real current id (planet or moon)
     const currentFromEmpire = context.current.isMoon
-      ? OGIData.empire.find((p) => p.id == context.current.id).moon
-      : OGIData.empire.find((p) => p.id == context.current.id);
+      ? OGBIData.empire.find((p) => p.id == context.current.id).moon
+      : OGBIData.empire.find((p) => p.id == context.current.id);
     const currentId = currentFromEmpire.id;
 
     //get the mirror id
     const mirrorId = context.current.isMoon
-      ? OGIData.empire.find((p) => p.id == context.current.id) // if current is a moon => get planet id
-      : OGIData.empire.find((p) => p.id == context.current.id).moon?.id ?? undefined; // if current is a planet having moon => get moon id, else get undefined
+      ? OGBIData.empire.find((p) => p.id == context.current.id) // if current is a moon => get planet id
+      : OGBIData.empire.find((p) => p.id == context.current.id).moon?.id ?? undefined; // if current is a planet having moon => get moon id, else get undefined
 
     //ensure everything is ready
     const everyThingIsReady = () => {
@@ -108,8 +109,8 @@ function customMissions(context) {
     wait.waitFor(everyThingIsReady).then(() => {
       for (let customMissionId = 1; customMissionId <= nbMissions; customMissionId++) {
         //init default customMission if not exists
-        if (!OGIData.json.options.customMissions[customMissionId]) {
-          OGIData.json.options.customMissions[customMissionId] = {
+        if (!OGBIData.json.options.customMissions[customMissionId]) {
+          OGBIData.json.options.customMissions[customMissionId] = {
             ship: 202,
             mission: 4,
             rotation: false,
@@ -120,8 +121,8 @@ function customMissions(context) {
           };
         }
 
-        if (!OGIData.json.options.customMissions[customMissionId].target[currentId]) {
-          OGIData.json.options.customMissions[customMissionId].target[currentId] = {
+        if (!OGBIData.json.options.customMissions[customMissionId].target[currentId]) {
+          OGBIData.json.options.customMissions[customMissionId].target[currentId] = {
             id: mirrorId,
             galaxy: currentFromEmpire.galaxy,
             system: currentFromEmpire.system,
@@ -134,18 +135,18 @@ function customMissions(context) {
 
         const customMissionClassSelector = `.ogk-customMission.ogk-customMission-${customMissionId}`;
         const customMissionClass = `ogk-customMission ogk-customMission-${customMissionId}`;
-        const missionClass = getMissionClass(OGIData.json.options.customMissions[customMissionId].mission);
+        const missionClass = getMissionClass(OGBIData.json.options.customMissions[customMissionId].mission);
         const optionClass = `ogk-customMission-options ogk-customMission-${customMissionId}`;
         const optionClassSelector = `.ogk-customMission-options.ogk-customMission-${customMissionId}`;
 
         const shipClass =
-          OGIData.json.options.customMissions[customMissionId].ship === "select-most"
+          OGBIData.json.options.customMissions[customMissionId].ship === "select-most"
             ? "select-most"
-            : OGIData.json.options.customMissions[customMissionId].ship === "sendall"
+            : OGBIData.json.options.customMissions[customMissionId].ship === "sendall"
             ? "sendall"
-            : OGIData.json.options.customMissions[customMissionId].ship == 202
+            : OGBIData.json.options.customMissions[customMissionId].ship == 202
             ? "smallCargo"
-            : OGIData.json.options.customMissions[customMissionId].ship == 219
+            : OGBIData.json.options.customMissions[customMissionId].ship == 219
             ? "pathFinder"
             : "largeCargo";
 
@@ -156,7 +157,7 @@ function customMissions(context) {
         let btnCollect = missionsDiv.appendChild(
           createDOM("button", {
             class: `${customMissionClass} ${missionClass} ${shipClass}`,
-            "data-marked": OGIData.json.options.customMissions[customMissionId].color,
+            "data-marked": OGBIData.json.options.customMissions[customMissionId].color,
           })
         );
 
@@ -170,7 +171,7 @@ function customMissions(context) {
           return optionsDivFleet.appendChild(
             createDOM("div", {
               class: `${shipClass} ${
-                OGIData.json.options.customMissions[customMissionId].ship === shipId ? "highlight" : ""
+                OGBIData.json.options.customMissions[customMissionId].ship === shipId ? "highlight" : ""
               }`,
             })
           );
@@ -179,14 +180,14 @@ function customMissions(context) {
           return optionsDivMission.appendChild(
             createDOM("div", {
               class: `ogl-option choice-mission-icon ogl-mission-${mission} ${
-                OGIData.json.options.customMissions[customMissionId].mission === mission ? "highlight" : ""
+                OGBIData.json.options.customMissions[customMissionId].mission === mission ? "highlight" : ""
               }`,
             })
           );
         };
 
         const forseResourcesUsing = (used) => {
-          OGIData.json.options.customMissions[customMissionId].resources = used;
+          OGBIData.json.options.customMissions[customMissionId].resources = used;
           resources.classList.remove("highlight");
           if (used) {
             resources.classList.add("highlight");
@@ -194,15 +195,15 @@ function customMissions(context) {
         };
 
         const toggleResources = () => {
-          forseResourcesUsing(!OGIData.json.options.customMissions[customMissionId].resources);
+          forseResourcesUsing(!OGBIData.json.options.customMissions[customMissionId].resources);
           if (
-            !OGIData.json.options.customMissions[customMissionId].resources &&
-            OGIData.json.options.customMissions[customMissionId].ship !== "select-most" &&
-            OGIData.json.options.customMissions[customMissionId].ship !== "sendall"
+            !OGBIData.json.options.customMissions[customMissionId].resources &&
+            OGBIData.json.options.customMissions[customMissionId].ship !== "select-most" &&
+            OGBIData.json.options.customMissions[customMissionId].ship !== "sendall"
           ) {
             updateDefaultCollectShip("select-most");
           }
-          OGIData.Save();
+          OGBIData.Save();
         };
 
         //fleet choices
@@ -221,7 +222,7 @@ function customMissions(context) {
         let tgt = optionsDivMission.appendChild(
           createDOM("div", {
             class: `ogl-option choice-target ${
-              OGIData.json.options.customMissions[customMissionId].target[currentId].type == 3 ? "moon" : "planet"
+              OGBIData.json.options.customMissions[customMissionId].target[currentId].type == 3 ? "moon" : "planet"
             }`,
           })
         );
@@ -230,7 +231,7 @@ function customMissions(context) {
         let color = optionsDivSettings.appendChild(
           createDOM("div", {
             class: `ogl-option choice-customMission-icon choice-color`,
-            "data-marked": OGIData.json.options.customMissions[customMissionId].color,
+            "data-marked": OGBIData.json.options.customMissions[customMissionId].color,
           })
         );
 
@@ -238,12 +239,12 @@ function customMissions(context) {
         const rotation = optionsDivSettings.appendChild(
           createDOM("div", { class: "ogl-option choice-customMission-icon customMission-rotation" })
         );
-        rotation.classList.toggle("highlight", OGIData.json.options.customMissions[customMissionId].rotation);
+        rotation.classList.toggle("highlight", OGBIData.json.options.customMissions[customMissionId].rotation);
         rotation.addEventListener("click", () => {
           rotation.classList.toggle("highlight");
-          OGIData.json.options.customMissions[customMissionId].rotation =
-            !OGIData.json.options.customMissions[customMissionId].rotation;
-          OGIData.Save();
+          OGBIData.json.options.customMissions[customMissionId].rotation =
+            !OGBIData.json.options.customMissions[customMissionId].rotation;
+          OGBIData.Save();
         });
 
         //keep speed choice
@@ -295,28 +296,28 @@ function customMissions(context) {
         keepSpeedIcon.appendChild(svg1);
 
         const keepSpeed = optionsDivSettings.appendChild(keepSpeedIcon);
-        keepSpeed.classList.toggle("highlight", OGIData.json.options.customMissions[customMissionId].keepSpeed);
+        keepSpeed.classList.toggle("highlight", OGBIData.json.options.customMissions[customMissionId].keepSpeed);
         keepSpeed.addEventListener("click", () => {
           keepSpeed.classList.toggle("highlight");
-          OGIData.json.options.customMissions[customMissionId].keepSpeed =
-            !OGIData.json.options.customMissions[customMissionId].keepSpeed;
-          OGIData.Save();
+          OGBIData.json.options.customMissions[customMissionId].keepSpeed =
+            !OGBIData.json.options.customMissions[customMissionId].keepSpeed;
+          OGBIData.Save();
         });
 
         //resources choice
         const resources = optionsDivSettings.appendChild(
           createDOM("div", { class: "ogl-option choice-customMission-icon customMission-resources" })
         );
-        resources.classList.toggle("highlight", OGIData.json.options.customMissions[customMissionId].resources);
+        resources.classList.toggle("highlight", OGBIData.json.options.customMissions[customMissionId].resources);
         resources.addEventListener("click", () => {
           toggleResources();
         });
 
         let updateCollectTooltipIcon = () => {
           let remove =
-            OGIData.json.options.customMissions[customMissionId].target[currentId].type == 1 ? "moon" : "planet";
+            OGBIData.json.options.customMissions[customMissionId].target[currentId].type == 1 ? "moon" : "planet";
           let add =
-            OGIData.json.options.customMissions[customMissionId].target[currentId].type == 3 ? "moon" : "planet";
+            OGBIData.json.options.customMissions[customMissionId].target[currentId].type == 3 ? "moon" : "planet";
           let classList = optionsDivMission.querySelector(".choice-target").classList;
           if (classList.contains(remove)) classList.remove(remove);
           if (!classList.contains(add)) classList.add(add);
@@ -337,15 +338,15 @@ function customMissions(context) {
         const getMissionClassSelector = (mission) => `.ogl-mission-${mission}`;
 
         let updateDefaultCollectShip = (shipId) => {
-          OGIData.json.options.customMissions[customMissionId].ship = shipId;
+          OGBIData.json.options.customMissions[customMissionId].ship = shipId;
 
           if (shipId !== "select-most" && shipId !== "sendall") {
             forseResourcesUsing(true);
           }
 
-          OGIData.Save();
+          OGBIData.Save();
 
-          const missionClass = getMissionClass(OGIData.json.options.customMissions[customMissionId].mission);
+          const missionClass = getMissionClass(OGBIData.json.options.customMissions[customMissionId].mission);
           const shipClass = getShipClass(shipId);
           const shipOptionClassSelector = getShipClassSelector(shipId);
 
@@ -361,14 +362,14 @@ function customMissions(context) {
         };
 
         let updateDefaultMission = (mission) => {
-          OGIData.json.options.customMissions[customMissionId].mission = mission;
-          OGIData.Save();
+          OGBIData.json.options.customMissions[customMissionId].mission = mission;
+          OGBIData.Save();
 
-          const missionClass = getMissionClass(OGIData.json.options.customMissions[customMissionId].mission);
+          const missionClass = getMissionClass(OGBIData.json.options.customMissions[customMissionId].mission);
           const missionClassSelector = getMissionClassSelector(
-            OGIData.json.options.customMissions[customMissionId].mission
+            OGBIData.json.options.customMissions[customMissionId].mission
           );
-          const shipClass = getShipClass(OGIData.json.options.customMissions[customMissionId].ship);
+          const shipClass = getShipClass(OGBIData.json.options.customMissions[customMissionId].ship);
 
           document.querySelector(
             customMissionClassSelector
@@ -393,16 +394,16 @@ function customMissions(context) {
           let container = openPlanetList(
             context,
             (planet) => {
-              OGIData.json.options.customMissions[customMissionId].target[currentId] = planet;
+              OGBIData.json.options.customMissions[customMissionId].target[currentId] = planet;
               document.querySelector(".ogl-dialogOverlay").classList.remove("ogl-active");
-              OGIData.Save();
+              OGBIData.Save();
               updateCollectTooltipIcon();
             },
-            OGIData.json.options.customMissions[customMissionId].target[currentId],
-            OGIData.json.options.customMissions[customMissionId].mission
+            OGBIData.json.options.customMissions[customMissionId].target[currentId],
+            OGBIData.json.options.customMissions[customMissionId].mission
           );
           popupUtil.popup(false, container);
-          OGIData.Save();
+          OGBIData.Save();
         });
 
         color.addEventListener("click", () => {
@@ -412,13 +413,13 @@ function customMissions(context) {
           colors.forEach((colorName) => {
             const circle = container.appendChild(createDOM("div", { "data-marked": colorName }));
             container.appendChild(circle);
-            if (OGIData.json.options.customMissions[customMissionId].color == colorName) {
+            if (OGBIData.json.options.customMissions[customMissionId].color == colorName) {
               circle.classList.add("ogl-active");
             }
 
             circle.addEventListener("click", () => {
-              OGIData.json.options.customMissions[customMissionId].color = colorName;
-              OGIData.Save();
+              OGBIData.json.options.customMissions[customMissionId].color = colorName;
+              OGBIData.Save();
               // Update UI
               btnCollect.setAttribute("data-marked", colorName);
               color.setAttribute("data-marked", colorName);
@@ -429,7 +430,7 @@ function customMissions(context) {
           });
 
           popupUtil.popup(false, container);
-          OGIData.Save();
+          OGBIData.Save();
         });
 
         btnCollect.addEventListener("mouseover", () => utilTooltip.tooltip(btnCollect, optionsDiv, false, false, 500));
@@ -448,7 +449,7 @@ function customMissions(context) {
             //add active class to the clicked button
             btnCollect.classList.add("ogl-active");
 
-            const selectedRoute = OGIData.json.options.customMissions[customMissionId];
+            const selectedRoute = OGBIData.json.options.customMissions[customMissionId];
             const selectedTarget = selectedRoute.target[currentId];
 
             //resest
@@ -461,9 +462,9 @@ function customMissions(context) {
             const findTargetByIdOrCoords = (sel) => {
               if (sel.type == 3) {
                 // moon
-                const byId = sel.id ? OGIData.empire.find((p) => p.moon && p.moon.id == sel.id)?.moon : undefined;
+                const byId = sel.id ? OGBIData.empire.find((p) => p.moon && p.moon.id == sel.id)?.moon : undefined;
                 if (byId) return byId;
-                return OGIData.empire.find(
+                return OGBIData.empire.find(
                   (p) =>
                     p.moon &&
                     p.moon.galaxy == sel.galaxy &&
@@ -472,9 +473,9 @@ function customMissions(context) {
                 )?.moon;
               } else {
                 // planet
-                const byId = sel.id ? OGIData.empire.find((p) => p.id == sel.id) : undefined;
+                const byId = sel.id ? OGBIData.empire.find((p) => p.id == sel.id) : undefined;
                 if (byId) return byId;
-                return OGIData.empire.find(
+                return OGBIData.empire.find(
                   (p) => p.galaxy == sel.galaxy && p.system == sel.system && p.position == sel.position
                 );
               }
@@ -529,7 +530,7 @@ function customMissions(context) {
 
             //select cargo
             document.querySelector(".ogl-cargo a.send_none").click();
-            if (OGIData.json.options.customMissions[customMissionId].resources) {
+            if (OGBIData.json.options.customMissions[customMissionId].resources) {
               document.querySelector(".ogl-cargo a.select-most").click();
             }
 
@@ -563,12 +564,12 @@ function customMissions(context) {
             fleetDispatcher.selectMission(selectedRoute.mission);
 
             //reselect cargo
-            if (OGIData.json.options.customMissions[customMissionId].resources) {
+            if (OGBIData.json.options.customMissions[customMissionId].resources) {
               document.querySelector(".ogl-cargo a.select-most").click();
             }
 
             let nextId = currentId;
-            const rotation = OGIData.json.options.customMissions[customMissionId].rotation;
+            const rotation = OGBIData.json.options.customMissions[customMissionId].rotation;
             if (rotation) {
               nextId = context.current.planet.nextElementSibling.id
                 ? context.current.planet.nextElementSibling.id.split("-")[1]
@@ -593,8 +594,8 @@ function customMissions(context) {
                 if (selectedRoute.mission == 6) {
                   //find next coords for targe with nextId
                   const nextTarget =
-                    OGIData.empire.find((p) => p.id == nextId) ??
-                    OGIData.empire.find((p) => p.moon && p.moon.id == nextId)?.moon;
+                    OGBIData.empire.find((p) => p.id == nextId) ??
+                    OGBIData.empire.find((p) => p.moon && p.moon.id == nextId)?.moon;
                   if (nextTarget.galaxy) urlParams.set("galaxy", nextTarget.galaxy);
                   if (nextTarget.system) urlParams.set("system", nextTarget.system);
                   urlParams.set("position", 16); //preselect P16
@@ -640,8 +641,8 @@ function customMissions(context) {
         let urlcustomMissionId = context.rawURL.searchParams.get("customMissionId");
         if (urlcustomMissionId) {
           urlcustomMissionId = parseInt(urlcustomMissionId);
-          if (OGIData.json.options.customMissions[urlcustomMissionId].keepSpeed) {
-            const lastSentFleet = OGIData.json.lastSentFleet;
+          if (OGBIData.json.options.customMissions[urlcustomMissionId].keepSpeed) {
+            const lastSentFleet = OGBIData.json.lastSentFleet;
 
             if (lastSentFleet?.speedPercent) {
               fleetDispatcher.speedPercent = lastSentFleet.speedPercent;
@@ -649,7 +650,7 @@ function customMissions(context) {
             }
           }
 
-          if (OGIData.json.options.customMissions[urlcustomMissionId].rotation) {
+          if (OGBIData.json.options.customMissions[urlcustomMissionId].rotation) {
             const customMissionButton = document.querySelector(
               `.ogk-customMission.ogk-customMission-${urlcustomMissionId}`
             );
@@ -672,10 +673,10 @@ function collect(context) {
     let cargoChoice = createDOM("div", { class: "ogk-collect-cargo" });
     let btnCollect = document.querySelector("#allornone .secondcol").appendChild(
       createDOM("button", {
-        class: `ogl-collect ${OGIData.json.options.collect.mission == 4 ? "statio" : ""} ${
-          OGIData.json.options.collect.ship == 202
+        class: `ogl-collect ${OGBIData.json.options.collect.mission == 4 ? "statio" : ""} ${
+          OGBIData.json.options.collect.ship == 202
             ? "smallCargo"
-            : OGIData.json.options.collect.ship == 219
+            : OGBIData.json.options.collect.ship == 219
             ? "pathFinder"
             : "largeCargo"
         }`,
@@ -684,60 +685,60 @@ function collect(context) {
     let sc = cargoChoice.appendChild(
       createDOM("div", {
         class: `ogl-option ogl-fleet-ship choice ogl-fleet-202 ${
-          OGIData.json.options.collect.ship == 202 ? "highlight" : ""
+          OGBIData.json.options.collect.ship == 202 ? "highlight" : ""
         }`,
       })
     );
     let lc = cargoChoice.appendChild(
       createDOM("div", {
         class: `ogl-option ogl-fleet-ship choice ogl-fleet-203 ${
-          OGIData.json.options.collect.ship == 203 ? "highlight" : ""
+          OGBIData.json.options.collect.ship == 203 ? "highlight" : ""
         }`,
       })
     );
     let pf = cargoChoice.appendChild(
       createDOM("div", {
         class: `ogl-option ogl-fleet-ship choice ogl-fleet-219 ${
-          OGIData.json.options.collect.ship == 219 ? "highlight" : ""
+          OGBIData.json.options.collect.ship == 219 ? "highlight" : ""
         }`,
       })
     );
     let tr = cargoChoice.appendChild(
       createDOM("div", {
         class: `ogl-option choice-mission-icon ogl-mission-3 ${
-          OGIData.json.options.collect.mission == 3 ? "highlight" : ""
+          OGBIData.json.options.collect.mission == 3 ? "highlight" : ""
         }`,
       })
     );
     let dp = cargoChoice.appendChild(
       createDOM("div", {
         class: `ogl-option choice-mission-icon ogl-mission-4 ${
-          OGIData.json.options.collect.mission == 4 ? "highlight" : ""
+          OGBIData.json.options.collect.mission == 4 ? "highlight" : ""
         }`,
       })
     );
     let tgt = cargoChoice.appendChild(
       createDOM("div", {
-        class: `ogl-option choice-target ${OGIData.json.options.collect.target.type == 3 ? "moon" : "planet"}`,
+        class: `ogl-option choice-target ${OGBIData.json.options.collect.target.type == 3 ? "moon" : "planet"}`,
       })
     );
 
     let updateCollectTooltipIcon = () => {
-      let remove = OGIData.json.options.collect.target.type == 1 ? "moon" : "planet";
-      let add = OGIData.json.options.collect.target.type == 3 ? "moon" : "planet";
+      let remove = OGBIData.json.options.collect.target.type == 1 ? "moon" : "planet";
+      let add = OGBIData.json.options.collect.target.type == 3 ? "moon" : "planet";
       let classList = cargoChoice.querySelector(".choice-target").classList;
       if (classList.contains(remove)) classList.remove(remove);
       if (!classList.contains(add)) classList.add(add);
     };
     let updateDefaultCollectShip = (id) => {
-      OGIData.json.options.collect.ship = id;
-      OGIData.Save();
+      OGBIData.json.options.collect.ship = id;
+      OGBIData.Save();
       document.querySelector(".ogl-collect").classList = `ogl-collect ${
-        OGIData.json.options.collect.mission == 4 ? "statio" : ""
+        OGBIData.json.options.collect.mission == 4 ? "statio" : ""
       } ${
-        OGIData.json.options.collect.ship == 202
+        OGBIData.json.options.collect.ship == 202
           ? "smallCargo"
-          : OGIData.json.options.collect.ship == 219
+          : OGBIData.json.options.collect.ship == 219
           ? "pathFinder"
           : "largeCargo"
       }`;
@@ -745,9 +746,9 @@ function collect(context) {
       document
         .querySelector(
           `.ogk-collect-cargo ${
-            OGIData.json.options.collect.ship == 202
+            OGBIData.json.options.collect.ship == 202
               ? ".ogl-fleet-202"
-              : OGIData.json.options.collect.ship == 219
+              : OGBIData.json.options.collect.ship == 219
               ? ".ogl-fleet-219"
               : ".ogl-fleet-203"
           }`
@@ -755,20 +756,20 @@ function collect(context) {
         .classList.add("highlight");
     };
     let updateDefaultCollectMission = (mission) => {
-      OGIData.json.options.collect.mission = mission;
-      OGIData.Save();
+      OGBIData.json.options.collect.mission = mission;
+      OGBIData.Save();
       document.querySelector(".ogl-collect").classList = `ogl-collect ${
-        OGIData.json.options.collect.mission == 4 ? "statio" : ""
+        OGBIData.json.options.collect.mission == 4 ? "statio" : ""
       } ${
-        OGIData.json.options.collect.ship == 202
+        OGBIData.json.options.collect.ship == 202
           ? "smallCargo"
-          : OGIData.json.options.collect.ship == 219
+          : OGBIData.json.options.collect.ship == 219
           ? "pathFinder"
           : "largeCargo"
       }`;
       document.querySelector(".ogk-collect-cargo .choice-mission-icon.highlight").classList.remove("highlight");
       document
-        .querySelector(`.ogk-collect-cargo ${".ogl-mission-" + OGIData.json.options.collect.mission}`)
+        .querySelector(`.ogk-collect-cargo ${".ogl-mission-" + OGBIData.json.options.collect.mission}`)
         .classList.add("highlight");
     };
     sc.addEventListener("click", () => updateDefaultCollectShip(202));
@@ -780,16 +781,16 @@ function collect(context) {
       let container = openPlanetList(
         context,
         (planet) => {
-          OGIData.json.options.collect.target = planet;
+          OGBIData.json.options.collect.target = planet;
           document.querySelector(".ogl-dialogOverlay").classList.remove("ogl-active");
-          OGIData.Save();
+          OGBIData.Save();
           updateCollectTooltipIcon();
         },
-        OGIData.json.options.collect.target,
-        OGIData.json.options.collect.mission
+        OGBIData.json.options.collect.target,
+        OGBIData.json.options.collect.mission
       );
       popupUtil.popup(false, container);
-      OGIData.Save();
+      OGBIData.Save();
     });
     btnCollect.addEventListener("mouseover", () => utilTooltip.tooltip(btnCollect, cargoChoice, false, false, 500));
     btnCollect.addEventListener("click", () => {
@@ -802,20 +803,20 @@ function collect(context) {
       fleetState.collectMode = true;
       fleetState.expeditionMode = false;
       document.querySelector("#missionsDiv").setAttribute("data", "false");
-      fleetDispatcher.mission = OGIData.json.options.collect.mission;
+      fleetDispatcher.mission = OGBIData.json.options.collect.mission;
       document.querySelector(".ogl-cargo a.send_none").click();
       document.querySelector(".ogl-cargo a.select-most").click();
       fleetDispatcher.resetShips();
-      selectBestCargoShip(context, OGIData.json.options.collect.ship);
+      selectBestCargoShip(context, OGBIData.json.options.collect.ship);
       let inputs = document.querySelectorAll(".ogl-coords input");
-      inputs[0].value = OGIData.json.options.collect.target.galaxy || context.homePlanetCoords.galaxy;
-      inputs[1].value = OGIData.json.options.collect.target.system || context.homePlanetCoords.system;
-      inputs[2].value = OGIData.json.options.collect.target.position || context.homePlanetCoords.position;
+      inputs[0].value = OGBIData.json.options.collect.target.galaxy || context.homePlanetCoords.galaxy;
+      inputs[1].value = OGBIData.json.options.collect.target.system || context.homePlanetCoords.system;
+      inputs[2].value = OGBIData.json.options.collect.target.position || context.homePlanetCoords.position;
       fleetDispatcher.targetPlanet = {
         galaxy: inputs[0].value,
         system: inputs[1].value,
         position: inputs[2].value,
-        type: OGIData.json.options.collect.target.type || context.homePlanetCoords.type,
+        type: OGBIData.json.options.collect.target.type || context.homePlanetCoords.type,
       };
       context.planetList.forEach((planet) => {
         let targetCoords = planet.querySelector(".planet-koords").textContent.split(":");
@@ -840,7 +841,7 @@ function collect(context) {
       fleetDispatcher.refreshTarget();
       fleetDispatcher.updateTarget();
       fleetDispatcher.fetchTargetPlayerData();
-      fleetDispatcher.selectMission(OGIData.json.options.collect.mission);
+      fleetDispatcher.selectMission(OGBIData.json.options.collect.mission);
       fleetDispatcher.refresh();
       let nextId = context.current.planet.nextElementSibling.id
         ? context.current.planet.nextElementSibling.id.split("-")[1]
@@ -852,7 +853,7 @@ function collect(context) {
         "https://" +
         window.location.host +
         window.location.pathname +
-        `?page=ingame&component=fleetdispatch&cp=${nextId}&galaxy=${OGIData.json.options.collect.target.galaxy}&system=${OGIData.json.options.collect.target.system}&position=${OGIData.json.options.collect.target.position}&type=${OGIData.json.options.collect.target.type}&mission=${OGIData.json.options.collect.mission}&oglMode=0`;
+        `?page=ingame&component=fleetdispatch&cp=${nextId}&galaxy=${OGBIData.json.options.collect.target.galaxy}&system=${OGBIData.json.options.collect.target.system}&position=${OGBIData.json.options.collect.target.position}&type=${OGBIData.json.options.collect.target.type}&mission=${OGBIData.json.options.collect.mission}&oglMode=0`;
       document.querySelector(".ogl-cargo a.select-most").click();
     });
   }

@@ -1,63 +1,9 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
+import { createDOM } from "../../util/dom.js";
 import { tabs } from "../../util/tabs.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import * as time from "../../util/time.js";
-import * as wait from "../../util/wait.js";
+import { toFormattedNumber } from "../../util/numbers.js";
 import DateTime from "../../util/dateTime.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import dataHelper from "../../util/dataHelper.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import missionType from "../../util/enum/missionType.js";
-import itemType from "../../util/enum/itemType.js";
-import itemImageID from "../../util/enum/itemImageID.js";
-import AllianceClass from "../../util/enum/allianceClass.js";
-import { fleetCost } from "../../util/fleetCost.js";
-import flying from "../../util/flying.js";
-import { getOption } from "../../ctxpage/conf-options.js";
-import { generateMMORPGLink } from "../../util/mmorpgStats.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { RESEARCH_INFO } from "../../util/enum/researchInfo.js";
-import {
-  CRAWLER_OVERLOAD_MAX,
-  CRYSTAL_GENERAL_INCOMING,
-  CRYSTAL_POS_BONUS,
-  ENGINEER_ENERGY_BONUS,
-  FACILITIES_TECHID,
-  GEOLOGIST_CRAWLER_BONUS,
-  GEOLOGIST_RESOURCE_BONUS,
-  IONTECHNOLOGY_BONUS,
-  MAX_CRAWLERS_PER_MINE,
-  METAL_GENERAL_INCOMING,
-  METAL_POS_BONUS,
-  OFFICER_ENERGY_BONUS,
-  OFFICER_RESOURCE_BONUS,
-  PLASMATECH_BONUS,
-  SHIP_EXPEDITION_POINTS,
-  SUPPLIES_TECHID,
-  TRADER_ENERGY_BONUS,
-  TRADER_RESOURCE_BONUS,
-} from "../../util/gameConstants.js";
-import {
-  building,
-  consumption,
-  getBestRoi,
-  minesProduction,
-  research,
-  roiAstrophysics,
-  roiLfBuilding,
-  roiLfResearch,
-  roiMine,
-  roiPlasmatechnology,
-} from "../../util/gameFormulas.js";
+import OGBIData from "../../util/OGIData.js";
 
 import { statsState } from "./state.js";
 import { discoveryBox, discoveryCostsBox } from "./boxes.js";
@@ -154,7 +100,7 @@ function discoveryStats() {
     let max = 0;
     for (let i = 0; i < 12; i++) {
       let dateStr = getFormatedDate(date.getTime(), "[d].[m].[y]");
-      let sums = computeRangeSums(OGIData.json.discoveriesSums, date, date) || sum;
+      let sums = computeRangeSums(OGBIData.json.discoveriesSums, date, date) || sum;
       let profit = sums ? getTotal(sums) : 0;
       if (Math.abs(profit) > max) max = profit;
       profits.push({
@@ -165,7 +111,7 @@ function discoveryStats() {
       date.setDate(date.getDate() - 1);
     }
     let div = createDOM("div");
-    let details = renderDetails(computeRangeSums(OGIData.json.discoveriesSums, new Date(), new Date()), () =>
+    let details = renderDetails(computeRangeSums(OGBIData.json.discoveriesSums, new Date(), new Date()), () =>
       refresh()
     );
     div.appendChild(
@@ -189,7 +135,7 @@ function discoveryStats() {
     let max = -Infinity;
     prevMonday.setDate(prevMonday.getDate() - ((prevMonday.getDay() + 6) % 7));
     for (let i = 0; i < 12; i++) {
-      let range = computeRangeSums(OGIData.json.discoveriesSums, start, prevMonday);
+      let range = computeRangeSums(OGBIData.json.discoveriesSums, start, prevMonday);
       weeks.push(range);
       let total = getTotal(range);
       totals.push({
@@ -223,7 +169,7 @@ function discoveryStats() {
     let months = [];
     let totals = [];
     for (let i = 0; i < 12; i++) {
-      let range = computeRangeSums(OGIData.json.discoveriesSums, lastDay, firstDay);
+      let range = computeRangeSums(OGBIData.json.discoveriesSums, lastDay, firstDay);
       months.push(range);
       let total = getTotal(range);
       totals.push({
@@ -249,13 +195,13 @@ function discoveryStats() {
     return div;
   };
   tabNames["∞"] = () => {
-    let keys = Object.keys(OGIData.json.expeditionSums).sort(
+    let keys = Object.keys(OGBIData.json.expeditionSums).sort(
       (a, b) => DateTime.dateStrToDate(a) - DateTime.dateStrToDate(b)
     );
     let minDate = keys[0];
     let maxDate = keys[keys.length - 1];
     let range = computeRangeSums(
-      OGIData.json.discoveriesSums,
+      OGBIData.json.discoveriesSums,
       DateTime.dateStrToDate(maxDate),
       DateTime.dateStrToDate(minDate)
     );

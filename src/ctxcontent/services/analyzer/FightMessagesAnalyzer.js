@@ -1,6 +1,6 @@
 import { getLogger } from "../../../util/logger.js";
 import { messagesTabs } from "../../../ctxpage/messages/index.js";
-import OGIData from "../../../util/OGIData.js";
+import OGBIData from "../../../util/OGIData.js";
 import PlanetType from "../../../util/enum/planetType.js";
 import ship from "../../../util/enum/ship.js";
 import * as standardUnit from "../../../util/standardUnit.js";
@@ -29,7 +29,7 @@ class FightMessagesAnalyzer {
 
   #addStandardUnit(combat, message) {
     /* @todo remove the cargoCapacity check when GF provide the good number for data-raw-fleets>combatTechnologies.amount */
-    if ((combat.isProbes && !OGIData.ships[ship.EspionageProbe].cargoCapacity) || !combat.loot) return;
+    if ((combat.isProbes && !OGBIData.ships[ship.EspionageProbe].cargoCapacity) || !combat.loot) return;
 
     const msgTitle = message.querySelector(".msgHeadItem .msgTitle");
     const standardUnitSum =
@@ -57,8 +57,8 @@ class FightMessagesAnalyzer {
 
   #parseExpeditionFight() {
     this.#getExpeditionFight().forEach((message) => {
-      const combats = OGIData.combats;
-      const expeditionSums = OGIData.expeditionSums;
+      const combats = OGBIData.combats;
+      const expeditionSums = OGBIData.expeditionSums;
       const msgId = message.getAttribute("data-msg-id");
 
       if (combats[msgId]) {
@@ -127,8 +127,8 @@ class FightMessagesAnalyzer {
 
       message.classList.add("ogk-expedition");
 
-      OGIData.combats = combats;
-      OGIData.expeditionSums = expeditionSums;
+      OGBIData.combats = combats;
+      OGBIData.expeditionSums = expeditionSums;
 
       this.#addStandardUnit(combats[msgId], message);
     });
@@ -153,7 +153,7 @@ class FightMessagesAnalyzer {
 
   #parseFight() {
     this.#getFight().forEach((message) => {
-      const combats = OGIData.combats;
+      const combats = OGBIData.combats;
       const msgId = message.getAttribute("data-msg-id");
 
       if (combats[msgId]) {
@@ -277,12 +277,12 @@ class FightMessagesAnalyzer {
 
       this.#addStandardUnit(combats[msgId], message);
 
-      OGIData.combats = combats;
+      OGBIData.combats = combats;
 
       // don't account twice a know or probe fight in combatsSums
       if (isKnownCombat || combats[msgId].isProbes) return;
 
-      const combatsSums = JSON.parse(JSON.stringify(OGIData.combatsSums)); // deep copy
+      const combatsSums = JSON.parse(JSON.stringify(OGBIData.combatsSums)); // deep copy
       const newDate = new Date(message.querySelector(".rawMessageData").getAttribute("data-raw-date"));
       const dates = [
         newDate.getDate().toString().padStart(2, "0"),
@@ -336,7 +336,7 @@ class FightMessagesAnalyzer {
         combatsSums[datePoint].losses[technologyId] += losses[technologyId];
       });
 
-      OGIData.combatsSums = combatsSums;
+      OGBIData.combatsSums = combatsSums;
     });
   }
 }

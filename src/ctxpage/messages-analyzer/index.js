@@ -2,7 +2,7 @@
  * LEGACY message analyzer - superseded, still live, scheduled for deletion.
  *
  * This is the older of the two message paths. It runs on every messages page via
- * `OGInfinity.messagesAnalyzer()` -> `ctxMessageAnalyzer.call(this)`, in parallel
+ * `OGBeyondInfinity.messagesAnalyzer()` -> `ctxMessageAnalyzer.call(this)`, in parallel
  * with the newer `ctxpage/messages/index.js` and its five analyzer classes.
  *
  * Decision (Phase 1 of refactoring.md): the newer path wins, this file goes.
@@ -45,7 +45,7 @@ const logger = getLogger("message-analyzer");
  */
 
 /**
- * @this {OGInfinity}
+ * @this {OGBeyondInfinity}
  */
 function analyzer() {
   if (this.page !== "messages") return;
@@ -74,7 +74,7 @@ function analyzer() {
    * @property {MutationCallback} change
    */
   /**
-   * @typedef {(self: OGInfinity) => SubAnalizer} SubAnalizerBuilder
+   * @typedef {(self: OGBeyondInfinity) => SubAnalizer} SubAnalizerBuilder
    */
 
   class MessageSubTabTrigger {

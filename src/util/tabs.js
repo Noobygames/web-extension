@@ -7,7 +7,7 @@ import { createDOM, createDOMSanitized } from "./dom.js";
  * only the active panel exists in the DOM, and switching tabs discards the old one
  * and calls the next builder. The first entry is rendered immediately.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md, unchanged. It sits in
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md, unchanged. It sits in
  * `util/` rather than with the statistics popup because nothing about it is about
  * statistics - it is the only tab widget the extension has.
  *

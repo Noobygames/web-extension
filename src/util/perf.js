@@ -10,7 +10,7 @@
  * or by appending `&ogi-perf=1` to the game URL (one page load only).
  *
  * It then prints a table to the console when the start-up sequence finishes:
- * one row per phase, plus one row per `OGInfinity.start()` step, sorted by
+ * one row per phase, plus one row per `OGBeyondInfinity.start()` step, sorted by
  * cost. All timings are relative to `navigationStart`, so they line up with
  * the Performance panel and with the game's own load.
  *
@@ -90,7 +90,7 @@ export function timeAsync(name, fn) {
 
 /**
  * Times every own method of `target` named in `names`, in place. Used to get a
- * per-step breakdown of `OGInfinity.start()` without editing forty call sites.
+ * per-step breakdown of `OGBeyondInfinity.start()` without editing forty call sites.
  *
  * @param {object} target instance whose prototype methods get wrapped
  * @param {string} prefix label prefix for the recorded entries

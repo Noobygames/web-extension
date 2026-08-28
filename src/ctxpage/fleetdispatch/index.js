@@ -1,4 +1,3 @@
-import * as DOM from "../../util/dom.js";
 import debounce from "../../util/debounce.js";
 import { fleetState } from "./state.js";
 // Re-exported so ogkush.js keeps one import path for the whole page, and so the
@@ -7,48 +6,21 @@ export { betterFleetDispatcher } from "./betterFleetDispatcher.js";
 export { expedition } from "./expedition.js";
 export { collect, customMissions } from "./customMissions.js";
 import { getLogger } from "../../util/logger.js";
-import { createDOM, createSVG, createDOMSanitized, changeOGSelect } from "../../util/dom.js";
+import { createDOM, createSVG } from "../../util/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as wait from "../../util/wait.js";
-import * as time from "../../util/time.js";
-import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import dataHelper from "../../util/dataHelper.js";
-import shipEnum from "../../util/enum/ship.js";
-import missionType from "../../util/enum/missionType.js";
-import planetType from "../../util/enum/planetType.js";
-import ogiMode from "../../util/enum/ogiMode.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import { pageSignal } from "../../util/abort.js";
-import { fleetCost } from "../../util/fleetCost.js";
-import { calcNeededShips as calcNeededShipsUtil } from "../../util/calcNeededShips.js";
-import highlight, { setHighlightCoords } from "../../util/highlightTarget.js";
-import { getOption } from "../conf-options.js";
-import { keepOnPlanetDialog } from "./keepOnPlanet.js";
-import { tabs } from "../../util/tabs.js";
-import {
-  SHIP_EXPEDITION_POINTS,
-  EXPEDITION_EXPEDITION_POINTS,
-  EXPEDITION_MAX_RESOURCES,
-  EXPEDITION_TOP1_POINTS,
-} from "../../util/gameConstants.js";
-import { building, research } from "../../util/gameFormulas.js";
+import OGBIData from "../../util/OGIData.js";
 
 /**
  * The fleet-dispatch page: the rebuilt dispatcher UI, the expedition and collect
  * shortcuts, the custom-mission buttons, and the cargo-selection helpers.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md. This is the module that
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. This is the module that
  * plan rates highest-risk, and the reason is not its size: several functions in here
  * patch OGame's own `FleetDispatcher` prototype, and inside those patches `this` is
  * the FleetDispatcher, not the page controller. Nothing that reads `this.mission`,
  * `this.sendFleetUrl`, `this.loca`, `this.appendTokenParams` and friends was
- * rewritten - only the members that belonged to `OGInfinity`.
+ * rewritten - only the members that belonged to `OGBeyondInfinity`.
  *
  * Compliance note (AGENTS.md 1.1 and 1.2): everything here still runs from one user
  * gesture. No button in this module sends more than one fleet, and nothing schedules
@@ -65,7 +37,7 @@ const logger = getLogger("fleetdispatch");
 /**
  * The fleet-dispatch page.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md, then split because one
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md, then split because one
  * 3.4k-line file is not an improvement on one 19k-line file. This file keeps the
  * entry points and the small ship-selection helpers; the three large features have
  * files of their own.
@@ -195,7 +167,7 @@ function initFleetDispatcher(context) {
       let fuel = fleetDispatcher.getConsumption();
       let dateStr = getFormatedDate(new Date().getTime(), "[d].[m].[y]");
       const isMoon = fleetDispatcher.targetPlanet.type == fleetDispatcher.fleetHelper.PLANETTYPE_MOON;
-      let object = OGIData.empire[context.current.index];
+      let object = OGBIData.empire[context.current.index];
       object = context.current.isMoon ? object.moon : object;
       object.metal = fleetDispatcher.metalOnPlanet - fleetDispatcher.cargoMetal;
       object.crystal = fleetDispatcher.crystalOnPlanet - fleetDispatcher.cargoCrystal;
@@ -226,8 +198,8 @@ function initFleetDispatcher(context) {
         object[ship.id] -= ship.number;
       });
       if (pos == 16) {
-        if (!OGIData.json.expeditionSums[dateStr]) {
-          OGIData.json.expeditionSums[dateStr] = {
+        if (!OGBIData.json.expeditionSums[dateStr]) {
+          OGBIData.json.expeditionSums[dateStr] = {
             found: [0, 0, 0, 0],
             harvest: [0, 0, 0],
             fleet: {},
@@ -237,10 +209,10 @@ function initFleetDispatcher(context) {
             adjust: [0, 0, 0],
           };
         }
-        OGIData.json.expeditionSums[dateStr].fuel -= fuel;
+        OGBIData.json.expeditionSums[dateStr].fuel -= fuel;
       } else {
-        if (!OGIData.json.combatsSums[dateStr]) {
-          OGIData.json.combatsSums[dateStr] = {
+        if (!OGBIData.json.combatsSums[dateStr]) {
+          OGBIData.json.combatsSums[dateStr] = {
             loot: [0, 0, 0],
             harvest: [0, 0, 0],
             losses: {},
@@ -252,10 +224,10 @@ function initFleetDispatcher(context) {
             draws: 0,
           };
         }
-        OGIData.json.combatsSums[dateStr].fuel -= fuel;
+        OGBIData.json.combatsSums[dateStr].fuel -= fuel;
       }
 
-      OGIData.json.lastSentFleet = {
+      OGBIData.json.lastSentFleet = {
         date: new Date().toISOString(),
         cargoCapacity: fleetDispatcher.cargoCapacity,
         cargoMetal: fleetDispatcher.cargoMetal,
@@ -276,11 +248,11 @@ function initFleetDispatcher(context) {
         useHalfSteps: fleetDispatcher.useHalfSteps,
       };
 
-      OGIData.Save();
+      OGBIData.Save();
       //if fleetState.onFleetSentRedirectUrl is string return it.
       //else if it's a method call it and return the result, if it's not a string return undefined
       return typeof fleetState.onFleetSentRedirectUrl === "string"
-        ? onFleetSentRedirectUrl
+        ? fleetState.onFleetSentRedirectUrl
         : typeof fleetState.onFleetSentRedirectUrl === "function"
         ? fleetState.onFleetSentRedirectUrl()
         : undefined;
@@ -371,16 +343,16 @@ function initFleetDispatcher(context) {
       ).parentElement
     );
     let plusSvg = svgButtons.appendChild(createDOM("div", { class: "ogi-plus-icon" }).appendChild(svg2).parentElement);
-    if (OGIData.json.options.dispatcher) {
+    if (OGBIData.json.options.dispatcher) {
       plusSvg.classList.add("ogl-active");
     }
     plusSvg.addEventListener("click", () => {
-      if (OGIData.json.options.dispatcher) {
-        OGIData.json.options.dispatcher = false;
+      if (OGBIData.json.options.dispatcher) {
+        OGBIData.json.options.dispatcher = false;
         document.querySelector(".ogl-dispatch").style.display = "none";
         plusSvg.classList.remove("ogl-active");
       } else {
-        OGIData.json.options.dispatcher = true;
+        OGBIData.json.options.dispatcher = true;
         if (document.querySelector(".ogl-dispatch")) {
           document.querySelector(".ogl-dispatch").style.display = "flex";
         } else {
@@ -388,7 +360,7 @@ function initFleetDispatcher(context) {
         }
         plusSvg.classList.add("ogl-active");
       }
-      OGIData.Save();
+      OGBIData.Save();
     });
 
     // Add updateMissions methods
@@ -404,9 +376,9 @@ function initFleetDispatcher(context) {
 
 function neededCargo(context) {
   const defaultKept = context.current.isMoon
-    ? OGIData.json.options.defaultKeptMoon ?? OGIData.json.options.defaultKept
-    : OGIData.json.options.defaultKept;
-  let kept = OGIData.json.options.kept[context.current.coords + (context.current.isMoon ? "M" : "P")] || defaultKept;
+    ? OGBIData.json.options.defaultKeptMoon ?? OGBIData.json.options.defaultKept
+    : OGBIData.json.options.defaultKept;
+  let kept = OGBIData.json.options.kept[context.current.coords + (context.current.isMoon ? "M" : "P")] || defaultKept;
   if (context.page == "fleetdispatch" && document.querySelector("#shipChosen")) {
     shipsOnPlanet.forEach((ship) => {
       if (ship.id == 202 || ship.id == 203) {
@@ -495,9 +467,9 @@ function openPlanetList(context, callcback, target = fleetDispatcher.targetPlane
 function selectMostShips(context, reclickSelectedTargetType = true) {
   fleetDispatcher.shipsOnPlanet.forEach((ship) => {
     const defaultKept = context.current.isMoon
-      ? OGIData.json.options.defaultKeptMoon ?? OGIData.json.options.defaultKept
-      : OGIData.json.options.defaultKept;
-    let kept = OGIData.json.options.kept[context.current.coords + (context.current.isMoon ? "M" : "P")] || defaultKept;
+      ? OGBIData.json.options.defaultKeptMoon ?? OGBIData.json.options.defaultKept
+      : OGBIData.json.options.defaultKept;
+    let kept = OGBIData.json.options.kept[context.current.coords + (context.current.isMoon ? "M" : "P")] || defaultKept;
     selectShips(context, ship.id, Math.max(0, ship.number - (kept[ship.id] || 0)));
   });
   if (reclickSelectedTargetType) {
@@ -556,8 +528,8 @@ function calcNeededShips(context, options) {
   ];
   resources = resources.reduce((a, b) => parseInt(a) + parseInt(b));
   if (options.resources || options.resources == 0) resources = options.resources;
-  let type = options.fret || OGIData.json.options.fret;
-  let fret = OGIData.json.ships[type].cargoCapacity;
+  let type = options.fret || OGBIData.json.options.fret;
+  let fret = OGBIData.json.ships[type].cargoCapacity;
   let total = resources / fret;
   if (options.moreFret) total *= 107 / 100;
   return Math.ceil(total);
@@ -596,7 +568,7 @@ function selectBestCargoShip(context, preferredShipId = null) {
     [202, 203, 219].forEach((id) => {
       if (!cargoIds.includes(id)) cargoIds.push(id);
     });
-    if (OGIData.json.ships[210].cargoCapacity != 0 && !cargoIds.includes(210)) cargoIds.push(210);
+    if (OGBIData.json.ships[210].cargoCapacity != 0 && !cargoIds.includes(210)) cargoIds.push(210);
     fleetDispatcher.shipsOnPlanet.forEach((ship) => {
       if (cargoIds.includes(ship.id)) cargoShipsOnPlanet[ship.id] = ship.number || 0;
     });

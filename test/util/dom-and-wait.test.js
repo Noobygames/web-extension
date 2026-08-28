@@ -83,7 +83,7 @@ test("createDOM keeps an explicit class when marking a select", async () => {
   });
 });
 
-// createDOMSanitized was lifted out of OGInfinity.createDOM() in the Phase 1 cut.
+// createDOMSanitized was lifted out of OGBeyondInfinity.createDOM() in the Phase 1 cut.
 // It differs from createDOM in exactly the two ways asserted below, and both
 // differences are load-bearing for its ~50 call sites - hence the tests.
 // DOMPurify is a page global injected by main.js, so it is stubbed here; what
@@ -129,7 +129,7 @@ test("createDOMSanitized only skips content that is absent, not content that is 
   await withSanitizer(({ createDOMSanitized }, calls) => {
     // TRAP: the guard is `content || content == 0`, and "" == 0 is true in JS,
     // so an empty string still reaches the sanitizer. Inherited verbatim from
-    // OGInfinity.createDOM(); the result is the same empty element either way,
+    // OGBeyondInfinity.createDOM(); the result is the same empty element either way,
     // but do not "simplify" the guard without checking this.
     assert.equal(createDOMSanitized("div", {}, "").innerHTML, "");
     assert.deepEqual(calls, [""]);

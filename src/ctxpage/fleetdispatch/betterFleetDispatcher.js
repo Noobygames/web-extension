@@ -11,7 +11,7 @@ import * as wait from "../../util/wait.js";
 import * as time from "../../util/time.js";
 import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import dataHelper from "../../util/dataHelper.js";
 import shipEnum from "../../util/enum/ship.js";
@@ -33,17 +33,27 @@ import {
   EXPEDITION_TOP1_POINTS,
 } from "../../util/gameConstants.js";
 import { building, research } from "../../util/gameFormulas.js";
+import {
+  calcNeededShips,
+  initUnionCombat,
+  openPlanetList,
+  overwriteFleetDispatcher,
+  selectBestCargoShip,
+  selectShips,
+} from "./index.js";
+import * as needsUtil from "../../util/needs.js";
+import RecyclingYieldCalculator from "../../util/recyclingYieldCalculator.js";
 
 /**
  * The fleet-dispatch page: the rebuilt dispatcher UI, the expedition and collect
  * shortcuts, the custom-mission buttons, and the cargo-selection helpers.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md. This is the module that
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. This is the module that
  * plan rates highest-risk, and the reason is not its size: several functions in here
  * patch OGame's own `FleetDispatcher` prototype, and inside those patches `this` is
  * the FleetDispatcher, not the page controller. Nothing that reads `this.mission`,
  * `this.sendFleetUrl`, `this.loca`, `this.appendTokenParams` and friends was
- * rewritten - only the members that belonged to `OGInfinity`.
+ * rewritten - only the members that belonged to `OGBeyondInfinity`.
  *
  * Compliance note (AGENTS.md 1.1 and 1.2): everything here still runs from one user
  * gesture. No button in this module sends more than one fleet, and nothing schedules
@@ -75,7 +85,7 @@ function betterFleetDispatcher(context) {
     const largeCargo = calcNeededShips(context, { fret: 203, resources: totalResources });
     const pathfinder = calcNeededShips(context, { fret: 219, resources: totalResources });
     const recycler = calcNeededShips(context, { fret: 209, resources: totalResources });
-    const planetId = context.current.isMoon ? OGIData.empire[context.current.index].moonID : context.current.id;
+    const planetId = context.current.isMoon ? OGBIData.empire[context.current.index].moonID : context.current.id;
     const shipyardURL =
       `https://s${context.universe}-${OgamePageData.gameLang}.ogame.gameforge.com/game/index.php?page=ingame` +
       `&component=shipyard&cp=${planetId}`;
@@ -161,7 +171,7 @@ function betterFleetDispatcher(context) {
       });
     };
     let dispatch = document.querySelector("#shipsChosen").appendChild(createDOM("div", { class: "ogl-dispatch" }));
-    if (!OGIData.json.options.dispatcher) {
+    if (!OGBIData.json.options.dispatcher) {
       dispatch.style.display = "none";
     }
     let destination = dispatch.appendChild(createDOM("div", { class: "ogl-dest" }));
@@ -330,15 +340,15 @@ function betterFleetDispatcher(context) {
                 defaultMission = missionURL;
               } else if (fleetDispatcher.targetPlanet.position == 16) {
                 if (fleetDispatcher.mission !== 15 && fleetDispatcher.mission !== 6) {
-                  defaultMission = OGIData.json.options.expeditionMission == 15 ? 15 : 6;
+                  defaultMission = OGBIData.json.options.expeditionMission == 15 ? 15 : 6;
                 } else {
                   defaultMission = fleetDispatcher.mission;
                 }
               } else if (fleetDispatcher.targetIsBuddyOrAllyMember || !missions.includes(1)) {
                 // if available missions do not include attack mission, the target is own planet/moon
-                defaultMission = OGIData.json.options.harvestMission;
+                defaultMission = OGBIData.json.options.harvestMission;
               } else {
-                defaultMission = OGIData.json.options.foreignMission;
+                defaultMission = OGBIData.json.options.foreignMission;
               }
             } else {
               defaultMission = fleetDispatcher.mission;
@@ -591,23 +601,23 @@ function betterFleetDispatcher(context) {
         }
       }
       if (index == 3) {
-        if (fleetDispatcher.targetPlayerId == playerId && OGIData.json.options.harvestMission == 3) {
+        if (fleetDispatcher.targetPlayerId == playerId && OGBIData.json.options.harvestMission == 3) {
           return true;
-        } else if (OGIData.json.options.foreignMission == 3) {
+        } else if (OGBIData.json.options.foreignMission == 3) {
           return true;
         }
       }
-      if (index == 1 && (context.mode == ogiMode.RAID || OGIData.json.options.foreignMission == 1)) {
+      if (index == 1 && (context.mode == ogiMode.RAID || OGBIData.json.options.foreignMission == 1)) {
         return true;
       }
-      if (index == 4 && OGIData.json.options.harvestMission == 4) {
+      if (index == 4 && OGBIData.json.options.harvestMission == 4) {
         return true;
       }
-      if (index == 15 && (OGIData.json.options.expeditionMission == 15 || fleetState.expeditionMode)) {
+      if (index == 15 && (OGBIData.json.options.expeditionMission == 15 || fleetState.expeditionMode)) {
         fleetState.expeditionMode = false;
         return true;
       }
-      if (index == 6 && OGIData.json.options.expeditionMission == 6 && !fleetState.expeditionMode) {
+      if (index == 6 && OGBIData.json.options.expeditionMission == 6 && !fleetState.expeditionMode) {
         return true;
       }
       return false;
@@ -1162,9 +1172,9 @@ function betterFleetDispatcher(context) {
       }
     };
     const defaultKept = context.current.isMoon
-      ? OGIData.json.options.defaultKeptMoon ?? OGIData.json.options.defaultKept
-      : OGIData.json.options.defaultKept;
-    let kept = OGIData.json.options.kept[context.current.coords + (context.current.isMoon ? "M" : "P")] || defaultKept;
+      ? OGBIData.json.options.defaultKeptMoon ?? OGBIData.json.options.defaultKept
+      : OGBIData.json.options.defaultKept;
+    let kept = OGBIData.json.options.kept[context.current.coords + (context.current.isMoon ? "M" : "P")] || defaultKept;
     $("#selectMostMetal").on("click", () => {
       let capacity = fleetDispatcher.getFreeCargoSpace();
       let cargo = Math.min(capacity, metalAvailable - (kept[0] || 0));
@@ -1383,7 +1393,7 @@ function betterFleetDispatcher(context) {
     let cyNum = transport.appendChild(createDOM("span", { class: "tooltip" }, "-"));
     let pbBtn;
     let pbNum;
-    if (OGIData.json.ships[210].cargoCapacity != 0) {
+    if (OGBIData.json.ships[210].cargoCapacity != 0) {
       pbBtn = transport.appendChild(
         createDOM("a", { "tech-id": 210, class: "ogl-option ogl-fleet-ship ogl-fleet-210" })
       );
@@ -1575,7 +1585,7 @@ function betterFleetDispatcher(context) {
       onResChange(2);
       onResChange(1);
       onResChange(0);
-      selectBestCargoShip(context, OGIData.json.options.collect.ship);
+      selectBestCargoShip(context, OGBIData.json.options.collect.ship);
     }
     update(false);
   }
@@ -1585,9 +1595,9 @@ function betterFleetDispatcher(context) {
     const slots = document.querySelector(".fleetStatus #slots");
     if (slots) {
       const fleetYield = RecyclingYieldCalculator.CalculateRecyclingYieldFleetFromEmpireData(
-        OGIData.empire[context.current.index],
-        OGIData.universeSettingsTooltip.debrisFactor,
-        OGIData.universeSettingsTooltip.deuteriumInDebris
+        OGBIData.empire[context.current.index],
+        OGBIData.universeSettingsTooltip.debrisFactor,
+        OGBIData.universeSettingsTooltip.deuteriumInDebris
       );
 
       const fleetAmount = context.current.isMoon
@@ -1604,7 +1614,9 @@ function betterFleetDispatcher(context) {
 
       const standardUnitSum = standardUnit.standardUnit(fleetAmount);
       if (standardUnitSum > 0) {
-        const limit = context.current.isMoon ? OGIData.options.rvalSelfLimitMoon : OGIData.options.rvalSelfLimitPlanet;
+        const limit = context.current.isMoon
+          ? OGBIData.options.rvalSelfLimitMoon
+          : OGBIData.options.rvalSelfLimitPlanet;
         const labelClass = standardUnitSum >= limit ? "ogk-label ogi-warning" : "ogk-label ogi-info";
         const totalDisplay = `${Numbers.toFormattedNumber(standardUnitSum, [0, 1], true)} ${standardUnit.unitType()}`;
         slots.appendChild(DOM.createDOM("span", { class: labelClass }, totalDisplay));

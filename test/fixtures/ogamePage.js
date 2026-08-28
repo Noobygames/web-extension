@@ -81,7 +81,7 @@ export function planetList(planets) {
 }
 
 /**
- * A complete-enough page for `new OGInfinity()` / `readPageContext()`.
+ * A complete-enough page for `new OGBeyondInfinity()` / `readPageContext()`.
  *
  * Defaults: two planets, the second one active, no moons, no officers, no class.
  */

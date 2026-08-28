@@ -1,5 +1,5 @@
 /**
- * `readPageContext()` is the seam that was cut out of `OGInfinity`'s constructor.
+ * `readPageContext()` is the seam that was cut out of `OGBeyondInfinity`'s constructor.
  *
  * These are characterisation tests: they record what the constructor reads today,
  * including the places where it throws instead of coping. Phase 3 of refactoring.md
@@ -202,7 +202,7 @@ test("readPageContext exposes the raw planet list as a live NodeList", () => {
 
 test("KNOWN BUG: a page without the player-id meta throws instead of degrading", () => {
   // Every OGame page carries this tag, so in practice it is unreachable - but it is
-  // the first thing the constructor touches, which is why `new OGInfinity()` could
+  // the first thing the constructor touches, which is why `new OGBeyondInfinity()` could
   // not be tested at all before this seam existed. A tolerant version would report
   // a missing player id rather than a TypeError from a null dereference.
   const html = [characterClass(), officers(), planetList([{ id: 1, coords: "1:2:3", active: true }])].join("\n");

@@ -1,63 +1,6 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { tabs } from "../../util/tabs.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import * as time from "../../util/time.js";
-import * as wait from "../../util/wait.js";
-import DateTime from "../../util/dateTime.js";
-import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import dataHelper from "../../util/dataHelper.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import missionType from "../../util/enum/missionType.js";
-import itemType from "../../util/enum/itemType.js";
-import itemImageID from "../../util/enum/itemImageID.js";
-import AllianceClass from "../../util/enum/allianceClass.js";
-import { fleetCost } from "../../util/fleetCost.js";
-import flying from "../../util/flying.js";
-import { getOption } from "../../ctxpage/conf-options.js";
-import { generateMMORPGLink } from "../../util/mmorpgStats.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { RESEARCH_INFO } from "../../util/enum/researchInfo.js";
-import {
-  CRAWLER_OVERLOAD_MAX,
-  CRYSTAL_GENERAL_INCOMING,
-  CRYSTAL_POS_BONUS,
-  ENGINEER_ENERGY_BONUS,
-  FACILITIES_TECHID,
-  GEOLOGIST_CRAWLER_BONUS,
-  GEOLOGIST_RESOURCE_BONUS,
-  IONTECHNOLOGY_BONUS,
-  MAX_CRAWLERS_PER_MINE,
-  METAL_GENERAL_INCOMING,
-  METAL_POS_BONUS,
-  OFFICER_ENERGY_BONUS,
-  OFFICER_RESOURCE_BONUS,
-  PLASMATECH_BONUS,
-  SHIP_EXPEDITION_POINTS,
-  SUPPLIES_TECHID,
-  TRADER_ENERGY_BONUS,
-  TRADER_RESOURCE_BONUS,
-} from "../../util/gameConstants.js";
-import {
-  building,
-  consumption,
-  getBestRoi,
-  minesProduction,
-  research,
-  roiAstrophysics,
-  roiLfBuilding,
-  roiLfResearch,
-  roiMine,
-  roiPlasmatechnology,
-} from "../../util/gameFormulas.js";
+import { createDOM } from "../../util/dom.js";
+import { toFormattedNumber } from "../../util/numbers.js";
+import OGBIData from "../../util/OGIData.js";
 
 import { statsState } from "./state.js";
 
@@ -119,7 +62,7 @@ function minesStats() {
   let alliance = [0, 0, 0];
   let energy = [0, 0, 0];
   let lifeform = statsState.context.hasLifeforms ? [0, 0, 0] : undefined;
-  OGIData.empire.forEach((planet) => {
+  OGBIData.empire.forEach((planet) => {
     if (!planet) return;
     for (let i = 0; i < 3; i++) {
       mines[i] +=

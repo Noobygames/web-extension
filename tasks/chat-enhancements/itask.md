@@ -15,18 +15,18 @@
 
 ## 2. Compliance-Einordnung (AGENTS.md)
 
-| Wunsch                       | Verdikt                                                                     |
-| ---------------------------- | --------------------------------------------------------------------------- |
-| PN-Button am Autor           | ✅ erlaubt — öffnet den spielinternen Chat, 1 Klick = 1 Aktion               |
-| Sprung in die Galaxieansicht | ✅ erlaubt — reine Navigation                                                |
-| Angriff                      | ✅ als Navigation zu `fleetdispatch` mit vorbelegtem Ziel (Repo-Präzedenz)   |
-| **Direktes Spionieren**      | ❌ **verboten, nicht gebaut** — §1.5.1                                       |
+| Wunsch                       | Verdikt                                                                    |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| PN-Button am Autor           | ✅ erlaubt — öffnet den spielinternen Chat, 1 Klick = 1 Aktion             |
+| Sprung in die Galaxieansicht | ✅ erlaubt — reine Navigation                                              |
+| Angriff                      | ✅ als Navigation zu `fleetdispatch` mit vorbelegtem Ziel (Repo-Präzedenz) |
+| **Direktes Spionieren**      | ❌ **verboten, nicht gebaut** — §1.5.1                                     |
 
 **Warum kein Spionage-Button.** §1.5.1 verbietet, eine Direkt-Spionage an
 Koordinatenanzeigen oder eigene Ziellisten zu hängen. Vanilla erlaubt Direct
 Probing nur aus der Galaxieansicht und aus Spionageberichten im Posteingang —
 Chatnachrichten sind beides nicht. Das Repo hat diese Grenze bereits gezogen:
-`OGInfinity.renderPlanet()` (`src/ogkush.js`) zeigt zwar noch das Augensymbol,
+`OGBeyondInfinity.renderPlanet()` (`src/ogkush.js`) zeigt zwar noch das Augensymbol,
 ruft aber `probingWarning()` statt `sendShipsWithPopup()`.
 
 **Ersatz:** Der Augen-Eintrag im Menü öffnet die Galaxieansicht auf genau dieser
@@ -47,14 +47,19 @@ Spieler geöffnete Seite geschrieben hat (§1.3 / §4 nicht berührt).
 Aus dem echten Dump `tasks/design-changes/example.html` (v13.0.0-r16):
 
 ```html
-<li class="chat_bar_list_item" data-associationid="500003">      <!-- Allianzchat -->
+<li class="chat_bar_list_item" data-associationid="500003">
+  <!-- Allianzchat -->
   <ul class="chat" data-foreign-association-id="500003">
     <li class="chat_msg" data-chat-id="30501">
       <div class="msg_head">
         <span class="msg_date fright">27.08.2026 18:39:15</span>
-        <span class="msg_title blue_txt">Emperor Viking</span>   <!-- nur Text, keine ID -->
+        <span class="msg_title blue_txt">Emperor Viking</span>
+        <!-- nur Text, keine ID -->
       </div>
       <span class="msg_content">…</span>
+    </li>
+  </ul>
+</li>
 ```
 
 Privatchats liegen unter `data-playerid` / `data-foreign-player-id`,
@@ -81,18 +86,18 @@ Findet keine Quelle die ID, öffnet der Klick die Chatseite, statt tot zu sein.
 Die Wertebereiche sind Teil des Musters, weil Chat voll von Uhrzeiten und Daten
 ist, die wie Koordinaten aussehen:
 
-| Text         | Ergebnis  | Grund                                          |
-| ------------ | --------- | ---------------------------------------------- |
-| `1:34:6`     | Treffer   |                                                |
-| `1-24-5`     | Treffer   | normalisiert zu `1:24:5`                       |
-| `4:117:12.`  | Treffer   | Satzpunkt ist kein Trennzeichen                |
-| `18:39:15`   | kein      | Galaxie ist `[1-9]`, Lookbehind blockt die `8`  |
-| `2026-08-27` | kein      | dito                                            |
-| `1:34-6`     | kein      | Trennzeichen per Backreference identisch        |
-| `1:34:17`    | kein      | Position > 16                                   |
+| Text         | Ergebnis | Grund                                          |
+| ------------ | -------- | ---------------------------------------------- |
+| `1:34:6`     | Treffer  |                                                |
+| `1-24-5`     | Treffer  | normalisiert zu `1:24:5`                       |
+| `4:117:12.`  | Treffer  | Satzpunkt ist kein Trennzeichen                |
+| `18:39:15`   | kein     | Galaxie ist `[1-9]`, Lookbehind blockt die `8` |
+| `2026-08-27` | kein     | dito                                           |
+| `1:34-6`     | kein     | Trennzeichen per Backreference identisch       |
+| `1:34:17`    | kein     | Position > 16                                  |
 
 Gegen den echten Dump (73 Nachrichten): 5 Koordinaten erkannt, davon eine in
-Bindestrich-Schreibweise, **0** Treffer in `.msg_date`.
+Bindestrich-Schreibweise, **0** TreffOGBeyondInfinityg_date`.
 
 ## 5. Umsetzung
 

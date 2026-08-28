@@ -1,7 +1,7 @@
 import { getLogger } from "./logger.js";
 
-const OGIObserver = function () {
-  const logger = getLogger("OGI - Observer");
+const OGBIObserver = function () {
+  const logger = getLogger("OGBI - Observer");
 
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
 
@@ -23,4 +23,4 @@ const OGIObserver = function () {
   };
 };
 
-export default OGIObserver;
+export default OGBIObserver;

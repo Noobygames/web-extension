@@ -1,10 +1,9 @@
-import { getOption, setOption } from "../conf-options.js";
+import { getOption } from "../conf-options.js";
 import { pageSignal } from "../../util/abort.js";
 import * as DOM from "../../util/dom.js";
 import { getLogger } from "../../util/logger.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 import * as wait from "../../util/wait.js";
-import OgamePageData from "../../util/OgamePageData.js";
 
 class TraderImportExportPage {
   logger;
@@ -99,25 +98,25 @@ class TraderImportExportPage {
     };
     const isObsolete = () => {
       const now = new Date();
-      const nextReminder = new Date(OGIData._json.reminders["importExport"].next);
+      const nextReminder = new Date(OGBIData._json.reminders["importExport"].next);
       return nextReminder < now;
     };
 
     const updateReminder = (date, mustRemind, rarity = null) => {
-      const importExportData = OGIData._json.reminders["importExport"] || {};
+      const importExportData = OGBIData._json.reminders["importExport"] || {};
       importExportData.next = date;
       importExportData.mustRemind = mustRemind;
       if (rarity) importExportData.rarity = rarity;
 
-      OGIData._json.reminders["importExport"] = importExportData;
-      OGIData.Save();
+      OGBIData._json.reminders["importExport"] = importExportData;
+      OGBIData.Save();
     };
 
     // Initialize reminder if not set
-    if (!OGIData._json.reminders["importExport"]) updateReminder(new Date(0).toISOString(), false);
+    if (!OGBIData._json.reminders["importExport"]) updateReminder(new Date(0).toISOString(), false);
 
     const remind = () => {
-      if (OGIData._json.reminders["importExport"].mustRemind) {
+      if (OGBIData._json.reminders["importExport"].mustRemind) {
         this.logger.debug("Showing import/export reminder");
 
         const menuItem =

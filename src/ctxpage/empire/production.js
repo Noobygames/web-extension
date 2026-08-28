@@ -1,41 +1,27 @@
 import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as wait from "../../util/wait.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
+import OGBIData from "../../util/OGIData.js";
 import AllianceClass from "../../util/enum/allianceClass.js";
 import PlayerClass from "../../util/enum/playerClass.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import { pageSignal } from "../../util/abort.js";
-import { updateresourceDetail } from "../empireOverview/index.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { RESEARCH_INFO } from "../../util/enum/researchInfo.js";
 import {
   CRAWLER_OVERLOAD_MAX,
   CRYSTAL_GENERAL_INCOMING,
   CRYSTAL_POS_BONUS,
-  ENGINEER_ENERGY_BONUS,
-  GEOLOGIST_CRAWLER_BONUS,
   GEOLOGIST_RESOURCE_BONUS,
-  IONTECHNOLOGY_BONUS,
   MAX_CRAWLERS_PER_MINE,
   METAL_GENERAL_INCOMING,
   METAL_POS_BONUS,
-  OFFICER_ENERGY_BONUS,
   OFFICER_RESOURCE_BONUS,
   PLASMATECH_BONUS,
-  TRADER_ENERGY_BONUS,
   TRADER_RESOURCE_BONUS,
   SUPPLIES_TECHID,
   FACILITIES_TECHID,
 } from "../../util/gameConstants.js";
-import { building, consumption, minesProduction, research } from "../../util/gameFormulas.js";
-import ogiMode from "../../util/enum/ogiMode.js";
+import itemImageID from "../../util/enum/itemImageID.js";
+import itemType from "../../util/enum/itemType.js";
+import { getOption } from "../conf-options.js";
+import { tooltip } from "../../util/tooltip.js";
+import * as iconVisibility from "../../util/iconVisibility.js";
 
 /**
  * The production numbers derived from the empire snapshot, and the construction
@@ -47,11 +33,11 @@ import ogiMode from "../../util/enum/ogiMode.js";
  */
 function updateEmpireProduction(context) {
   // WIP
-  OGIData.empire.forEach((planet) => {
+  OGBIData.empire.forEach((planet) => {
     planet.production.productionFactor = 1; // temporary, TODO: change use in fleetDispatcher with computed factor
     planet.production.generalIncoming = {
-      0: METAL_GENERAL_INCOMING * METAL_POS_BONUS[planet.position - 1] * OGIData.json.speed,
-      1: CRYSTAL_GENERAL_INCOMING * CRYSTAL_POS_BONUS[planet.position - 1] * OGIData.json.speed,
+      0: METAL_GENERAL_INCOMING * METAL_POS_BONUS[planet.position - 1] * OGBIData.json.speed,
+      1: CRYSTAL_GENERAL_INCOMING * CRYSTAL_POS_BONUS[planet.position - 1] * OGBIData.json.speed,
       2: 0,
       3: 0,
     };
@@ -59,7 +45,7 @@ function updateEmpireProduction(context) {
     planet.production.production = {
       1: {
         // metal mine
-        0: Math.floor(30 * planet[1] * 1.1 ** planet[1] * OGIData.json.speed * METAL_POS_BONUS[planet.position - 1]),
+        0: Math.floor(30 * planet[1] * 1.1 ** planet[1] * OGBIData.json.speed * METAL_POS_BONUS[planet.position - 1]),
         1: 0,
         2: 0,
         3: Math.floor(10 * planet[1] * 1.1 ** planet[1]),
@@ -67,7 +53,7 @@ function updateEmpireProduction(context) {
       2: {
         // crystal mine
         0: 0,
-        1: Math.floor(20 * planet[2] * 1.1 ** planet[2] * OGIData.json.speed * CRYSTAL_POS_BONUS[planet.position - 1]),
+        1: Math.floor(20 * planet[2] * 1.1 ** planet[2] * OGBIData.json.speed * CRYSTAL_POS_BONUS[planet.position - 1]),
         2: 0,
         3: Math.floor(10 * planet[2] * 1.1 ** planet[2]),
       },
@@ -75,7 +61,7 @@ function updateEmpireProduction(context) {
         // deuterium synthesizer
         0: 0,
         1: 0,
-        2: Math.floor(10 * planet[3] * 1.1 ** planet[3] * OGIData.json.speed * (1.36 - 0.004 * (planet.db_par2 + 20))),
+        2: Math.floor(10 * planet[3] * 1.1 ** planet[3] * OGBIData.json.speed * (1.36 - 0.004 * (planet.db_par2 + 20))),
         3: Math.floor(20 * planet[3] * 1.1 ** planet[3]),
       },
       4: {
@@ -89,7 +75,7 @@ function updateEmpireProduction(context) {
         // fusion reactor
         0: 0,
         1: 0,
-        2: Math.floor(10 * planet[12] * 1.1 ** planet[12] * OGIData.json.speed),
+        2: Math.floor(10 * planet[12] * 1.1 ** planet[12] * OGBIData.json.speed),
         3: Math.floor(30 * planet[12] * (1.05 + 0.01 * planet[113]) ** planet[12]),
       },
       122: {
@@ -201,17 +187,17 @@ function updateEmpireProduction(context) {
       const plasmaProd = mineProd * planet[122] * PLASMATECH_BONUS[idx];
       const geoProd = mineProd * (context.geologist ? GEOLOGIST_RESOURCE_BONUS : 0);
       const officerProd = mineProd * (context.allOfficers ? OFFICER_RESOURCE_BONUS : 0);
-      const allyClassProd = mineProd * (OGIData.json.allianceClass == AllianceClass.MINER ? TRADER_RESOURCE_BONUS : 0);
+      const allyClassProd = mineProd * (OGBIData.json.allianceClass == AllianceClass.MINER ? TRADER_RESOURCE_BONUS : 0);
       const itemProd = mineProd * activeItems[idx];
 
-      const lifeformBonus = OGIData.json.lifeformBonus;
+      const lifeformBonus = OGBIData.json.lifeformBonus;
       const playerClassProd =
         mineProd *
         (context.playerClass == PlayerClass.MINER
-          ? OGIData.json.minerBonusResourceProduction * (1 + lifeformBonus.classBonus.miner)
+          ? OGBIData.json.minerBonusResourceProduction * (1 + lifeformBonus.classBonus.miner)
           : 0);
       const lifeformProd = mineProd * lifeformBonus.productionBonus?.[idx] || 0;
-      const lifeformPlanetBonus = OGIData.json.lifeformPlanetBonus[planet.id]?.productionBonus;
+      const lifeformPlanetBonus = OGBIData.json.lifeformPlanetBonus[planet.id]?.productionBonus;
       const lifeformPlanetProd = mineProd * lifeformPlanetBonus[idx] || 0;
 
       let totalProd = 0;
@@ -233,21 +219,21 @@ function updateEmpireProduction(context) {
           (planet[1] + planet[2] + planet[3]) *
             MAX_CRAWLERS_PER_MINE *
             (context.playerClass == PlayerClass.MINER && context.geologist
-              ? 1 + OGIData.json.minerBonusMaxCrawler * (1 + lifeformBonus.classBonus.miner)
+              ? 1 + OGBIData.json.minerBonusMaxCrawler * (1 + lifeformBonus.classBonus.miner)
               : 1)
         );
         crawlerProd =
           mineProd *
           Math.min(planet[217], maxCrawlers) *
-          OGIData.json.resourceBuggyProductionBoost *
+          OGBIData.json.resourceBuggyProductionBoost *
           (context.playerClass == PlayerClass.MINER
-            ? 1 + OGIData.json.minerBonusAdditionalCrawler * (1 + lifeformBonus.classBonus.miner)
+            ? 1 + OGBIData.json.minerBonusAdditionalCrawler * (1 + lifeformBonus.classBonus.miner)
             : 1) *
-          (1 + OGIData.json.lifeformBonus.crawlerBonus?.production || 1);
+          (1 + OGBIData.json.lifeformBonus.crawlerBonus?.production || 1);
         //let crawlerPercent = context.playerClass == PlayerClass.MINER ? 1.5 : 1;  // TODO: try to guess true value
         let crawlerPercent = 1;
         crawlerProd *= Math.min(crawlerPercent, context.playerClass == PlayerClass.MINER ? CRAWLER_OVERLOAD_MAX : 1);
-        crawlerProd = Math.min(crawlerProd, mineProd * OGIData.json.resourceBuggyMaxProductionBoost);
+        crawlerProd = Math.min(crawlerProd, mineProd * OGBIData.json.resourceBuggyMaxProductionBoost);
       }
 
       const crawlerFactor = context.playerClass == PlayerClass.MINER ? 1.5 : 1;
@@ -263,7 +249,7 @@ function updateEmpireProduction(context) {
 
       crawlerProd = Math.min(
         crawlerProd * crawlerFactor * prodFactor,
-        mineProd * prodFactor * OGIData.json.resourceBuggyMaxProductionBoost
+        mineProd * prodFactor * OGBIData.json.resourceBuggyMaxProductionBoost
       );
 
       totalProd *= prodFactor;
@@ -323,7 +309,7 @@ function ProcessProductionProgressData(context, canCheckFromEmpire = false) {
   document.querySelectorAll(".planet-koords").forEach((planet) => {
     const smallplanet = planet.parentElement.parentElement;
     const planetId = planet.parentElement.href.match(/=(\d+)/)[1];
-    const planetFromEmpire = OGIData.empire.find((p) => p.id === parseInt(planetId));
+    const planetFromEmpire = OGBIData.empire.find((p) => p.id === parseInt(planetId));
     const moonFromEmpire = planetFromEmpire.moon;
     const planetCoords = planet.textContent.trim();
 
@@ -332,29 +318,29 @@ function ProcessProductionProgressData(context, canCheckFromEmpire = false) {
       canCheckFromEmpire && moonFromEmpire?.workInProgressTechs
         ? moonFromEmpire.workInProgressTechs.find((x) => regularBuildingsGroups.includes(x.group))
         : null; //elemFromEmpire is set only if canCheckFromEmpire is true
-    let elem = OGIData.json.moonProductionProgress[planetCoords];
+    let elem = OGBIData.json.moonProductionProgress[planetCoords];
     if (elem && elem.endDate) {
       //if an element exists and have an end date, we must check if it is finished
       const endDate = new Date(elem.endDate);
       if (endDate < now) {
         //if an element is finished, then copy it to the finished progress
-        OGIData.json.moonProductionProgressFinished[planetCoords] = elem;
+        OGBIData.json.moonProductionProgressFinished[planetCoords] = elem;
         if (elemFromEmpire) {
           //if elemFromEmpire exists, then we need to update the active progress
-          OGIData.json.moonProductionProgress[planetCoords] = {
+          OGBIData.json.moonProductionProgress[planetCoords] = {
             technoId: elemFromEmpire.id,
             tolvl: elemFromEmpire.to,
           };
         } else {
           //if elemFromEmpire does not exist, then we can consider that there is no construction in progress
-          delete OGIData.json.moonProductionProgress[planetCoords];
+          delete OGBIData.json.moonProductionProgress[planetCoords];
         }
       } else if (elemFromEmpire) {
         //if both exist, but elem is not finished, then it means that the construction could have changed, and we need to compare techId and level
         if (elem.technoId != elemFromEmpire.id || elem.tolvl != elemFromEmpire.to) {
           //techId or level has changed, so the element has finished and we must copy it to the finished progress and update the active progress
-          OGIData.json.moonProductionProgressFinished[planetCoords] = elem;
-          OGIData.json.moonProductionProgress[planetCoords] = {
+          OGBIData.json.moonProductionProgressFinished[planetCoords] = elem;
+          OGBIData.json.moonProductionProgress[planetCoords] = {
             technoId: elemFromEmpire.id,
             tolvl: elemFromEmpire.to,
           };
@@ -364,19 +350,19 @@ function ProcessProductionProgressData(context, canCheckFromEmpire = false) {
       //if both exist, but elem has no end date, then it means that the construction could have changed, and we need to compare techId and level
       if (elem.technoId != elemFromEmpire.id || elem.tolvl != elemFromEmpire.to) {
         //techId or level has changed, so the element has finished and we must copy it to the finished progress and update the active progress
-        OGIData.json.moonProductionProgressFinished[planetCoords] = elem;
-        OGIData.json.moonProductionProgress[planetCoords] = {
+        OGBIData.json.moonProductionProgressFinished[planetCoords] = elem;
+        OGBIData.json.moonProductionProgress[planetCoords] = {
           technoId: elemFromEmpire.id,
           tolvl: elemFromEmpire.to,
         };
       }
     } else if (elem && canCheckFromEmpire) {
       //if only elem exists, and we have checked from empire, but no constructions are in progress, we can consider it finished
-      OGIData.json.moonProductionProgressFinished[planetCoords] = elem;
-      delete OGIData.json.moonProductionProgress[planetCoords];
+      OGBIData.json.moonProductionProgressFinished[planetCoords] = elem;
+      delete OGBIData.json.moonProductionProgress[planetCoords];
     } else if (elemFromEmpire) {
       //if only elemFromEmpire exists, then it means that a new construction has started
-      OGIData.json.moonProductionProgress[planetCoords] = {
+      OGBIData.json.moonProductionProgress[planetCoords] = {
         technoId: elemFromEmpire.id,
         tolvl: elemFromEmpire.to,
       };
@@ -387,29 +373,29 @@ function ProcessProductionProgressData(context, canCheckFromEmpire = false) {
       canCheckFromEmpire && planetFromEmpire?.workInProgressTechs
         ? planetFromEmpire.workInProgressTechs.find((x) => x.group == lifeformResearchGroup)
         : null; //elemFromEmpire is set only if canCheckFromEmpire is true
-    elem = OGIData.json.lfResearchProgress[planetCoords];
+    elem = OGBIData.json.lfResearchProgress[planetCoords];
     if (elem && elem.endDate) {
       //if an element exists and have an end date, we must check if it is finished
       const endDate = new Date(elem.endDate);
       if (endDate < now) {
         //if an element is finished, then copy it to the finished progress
-        OGIData.json.lfResearchProgressFinished[planetCoords] = elem;
+        OGBIData.json.lfResearchProgressFinished[planetCoords] = elem;
         if (elemFromEmpire) {
           //if elemFromEmpire exists, then we need to update the active progress
-          OGIData.json.lfResearchProgress[planetCoords] = {
+          OGBIData.json.lfResearchProgress[planetCoords] = {
             technoId: elemFromEmpire.id,
             tolvl: elemFromEmpire.to,
           };
         } else {
           //if elemFromEmpire does not exist, then we can consider that there is no construction in progress
-          delete OGIData.json.lfResearchProgress[planetCoords];
+          delete OGBIData.json.lfResearchProgress[planetCoords];
         }
       } else if (elemFromEmpire) {
         //if both exist, but elem is not finished, then it means that the construction could have changed, and we need to compare techId and level
         if (elem.technoId != elemFromEmpire.id || elem.tolvl != elemFromEmpire.to) {
           //techId or level has changed, so the element has finished and we must copy it to the finished progress and update the active progress
-          OGIData.json.lfResearchProgressFinished[planetCoords] = elem;
-          OGIData.json.lfResearchProgress[planetCoords] = {
+          OGBIData.json.lfResearchProgressFinished[planetCoords] = elem;
+          OGBIData.json.lfResearchProgress[planetCoords] = {
             technoId: elemFromEmpire.id,
             tolvl: elemFromEmpire.to,
           };
@@ -419,19 +405,19 @@ function ProcessProductionProgressData(context, canCheckFromEmpire = false) {
       //if both exist, but elem has no end date, then it means that the construction could have changed, and we need to compare techId and level
       if (elem.technoId != elemFromEmpire.id || elem.tolvl != elemFromEmpire.to) {
         //techId or level has changed, so the element has finished and we must copy it to the finished progress and update the active progress
-        OGIData.json.lfResearchProgressFinished[planetCoords] = elem;
-        OGIData.json.lfResearchProgress[planetCoords] = {
+        OGBIData.json.lfResearchProgressFinished[planetCoords] = elem;
+        OGBIData.json.lfResearchProgress[planetCoords] = {
           technoId: elemFromEmpire.id,
           tolvl: elemFromEmpire.to,
         };
       }
     } else if (elem && canCheckFromEmpire) {
       //if only elem exists, and we have checked from empire, but no constructions are in progress, we can consider it finished
-      OGIData.json.lfResearchProgressFinished[planetCoords] = elem;
-      delete OGIData.json.lfResearchProgress[planetCoords];
+      OGBIData.json.lfResearchProgressFinished[planetCoords] = elem;
+      delete OGBIData.json.lfResearchProgress[planetCoords];
     } else if (elemFromEmpire) {
       //if only elemFromEmpire exists, then it means that a new construction has started
-      OGIData.json.lfResearchProgress[planetCoords] = {
+      OGBIData.json.lfResearchProgress[planetCoords] = {
         technoId: elemFromEmpire.id,
         tolvl: elemFromEmpire.to,
       };
@@ -442,29 +428,29 @@ function ProcessProductionProgressData(context, canCheckFromEmpire = false) {
       canCheckFromEmpire && planetFromEmpire?.workInProgressTechs
         ? planetFromEmpire.workInProgressTechs.find((x) => x.group == lifeformBuildingsGroup)
         : null; //elemFromEmpire is set only if canCheckFromEmpire is true
-    elem = OGIData.json.lfProductionProgress[planetCoords];
+    elem = OGBIData.json.lfProductionProgress[planetCoords];
     if (elem && elem.endDate) {
       //if an element exists and have an end date, we must check if it is finished
       const endDate = new Date(elem.endDate);
       if (endDate < now) {
         //if an element is finished, then copy it to the finished progress
-        OGIData.json.lfProductionProgressFinished[planetCoords] = elem;
+        OGBIData.json.lfProductionProgressFinished[planetCoords] = elem;
         if (elemFromEmpire) {
           //if elemFromEmpire exists, then we need to update the active progress
-          OGIData.json.lfProductionProgress[planetCoords] = {
+          OGBIData.json.lfProductionProgress[planetCoords] = {
             technoId: elemFromEmpire.id,
             tolvl: elemFromEmpire.to,
           };
         } else {
           //if elemFromEmpire does not exist, then we can consider that there is no construction in progress
-          delete OGIData.json.lfProductionProgress[planetCoords];
+          delete OGBIData.json.lfProductionProgress[planetCoords];
         }
       } else if (elemFromEmpire) {
         //if both exist, but elem is not finished, then it means that the construction could have changed, and we need to compare techId and level
         if (elem.technoId != elemFromEmpire.id || elem.tolvl != elemFromEmpire.to) {
           //techId or level has changed, so the element has finished and we must copy it to the finished progress and update the active progress
-          OGIData.json.lfProductionProgressFinished[planetCoords] = elem;
-          OGIData.json.lfProductionProgress[planetCoords] = {
+          OGBIData.json.lfProductionProgressFinished[planetCoords] = elem;
+          OGBIData.json.lfProductionProgress[planetCoords] = {
             technoId: elemFromEmpire.id,
             tolvl: elemFromEmpire.to,
           };
@@ -474,19 +460,19 @@ function ProcessProductionProgressData(context, canCheckFromEmpire = false) {
       //if both exist, but elem has no end date, then it means that the construction could have changed, and we need to compare techId and level
       if (elem.technoId != elemFromEmpire.id || elem.tolvl != elemFromEmpire.to) {
         //techId or level has changed, so the element has finished and we must copy it to the finished progress and update the active progress
-        OGIData.json.lfProductionProgressFinished[planetCoords] = elem;
-        OGIData.json.lfProductionProgress[planetCoords] = {
+        OGBIData.json.lfProductionProgressFinished[planetCoords] = elem;
+        OGBIData.json.lfProductionProgress[planetCoords] = {
           technoId: elemFromEmpire.id,
           tolvl: elemFromEmpire.to,
         };
       }
     } else if (elem && canCheckFromEmpire) {
       //if only elem exists, and we have checked from empire, but no constructions are in progress, we can consider it finished
-      OGIData.json.lfProductionProgressFinished[planetCoords] = elem;
-      delete OGIData.json.lfProductionProgress[planetCoords];
+      OGBIData.json.lfProductionProgressFinished[planetCoords] = elem;
+      delete OGBIData.json.lfProductionProgress[planetCoords];
     } else if (elemFromEmpire) {
       //if only elemFromEmpire exists, then it means that a new construction has started
-      OGIData.json.lfProductionProgress[planetCoords] = {
+      OGBIData.json.lfProductionProgress[planetCoords] = {
         technoId: elemFromEmpire.id,
         tolvl: elemFromEmpire.to,
       };
@@ -497,29 +483,29 @@ function ProcessProductionProgressData(context, canCheckFromEmpire = false) {
       canCheckFromEmpire && planetFromEmpire?.workInProgressTechs
         ? planetFromEmpire.workInProgressTechs.find((x) => regularBuildingsGroups.includes(x.group))
         : null; //elemFromEmpire is set only if canCheckFromEmpire is true
-    elem = OGIData.json.productionProgress[planetCoords];
+    elem = OGBIData.json.productionProgress[planetCoords];
     if (elem && elem.endDate) {
       //if an element exists and have an end date, we must check if it is finished
       const endDate = new Date(elem.endDate);
       if (endDate < now) {
         //if an element is finished, then copy it to the finished progress
-        OGIData.json.productionProgressFinished[planetCoords] = elem;
+        OGBIData.json.productionProgressFinished[planetCoords] = elem;
         if (elemFromEmpire) {
           //if elemFromEmpire exists, then we need to update the active progress
-          OGIData.json.productionProgress[planetCoords] = {
+          OGBIData.json.productionProgress[planetCoords] = {
             technoId: elemFromEmpire.id,
             tolvl: elemFromEmpire.to,
           };
         } else {
           //if elemFromEmpire does not exist, then we can consider that there is no construction in progress
-          delete OGIData.json.productionProgress[planetCoords];
+          delete OGBIData.json.productionProgress[planetCoords];
         }
       } else if (elemFromEmpire) {
         //if both exist, but elem is not finished, then it means that the construction could have changed, and we need to compare techId and level
         if (elem.technoId != elemFromEmpire.id || elem.tolvl != elemFromEmpire.to) {
           //techId or level has changed, so the element has finished and we must copy it to the finished progress and update the active progress
-          OGIData.json.productionProgressFinished[planetCoords] = elem;
-          OGIData.json.productionProgress[planetCoords] = {
+          OGBIData.json.productionProgressFinished[planetCoords] = elem;
+          OGBIData.json.productionProgress[planetCoords] = {
             technoId: elemFromEmpire.id,
             tolvl: elemFromEmpire.to,
           };
@@ -529,19 +515,19 @@ function ProcessProductionProgressData(context, canCheckFromEmpire = false) {
       //if both exist, but elem has no end date, then it means that the construction could have changed, and we need to compare techId and level
       if (elem.technoId != elemFromEmpire.id || elem.tolvl != elemFromEmpire.to) {
         //techId or level has changed, so the element has finished and we must copy it to the finished progress and update the active progress
-        OGIData.json.productionProgressFinished[planetCoords] = elem;
-        OGIData.json.productionProgress[planetCoords] = {
+        OGBIData.json.productionProgressFinished[planetCoords] = elem;
+        OGBIData.json.productionProgress[planetCoords] = {
           technoId: elemFromEmpire.id,
           tolvl: elemFromEmpire.to,
         };
       }
     } else if (elem && canCheckFromEmpire) {
       //if only elem exists, and we have checked from empire, but no constructions are in progress, we can consider it finished
-      OGIData.json.productionProgressFinished[planetCoords] = elem;
-      delete OGIData.json.productionProgress[planetCoords];
+      OGBIData.json.productionProgressFinished[planetCoords] = elem;
+      delete OGBIData.json.productionProgress[planetCoords];
     } else if (elemFromEmpire) {
       //if only elemFromEmpire exists, then it means that a new construction has started
-      OGIData.json.productionProgress[planetCoords] = {
+      OGBIData.json.productionProgress[planetCoords] = {
         technoId: elemFromEmpire.id,
         tolvl: elemFromEmpire.to,
       };
@@ -583,7 +569,7 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
     document.querySelectorAll(".planet-koords").forEach((planet) => {
       const smallplanet = planet.parentElement.parentElement;
       const planetId = planet.parentElement.href.match(/=(\d+)/)[1];
-      const planetFromEmpire = OGIData.empire.find((p) => p.id === parseInt(planetId));
+      const planetFromEmpire = OGBIData.empire.find((p) => p.id === parseInt(planetId));
       const planetCoords = planet.textContent.trim();
       // remove old constructions icons
       smallplanet.querySelector(".constructionIcons:not(.moonConstructionIcons)")?.remove();
@@ -602,12 +588,12 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
       const moon = smallplanet.querySelector(".moonlink");
       if (moon) {
         const moonId = moon.href.match(/=(\d+)/)[1];
-        elem = OGIData.json.moonProductionProgress[planetCoords];
-        finishedElem = OGIData.json.moonProductionProgressFinished[planetCoords];
+        elem = OGBIData.json.moonProductionProgress[planetCoords];
+        finishedElem = OGBIData.json.moonProductionProgressFinished[planetCoords];
 
         /* FINISHED */
         if (finishedElem) {
-          if (OGIData.json.options.showProgressIndicators) {
+          if (OGBIData.json.options.showProgressIndicators) {
             //if an element is finished, we need to add the finished class, if it doesn't already have it
             if (!moon.classList.contains("finished")) moon.classList.add("finished");
           }
@@ -647,7 +633,7 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
       }
 
       /* PLANET LIFEFORM RESEARCH */
-      elem = OGIData.json.lfResearchProgress[planetCoords];
+      elem = OGBIData.json.lfResearchProgress[planetCoords];
       //there is no finished indicator for lifeform research
 
       /* WORK IN PROGRESS */
@@ -671,14 +657,14 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
       }
 
       /* PLANET LIFEFORM CONSTRUCTION */
-      elem = OGIData.json.lfProductionProgress[planetCoords];
-      finishedElem = OGIData.json.lfProductionProgressFinished[planetCoords];
+      elem = OGBIData.json.lfProductionProgress[planetCoords];
+      finishedElem = OGBIData.json.lfProductionProgressFinished[planetCoords];
 
       /* FINISHED */
       if (finishedElem) {
         // lifeform production work is finished, so we need to update the lifeform
-        OGIData.json.needLifeformUpdate[planet.parentElement.href.match(/=(\d+)/)[1]] = true;
-        if (OGIData.json.options.showProgressIndicators) {
+        OGBIData.json.needLifeformUpdate[planet.parentElement.href.match(/=(\d+)/)[1]] = true;
+        if (OGBIData.json.options.showProgressIndicators) {
           //if an element is finished, we need to add the finished class, if it doesn't already have it
           if (!planet.parentElement.classList.contains("finishedLf")) planet.parentElement.classList.add("finishedLf");
         }
@@ -708,14 +694,14 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
       }
 
       /* PLANET CONSTRUCTION */
-      elem = OGIData.json.productionProgress[planetCoords];
-      finishedElem = OGIData.json.productionProgressFinished[planetCoords];
+      elem = OGBIData.json.productionProgress[planetCoords];
+      finishedElem = OGBIData.json.productionProgressFinished[planetCoords];
 
       /* FINISHED */
       if (finishedElem) {
         // lifeform production work is finished, so we need to update the lifeform
-        OGIData.json.needLifeformUpdate[planet.parentElement.href.match(/=(\d+)/)[1]] = true;
-        if (OGIData.json.options.showProgressIndicators) {
+        OGBIData.json.needLifeformUpdate[planet.parentElement.href.match(/=(\d+)/)[1]] = true;
+        if (OGBIData.json.options.showProgressIndicators) {
           //if an element is finished, we need to add the finished class, if it doesn't already have it
           if (!planet.parentElement.classList.contains("finished")) planet.parentElement.classList.add("finished");
         }
@@ -755,7 +741,7 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
 
   if (needLifeformUpdateForResearch) {
     document.querySelectorAll(".planet-koords").forEach((planet) => {
-      OGIData.json.needLifeformUpdate[planet.parentElement.href.match(/=(\d+)/)[1]] = true;
+      OGBIData.json.needLifeformUpdate[planet.parentElement.href.match(/=(\d+)/)[1]] = true;
     });
   }
 
@@ -765,9 +751,9 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
 
     // remove the finished production progress (we are on <coords>, so we don't need it anymore)
     if (context.current.isMoon) {
-      delete OGIData.json.moonProductionProgressFinished[coords];
+      delete OGBIData.json.moonProductionProgressFinished[coords];
     } else {
-      delete OGIData.json.productionProgressFinished[coords];
+      delete OGBIData.json.productionProgressFinished[coords];
     }
 
     if (building) {
@@ -797,16 +783,16 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
           endDate: endDate.toGMTString(),
         };
         if (context.current.isMoon) {
-          OGIData.json.moonProductionProgress[coords] = elem;
+          OGBIData.json.moonProductionProgress[coords] = elem;
         } else {
-          OGIData.json.productionProgress[coords] = elem;
+          OGBIData.json.productionProgress[coords] = elem;
         }
       }
     } else {
       if (context.current.isMoon) {
-        delete OGIData.json.moonProductionProgress[coords];
+        delete OGBIData.json.moonProductionProgress[coords];
       } else {
-        delete OGIData.json.productionProgress[coords];
+        delete OGBIData.json.productionProgress[coords];
       }
     }
   }
@@ -816,7 +802,7 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
     const lfbuilding = document.querySelector("#productionboxlfbuildingcomponent .queuePic");
 
     // remove the finished production progress (we are on <coords>, so we don't need it anymore)
-    delete OGIData.json.lfProductionProgressFinished[coords];
+    delete OGBIData.json.lfProductionProgressFinished[coords];
 
     if (lfbuilding) {
       const technoId = lfbuilding.classList[2].replace("lifeformTech", "");
@@ -837,14 +823,14 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
           time[1],
           time[2]
         );
-        OGIData.json.lfProductionProgress[coords] = {
+        OGBIData.json.lfProductionProgress[coords] = {
           technoId: technoId,
           tolvl: tolvl,
           endDate: endDate.toGMTString(),
         };
       }
     } else {
-      delete OGIData.json.lfProductionProgress[coords];
+      delete OGBIData.json.lfProductionProgress[coords];
     }
   }
 
@@ -876,7 +862,7 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
           time[1],
           time[2]
         );
-        OGIData.json.researchProgress = {
+        OGBIData.json.researchProgress = {
           technoId: technoId,
           coords: coords,
           tolvl: tolvl,
@@ -885,7 +871,7 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
         };
       }
     } else {
-      OGIData.json.researchProgress = {};
+      OGBIData.json.researchProgress = {};
     }
   }
 
@@ -894,7 +880,7 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
     const lfresearch = document.querySelector("#productionboxlfresearchcomponent .queuePic");
 
     // remove the finished production progress (we are on <coords>, so we don't need it anymore)
-    delete OGIData.json.lfResearchProgress[coords];
+    delete OGBIData.json.lfResearchProgress[coords];
 
     if (lfresearch) {
       const technoId = lfresearch.classList[2].replace("lifeformTech", "");
@@ -915,20 +901,20 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
           time[1],
           time[2]
         );
-        OGIData.json.lfResearchProgress[coords] = {
+        OGBIData.json.lfResearchProgress[coords] = {
           technoId: technoId,
           tolvl: tolvl,
           endDate: endDate.toGMTString(),
         };
       }
     } else {
-      delete OGIData.json.lfResearchProgress[coords];
+      delete OGBIData.json.lfResearchProgress[coords];
     }
   }
 
   updateProgressIndicators();
 
-  OGIData.Save();
+  OGBIData.Save();
 }
 
 export { updateEmpireProduction, ProcessProductionProgressData, updateProductionProgress };

@@ -91,18 +91,18 @@ nötig **vor** dem Publish.
 Im Code an der betroffenen Stelle vermerken:
 `/* GRAY AREA: requires ToolDev approval before publishing — see AGENTS.md §3 */`
 
-**Zusatz durch den Zoom.** §1.7 listet ausdrücklich *"resizing"* von Bannern,
+**Zusatz durch den Zoom.** §1.7 listet ausdrücklich _"resizing"_ von Bannern,
 oberer Werbeleiste, Premium-Inhalten, Footer und den Menüpunkten Händler /
 Offizierskasino / Shop. Die Regel qualifiziert die Richtung nicht — Vergrößern
 zählt genauso wie Verkleinern. Der Zoom ist deshalb bewusst nur auf den
 Spielinhalt gelegt:
 
-| skaliert                          | nicht skaliert                                   |
-| --------------------------------- | ------------------------------------------------ |
-| `#middle` (Grids, Tabellen, Reports) | `#bannerskyscrapercomponent` (Ad-Slot)        |
-| `#planetbarcomponent` (Planetenliste) | `#top` (Rohstoffe, Dark Matter, Offiziere)   |
-|                                   | `#left` (Menü inkl. Händler/Offizierskasino/Shop) |
-|                                   | `#siteFooter` (liegt außerhalb `#pageContent`)    |
+| skaliert                              | nicht skaliert                                    |
+| ------------------------------------- | ------------------------------------------------- |
+| `#middle` (Grids, Tabellen, Reports)  | `#bannerskyscrapercomponent` (Ad-Slot)            |
+| `#planetbarcomponent` (Planetenliste) | `#top` (Rohstoffe, Dark Matter, Offiziere)        |
+|                                       | `#left` (Menü inkl. Händler/Offizierskasino/Shop) |
+|                                       | `#siteFooter` (liegt außerhalb `#pageContent`)    |
 
 Das ging sauber, weil `#bannerskyscrapercomponent` **Geschwister** von
 `#planetbarcomponent` innerhalb `#right` ist, nicht dessen Kind — der Ad-Slot
@@ -217,11 +217,10 @@ Manuell, es gibt keinen DOM-Layout-Test im `node:test`-Setup.
   2040px Viewport). Damit wird zuerst Breite ausgenutzt, dann skaliert.
 - Spaltenformel teilt jetzt durch den Zoom:
   `clamp(670px, calc((100vw - 640px) / var(--ogl-wide-zoom)), 1400px)`.
-  Der Cap wirkt so in *Spec-Pixeln*, nicht in Gerätepixeln — Zeichen pro Zeile
+  Der Cap wirkt so in _Spec-Pixeln_, nicht in Gerätepixeln — Zeichen pro Zeile
   bleiben konstant, obwohl die Schrift größer wird.
 - `@supports (zoom: 1.25)` umschließt alle Stufen. `manifest-firefox.json`
-  deklariert `strict_min_version: "120.0"`, CSS `zoom` kam aber erst in Firefox
-  126. Auf 120-125 bleibt es beim reinen Verbreitern.
+  deklariert `strict_min_version: "120.0"`, CSS `zoom` kam aber erst in Firefox 126. Auf 120-125 bleibt es beim reinen Verbreitern.
 - `zoom` statt `transform: scale()`, weil `zoom` das Layout tatsächlich neu
   umbricht; `scale()` würde nur vergrößert überlagern und Überlauf erzeugen.
 - OGI-Dialoge, Toasts und Tooltips hängen an `document.body`
@@ -238,15 +237,15 @@ das sollte passen — im Spiel aber einmal Tooltips und Galaxie-Hover prüfen.
 Drei Optionen in `src/ctxpage/conf-options.js` (der Options-Proxy weist
 unbekannte Keys ab, sie müssen dort deklariert sein):
 
-| Option              | Default | Wirkung                                            |
-| ------------------- | ------- | -------------------------------------------------- |
-| `wideLayoutEnable`  | `true`  | Breitenstreckung                                    |
-| `wideZoomEnable`    | `true`  | Inhaltsskalierung                                   |
-| `wideZoomFactor`    | `0`     | `0` = automatische Stufen, sonst fester Faktor       |
+| Option             | Default | Wirkung                                        |
+| ------------------ | ------- | ---------------------------------------------- |
+| `wideLayoutEnable` | `true`  | Breitenstreckung                               |
+| `wideZoomEnable`   | `true`  | Inhaltsskalierung                              |
+| `wideZoomFactor`   | `0`     | `0` = automatische Stufen, sonst fester Faktor |
 
 `src/ctxpage/wide-layout.js` setzt daraus zwei Klassen auf `<html>`
 (`ogl-wide-layout`, `ogl-wide-zoom`) und schreibt einen manuellen Faktor als
-Inline-Custom-Property. Aufgerufen in `OGInfinity.start()` und beim Speichern
+Inline-Custom-Property. Aufgerufen in `OGBeyondInfinity.start()` und beim Speichern
 des Settings-Dialogs.
 
 Warum Klassen statt „CSS neutralisieren": ohne Klasse greift **keine einzige**
@@ -270,7 +269,7 @@ Korrekturen:
 - Reserve wächst mit dem Zoom: `calc(260px + 384px * var(--ogl-wide-zoom))`,
   hergeleitet aus `gap >= overhang`.
 - Untergrenze der Spalte teilt durch den Zoom
-  (`calc(670px / var(--ogl-wide-zoom))`), damit die Spalte nie *sichtbar*
+  (`calc(670px / var(--ogl-wide-zoom))`), damit die Spalte nie _sichtbar_
   schmaler wird als Vanilla, egal wie stark gezoomt wird.
 
 `WIDE_ZOOM_MAX` ist deshalb **1.75**, nicht 2: bei 1600px — der schmalsten
@@ -280,14 +279,14 @@ Planetennamen ab, daher der Puffer.
 
 ### Messungen (Schalter-Matrix bei 2560px)
 
-| Fall                     | zoom | spec   | sichtbar | Kachel | Banner  | H-Scroll |
-| ------------------------ | ---- | ------ | -------- | ------ | ------- | -------- |
-| beides AUS               | 1    | 670px  | 670      | 100    | 160x600 | nein     |
-| Layout AN, Zoom AUS      | 1    | 1400px | 1400     | 100    | 160x600 | nein     |
-| Zoom AN, Layout AUS      | 1.25 | 670px  | 838      | 125    | 160x600 | nein     |
-| beides AN (automatisch)  | 1.25 | 1400px | 1750     | 125    | 160x600 | nein     |
-| beides AN + manuell 1.2  | 1.2  | 1400px | 1680     | 120    | 160x600 | nein     |
-| beides AN + manuell 1.0  | 1    | 1400px | 1400     | 100    | 160x600 | nein     |
+| Fall                    | zoom | spec   | sichtbar | Kachel | Banner  | H-Scroll |
+| ----------------------- | ---- | ------ | -------- | ------ | ------- | -------- |
+| beides AUS              | 1    | 670px  | 670      | 100    | 160x600 | nein     |
+| Layout AN, Zoom AUS     | 1    | 1400px | 1400     | 100    | 160x600 | nein     |
+| Zoom AN, Layout AUS     | 1.25 | 670px  | 838      | 125    | 160x600 | nein     |
+| beides AN (automatisch) | 1.25 | 1400px | 1750     | 125    | 160x600 | nein     |
+| beides AN + manuell 1.2 | 1.2  | 1400px | 1680     | 120    | 160x600 | nein     |
+| beides AN + manuell 1.0 | 1    | 1400px | 1400     | 100    | 160x600 | nein     |
 
 „beides AUS" trifft exakt die Vanilla-Werte 670 / 654 — der Beweis, dass der
 Schalter zurücksetzt statt zu überlagern.

@@ -2,7 +2,7 @@
  * `ctxpage/fleetdispatch/` - the cargo helpers.
  *
  * These tests came from `test/ogkush.calculations.test.js`, where they ran against
- * `OGInfinity.prototype`. Phase 3 of refactoring.md moved the fleet-dispatch page out
+ * `OGBeyondInfinity.prototype`. Phase 3 of refactoring.md moved the fleet-dispatch page out
  * of the monolith; the tests moved with it, and every expected value is unchanged -
  * which is what verifies the move.
  *

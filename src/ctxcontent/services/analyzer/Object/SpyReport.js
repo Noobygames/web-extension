@@ -5,7 +5,7 @@ import * as DOM from "../../../../util/dom.js";
 import ship from "../../../../util/enum/ship.js";
 import planetType from "../../../../util/enum/planetType.js";
 import Translator from "../../../../util/translate.js";
-import OGIData from "../../../../util/OGIData.js";
+import OGBIData from "../../../../util/OGIData.js";
 import RecyclingYieldCalculator from "../../../../util/recyclingYieldCalculator.js";
 import * as standardUnit from "../../../../util/standardUnit.js";
 import { toFormattedNumber } from "../../../../util/numbers.js";
@@ -111,7 +111,7 @@ export class SpyReport {
   constructor(message) {
     this._id = message.getAttribute("data-msg-id");
     this._targetIsSelf =
-      message.querySelector(`.rawMessageData[data-raw-targetplayerid="${OGIData.playerId}"]`) !== null;
+      message.querySelector(`.rawMessageData[data-raw-targetplayerid="${OGBIData.playerId}"]`) !== null;
     this._isNew = message.classList.contains("msg_new");
     this._isFavorited = message.querySelector(".icon_favorited");
     this._attacked = message.querySelector(".fleetAction.fleetHostile");
@@ -246,23 +246,23 @@ export class SpyReport {
 
     const recyclingYieldFleet = RecyclingYieldCalculator.CalculateRecyclingYieldFleet(
       fleet ?? [],
-      OGIData.universeSettingsTooltip.debrisFactor,
-      OGIData.universeSettingsTooltip.deuteriumInDebris
+      OGBIData.universeSettingsTooltip.debrisFactor,
+      OGBIData.universeSettingsTooltip.deuteriumInDebris
     );
     const amountFleet = [recyclingYieldFleet.metal, recyclingYieldFleet.crystal, recyclingYieldFleet.deut];
     const standardUnitSumFleet = standardUnit.standardUnit(amountFleet);
 
     const recyclingYieldDefence = RecyclingYieldCalculator.CalculateRecyclingYieldDefence(
       defence ?? [],
-      OGIData.universeSettingsTooltip.debrisFactorDef,
-      OGIData.universeSettingsTooltip.deuteriumInDebris
+      OGBIData.universeSettingsTooltip.debrisFactorDef,
+      OGBIData.universeSettingsTooltip.deuteriumInDebris
     );
     const amountDefence = [recyclingYieldDefence.metal, recyclingYieldDefence.crystal, recyclingYieldDefence.deut];
     const standardUnitSumDefence = standardUnit.standardUnit(amountDefence);
 
     const totalStandardUnitSum = standardUnitSumFleet + standardUnitSumDefence;
 
-    const limit = planetType === 3 ? OGIData.options.rvalSelfLimitMoon : OGIData.options.rvalSelfLimitPlanet;
+    const limit = planetType === 3 ? OGBIData.options.rvalSelfLimitMoon : OGBIData.options.rvalSelfLimitPlanet;
 
     // If the standard unit sum is above the limit, display warning labels
     if (totalStandardUnitSum >= limit) {
@@ -376,7 +376,7 @@ export class SpyReport {
         title: Translator.translate(188),
       });
       seeReportButton.addEventListener("click", () => {
-        const url = `${OGIData.universeUrl}/game/index.php?${searchParams.toString()}`;
+        const url = `${OGBIData.universeUrl}/game/index.php?${searchParams.toString()}`;
         seeReportRequest(url);
       });
       seeReportButton.appendChild(DOM.createDOM("span", { class: "seeReportIcon" }));

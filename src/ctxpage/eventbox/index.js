@@ -1,28 +1,13 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as wait from "../../util/wait.js";
-import * as time from "../../util/time.js";
-import * as standardUnit from "../../util/standardUnit.js";
+import { createDOM } from "../../util/dom.js";
 import Translator from "../../util/translate.js";
-import DateTime from "../../util/dateTime.js";
-import OGIData from "../../util/OGIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import missionType from "../../util/enum/missionType.js";
-import { getOption } from "../conf-options.js";
-import { fleetCost } from "../../util/fleetCost.js";
-import { tabs } from "../../util/tabs.js";
+import OGBIData from "../../util/OGIData.js";
+import { updateresourceDetail } from "../empireOverview/index.js";
+import { updateEmpireData } from "../empire/index.js";
 
 /**
  * The fleet-movement panel OGame drops in over the top bar, with OGI's own totals.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md.
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md.
  */
 
 function eventBox(context) {
@@ -30,10 +15,10 @@ function eventBox(context) {
     if (document.querySelector("#eventboxLoading").style.display == "none") {
       clearInterval(interval);
       const flying = flying();
-      if (JSON.stringify(OGIData.json.flying.ids) != JSON.stringify(flying.ids)) {
+      if (JSON.stringify(OGBIData.json.flying.ids) != JSON.stringify(flying.ids)) {
         let gone = [];
-        OGIData.json.flying.ids &&
-          OGIData.json.flying.ids.forEach((mov) => {
+        OGBIData.json.flying.ids &&
+          OGBIData.json.flying.ids.forEach((mov) => {
             let found = false;
             flying.ids.forEach((oldMov) => {
               if (mov.id == oldMov.id) {
@@ -45,10 +30,10 @@ function eventBox(context) {
             }
           });
         let added = [];
-        OGIData.json.flying.ids &&
+        OGBIData.json.flying.ids &&
           flying.ids.forEach((mov) => {
             let found = false;
-            OGIData.json.flying.ids.forEach((oldMov) => {
+            OGBIData.json.flying.ids.forEach((oldMov) => {
               if (mov.id == oldMov.id) {
                 found = true;
               }
@@ -71,12 +56,12 @@ function eventBox(context) {
           ) {
             let arrival = movement.back ? movement.origin : movement.dest;
             let coords = "[" + arrival.slice(0, -1) + "]";
-            OGIData.empire.forEach((planet) => {
+            OGBIData.empire.forEach((planet) => {
               if ((arrival.slice(-1) == "M" && planet.moon) || arrival.slice(-1) != "M") {
                 let object = arrival.slice(-1) == "M" ? planet.moon : planet;
                 if (object.coordinates == coords) {
                   for (let id in movement.fleet) object[id] += movement.fleet[id];
-                  OGIData.Save();
+                  OGBIData.Save();
                 }
               }
             });
@@ -88,34 +73,34 @@ function eventBox(context) {
           ) {
             let arrival = movement.back ? movement.origin : movement.dest;
             let coords = "[" + arrival.slice(0, -1) + "]";
-            OGIData.empire.forEach((planet) => {
+            OGBIData.empire.forEach((planet) => {
               if ((arrival.slice(-1) == "M" && planet.moon) || arrival.slice(-1) != "M") {
                 let object = arrival.slice(-1) == "M" ? planet.moon : planet;
                 if (object.coordinates == coords) {
                   if (movement.metal) object.metal += movement.metal;
                   if (movement.crystal) object.crystal += movement.crystal;
                   if (movement.deuterium) object.deuterium += movement.deuterium;
-                  if (!OGIData.json.options.lessAggressiveEmpireAutomaticUpdate) {
+                  if (!OGBIData.json.options.lessAggressiveEmpireAutomaticUpdate) {
                     update = true;
                   } else {
                     object.invalidate = true;
                     updateresourceDetail(context.overviewContext);
                   }
                 }
-                OGIData.Save();
+                OGBIData.Save();
               }
             });
           }
         });
-        OGIData.json.needsUpdate = update;
-        OGIData.Save();
+        OGBIData.json.needsUpdate = update;
+        OGBIData.Save();
         if (update) {
           updateEmpireData(context.empireContext);
         }
-        OGIData.json.needSync = true;
+        OGBIData.json.needSync = true;
       }
-      OGIData.json.flying = flying;
-      OGIData.Save();
+      OGBIData.json.flying = flying;
+      OGBIData.Save();
       updateresourceDetail(context.overviewContext);
     }
   }, 10);
@@ -124,17 +109,17 @@ function eventBox(context) {
     let div = header.appendChild(createDOM("div"));
     div.appendChild(createDOM("span", {}, "Keep"));
     let keep = div.appendChild(createDOM("input", { type: "checkbox" }));
-    if (OGIData.json.options.eventBoxKeep) keep.checked = true;
+    if (OGBIData.json.options.eventBoxKeep) keep.checked = true;
     div.appendChild(createDOM("span", {}, Translator.translate(41)));
     let exps = div.appendChild(createDOM("input", { type: "checkbox" }));
-    if (OGIData.json.options.eventBoxExps) exps.checked = true;
+    if (OGBIData.json.options.eventBoxExps) exps.checked = true;
     keep.addEventListener("change", () => {
-      OGIData.json.options.eventBoxKeep = keep.checked;
-      OGIData.Save();
+      OGBIData.json.options.eventBoxKeep = keep.checked;
+      OGBIData.Save();
     });
     exps.addEventListener("change", () => {
-      OGIData.json.options.eventBoxExps = exps.checked;
-      OGIData.Save();
+      OGBIData.json.options.eventBoxExps = exps.checked;
+      OGBIData.Save();
       context.expeditionImpact(exps.checked);
     });
   };
@@ -203,7 +188,7 @@ function eventBox(context) {
         "onClick",
         `sendShipsWithPopup(6,${params.get("galaxy")},${params.get("system")},${params.get("position")},${params.get(
           "planetType"
-        )},${OGIData.json.spyProbes}); return false;`
+        )},${OGBIData.json.spyProbes}); return false;`
       );
     });
   };
@@ -239,7 +224,7 @@ function eventBox(context) {
   };
   let changeTimeZone = () => {
     document.querySelectorAll("#eventContent .eventFleet").forEach((line) => {
-      let timeZoneChange = OGIData.json.options.timeZone ? 0 : OGIData.json.timezoneDiff;
+      let timeZoneChange = OGBIData.json.options.timeZone ? 0 : OGBIData.json.timezoneDiff;
       let arrival = new Date((line.getAttribute("data-arrival-time") - timeZoneChange) * 1e3);
       arrival = arrival.getTime();
       if (line.querySelector(".arrivalTime")) {
@@ -254,7 +239,7 @@ function eventBox(context) {
     addOptions();
     addHover();
     addRefreshButton();
-    context.expeditionImpact(OGIData.json.options.eventBoxExps);
+    context.expeditionImpact(OGBIData.json.options.eventBoxExps);
   };
   let addRefreshButton = () => {
     let refreshBtn = createDOM("a", { class: "icon icon_reload" });
@@ -270,7 +255,7 @@ function eventBox(context) {
       );
     });
   };
-  if (OGIData.json.options.eventBoxKeep) {
+  if (OGBIData.json.options.eventBoxKeep) {
     toggleEvents.loaded = true;
     document.querySelector("#eventboxContent").style.display = "block";
   }

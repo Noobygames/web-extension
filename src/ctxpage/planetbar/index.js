@@ -1,36 +1,27 @@
 import * as DOM from "../../util/dom.js";
 import isOwnPlanet from "../../util/isOwnPlanet.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as popupUtil from "../../util/popup.js";
-import * as time from "../../util/time.js";
-import * as wait from "../../util/wait.js";
+import { createDOM } from "../../util/dom.js";
+import { toFormattedNumber } from "../../util/numbers.js";
 import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import DateTime from "../../util/dateTime.js";
-import OGIData from "../../util/OGIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import flying from "../../util/flying.js";
-import shipEnum from "../../util/enum/ship.js";
+import OGBIData from "../../util/OGIData.js";
 import missionType from "../../util/enum/missionType.js";
-import planetType from "../../util/enum/planetType.js";
-import { pageSignal } from "../../util/abort.js";
 import { getOption } from "../conf-options.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { building, minesProduction } from "../../util/gameFormulas.js";
+import OGIObserver from "../../util/observer.js";
+import { tooltip } from "../../util/tooltip.js";
+import RecyclingYieldCalculator from "../../util/recyclingYieldCalculator.js";
+import * as iconVisibility from "../../util/iconVisibility.js";
 
 /**
  * The right-hand planet bar: mine levels, harvest and jump-gate shortcuts, the
  * activity timers, incoming fleets, and the ship presence per planet.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md.
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md.
  *
  * `sideOptions()` stayed behind, against the module list in that plan. It is not
  * planet-bar rendering: it is the wiring of the five sidebar buttons, each of which
  * opens a different page module with that module's own context. That is precisely the
- * "Aufrufplan" the phase wants OGInfinity to keep.
+ * "Aufrufplan" the phase wants OGBeyondInfinity to keep.
  *
  * Two pieces of cross-page state are module state here, which is the scope they had
  * in practice - one planet bar per page load: the shared activity ticker, and the
@@ -51,13 +42,13 @@ let flyingFleetPerPlanets;
 let incomingHostileFleetPerPlanets;
 
 function minesLevel(context) {
-  if (document.querySelectorAll("div[id*=planet-").length != OGIData.empire.length) return;
+  if (document.querySelectorAll("div[id*=planet-").length != OGBIData.empire.length) return;
   context.planetList.forEach((planet) => {
     let coords = planet.querySelector(".planet-koords").textContent;
     let metal = 0,
       crystal = 0,
       deut = 0;
-    OGIData.empire.forEach((planet) => {
+    OGBIData.empire.forEach((planet) => {
       if (planet.coordinates.slice(1, -1) == coords) {
         metal = planet[1];
         crystal = planet[2];
@@ -72,7 +63,7 @@ function minesLevel(context) {
 
 function jumpGate(context) {
   const jumpTimes = [60, 53, 47, 41, 36, 31, 27, 23, 19, 17, 14, 13, 11, 10, 10];
-  for (const [moonId, t] of Object.entries(OGIData.json.jumpGate)) {
+  for (const [moonId, t] of Object.entries(OGBIData.json.jumpGate)) {
     const time = new Date(t);
     context.planetList.forEach((planet) => {
       const moonlink = planet.querySelector(".moonlink");
@@ -80,7 +71,7 @@ function jumpGate(context) {
         const gateLevel = Number(moonlink.getAttribute("data-jumpgatelevel"));
         const updateCounter = () => {
           const diff = (new Date() - time) / 1e3 / 60;
-          const refreshTime = jumpTimes[gateLevel - 1] / OGIData.json.speedFleetWar;
+          const refreshTime = jumpTimes[gateLevel - 1] / OGBIData.json.speedFleetWar;
           const count = Math.round(refreshTime - diff);
           counter.textContent = count + "'";
           if (count > 0) {
@@ -93,8 +84,8 @@ function jumpGate(context) {
             }
             return true;
           } else {
-            delete OGIData.json.jumpGate[moonId];
-            OGIData.Save();
+            delete OGBIData.json.jumpGate[moonId];
+            OGBIData.Save();
             return false;
           }
         };
@@ -116,9 +107,9 @@ function jumpGate(context) {
       const dest = data["targetMoon"];
       const origin = new URL(context.current.planet.querySelector(".moonlink").href).searchParams.get("cp");
       const time = new Date();
-      OGIData.json.jumpGate[planet] = time;
-      OGIData.json.jumpGate[origin] = time;
-      OGIData.Save();
+      OGBIData.json.jumpGate[planet] = time;
+      OGBIData.json.jumpGate[origin] = time;
+      OGBIData.Save();
       /* end ogi code */
       $(".overlayDiv").dialog("destroy");
       if (data.redirectUrl) {
@@ -144,9 +135,9 @@ function jumpGate(context) {
           jumpgate.querySelector(".send_all").after(createDOM("span", { class: "select-most" }));
           jumpgate.querySelector(".select-most").addEventListener("click", () => {
             const kept =
-              OGIData.json.options.kept[context.current.coords + (context.current.isMoon ? "M" : "P")] ??
-              OGIData.json.options.defaultKeptMoon ??
-              OGIData.json.options.defaultKept;
+              OGBIData.json.options.kept[context.current.coords + (context.current.isMoon ? "M" : "P")] ??
+              OGBIData.json.options.defaultKeptMoon ??
+              OGBIData.json.options.defaultKept;
             jumpgate.querySelectorAll(".ship_input_row input").forEach((elem) => {
               const id = elem.getAttribute("name").replace("ship_", "");
               const max = elem.getAttribute("rel");
@@ -173,11 +164,11 @@ function jumpGate(context) {
 function flyingFleet(context) {
   let total = 0;
   let flyingCount = 0;
-  const flying = OGIData.json.flying.fleet;
+  const flying = OGBIData.json.flying.fleet;
   for (let id in flying) flyingCount += flying[id];
   let fleetCount = flyingCount;
   [202, 203, 208, 209, 210, 204, 205, 206, 219, 207, 215, 211, 213, 218, 214].forEach((id) => {
-    OGIData.empire.forEach((planet) => {
+    OGBIData.empire.forEach((planet) => {
       fleetCount += parseInt(planet[id]);
       if (planet.moon) fleetCount += parseInt(planet.moon[id]);
     });
@@ -217,7 +208,7 @@ function harvest(context) {
   let btnAction = (event, coords, type) => {
     event.preventDefault();
     event.stopPropagation();
-    let link = `?page=ingame&component=fleetdispatch&galaxy=${coords[0]}&system=${coords[1]}&position=${coords[2]}&type=${type}&mission=${OGIData.json.options.harvestMission}&oglMode=1`;
+    let link = `?page=ingame&component=fleetdispatch&galaxy=${coords[0]}&system=${coords[1]}&position=${coords[2]}&type=${type}&mission=${OGBIData.json.options.harvestMission}&oglMode=1`;
     window.location.href = "https://" + window.location.host + window.location.pathname + link;
   };
   context.planetList.forEach((planet) => {
@@ -237,21 +228,21 @@ function harvest(context) {
 
 function activitytimers(context) {
   let now = Date.now();
-  if (!OGIData.json.myActivities[context.current.coords]) OGIData.json.myActivities[context.current.coords] = [0, 0];
-  let planetActivity = OGIData.json.myActivities[context.current.coords][0];
-  let moonActivity = OGIData.json.myActivities[context.current.coords][1];
+  if (!OGBIData.json.myActivities[context.current.coords]) OGBIData.json.myActivities[context.current.coords] = [0, 0];
+  let planetActivity = OGBIData.json.myActivities[context.current.coords][0];
+  let moonActivity = OGBIData.json.myActivities[context.current.coords][1];
   if (context.current.isMoon) moonActivity = now;
   else planetActivity = now;
-  OGIData.json.myActivities[context.current.coords] = [planetActivity, moonActivity];
-  OGIData.Save();
+  OGBIData.json.myActivities[context.current.coords] = [planetActivity, moonActivity];
+  OGBIData.Save();
   context.planetList.forEach((planet) => {
     let coords = planet.querySelector(".planet-koords").textContent;
-    let timers = OGIData.json.myActivities[coords] || [0, 0];
+    let timers = OGBIData.json.myActivities[coords] || [0, 0];
     let value = Math.min(Math.round((now - timers[0]) / 6e4), 60);
     let pTimer = planet
       .querySelector(".planetlink")
       .appendChild(createDOM("div", { class: "ogl-timer ogl-short ogl-medium", "data-timer": value }));
-    if (OGIData.json.options.activitytimers && value != 60 && value >= 15) {
+    if (OGBIData.json.options.activitytimers && value != 60 && value >= 15) {
       planet.querySelector(".planetlink").appendChild(createDOM("div", { class: "activity showMinutes" }, value));
     }
     updateTimer(context, pTimer);
@@ -263,7 +254,7 @@ function activitytimers(context) {
           "data-timer": Math.min(Math.round((now - timers[1]) / 6e4), 60),
         })
       );
-      if (OGIData.json.options.activitytimers && value != 60 && value >= 15) {
+      if (OGBIData.json.options.activitytimers && value != 60 && value >= 15) {
         planet.querySelector(".moonlink").appendChild(createDOM("div", { class: "activity showMinutes" }, value));
       }
       updateTimer(context, mTimer);
@@ -439,7 +430,7 @@ function updatePlanets_IncomingHostileFleet(context) {
 }
 
 function updatePlanets_FleetActivity(context) {
-  if (flyingFleetPerPlanets && OGIData.json.options.fleetActivity) {
+  if (flyingFleetPerPlanets && OGBIData.json.options.fleetActivity) {
     const planetList = document.getElementById("planetList").children;
     Array.from(planetList).forEach((planet) => {
       const planetKoordsEl = planet.querySelector(".planet-koords");
@@ -583,12 +574,12 @@ function updateSpaceShipsPresence(context) {
     const smallplanet = planet.parentElement.parentElement;
     const planetId = planet.parentElement.href.match(/=(\d+)/)[1];
 
-    const planetFromEmpire = OGIData.empire.find((p) => p.id === parseInt(planetId));
+    const planetFromEmpire = OGBIData.empire.find((p) => p.id === parseInt(planetId));
 
     const fleetYield = RecyclingYieldCalculator.CalculateRecyclingYieldFleetFromEmpireData(
       planetFromEmpire,
-      OGIData.universeSettingsTooltip.debrisFactor,
-      OGIData.universeSettingsTooltip.deuteriumInDebris
+      OGBIData.universeSettingsTooltip.debrisFactor,
+      OGBIData.universeSettingsTooltip.deuteriumInDebris
     );
     const planetFleetAmount = [
       fleetYield.planetFleetRecyclingYield.metal,
@@ -615,7 +606,7 @@ function updateSpaceShipsPresence(context) {
     };
 
     if (planetFromEmpire.moon) {
-      if (moonFleetStandardUnitSum >= OGIData.options.rvalSelfLimitMoon) {
+      if (moonFleetStandardUnitSum >= OGBIData.options.rvalSelfLimitMoon) {
         const moonFleetIconsDiv = DOM.createDOM("div", { class: "moonFleetIcons" });
         moonFleetIconsDiv.appendChild(
           createFleetIcon(
@@ -630,7 +621,7 @@ function updateSpaceShipsPresence(context) {
     }
 
     smallplanet.querySelector(".planetFleetIcons")?.remove();
-    if (planetFleetStandardUnitSum >= OGIData.options.rvalSelfLimitPlanet) {
+    if (planetFleetStandardUnitSum >= OGBIData.options.rvalSelfLimitPlanet) {
       const planetFleetIconsDiv = DOM.createDOM("div", { class: "planetFleetIcons" });
       planetFleetIconsDiv.appendChild(
         createFleetIcon(
@@ -648,7 +639,7 @@ function updateSpaceShipsPresence(context) {
 function markLifeforms(context) {
   if (!context.hasLifeforms) return;
   document.querySelectorAll(".smallplanet a.planetlink").forEach((elem) => {
-    const lifeform = OGIData.json.selectedLifeforms[elem.href.split("cp=")[1]];
+    const lifeform = OGBIData.json.selectedLifeforms[elem.href.split("cp=")[1]];
     elem.appendChild(createDOM("div", { class: `lifeform-item-icon small ${lifeform ? lifeform : ""}` }));
   });
 }

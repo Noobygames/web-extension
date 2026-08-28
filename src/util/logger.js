@@ -37,7 +37,7 @@ function print(on) {
     }
 
     on(
-      `%cOGame Infinity/v${VERSION}%c%s%c %s> ${message}`,
+      `%cOGame Beyond Infinity/v${VERSION}%c%s%c %s> ${message}`,
       APP_VERSION_STYLE,
       LOG_NAME_STYLE,
       name,

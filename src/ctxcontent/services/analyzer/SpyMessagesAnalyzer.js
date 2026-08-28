@@ -15,7 +15,7 @@ import Player from "../../../util/player.js";
 import * as stalk from "../../../util/stalk.js";
 import PlayerClass from "../../../util/enum/playerClass.js";
 import OgamePageData from "../../../util/OgamePageData.js";
-import OGIData from "../../../util/OGIData.js";
+import OGBIData from "../../../util/OGIData.js";
 import Translator from "../../../util/translate.js";
 import { evaluateTarget } from "../../../util/farmEvaluator.js";
 import { formatDuration } from "../../../util/fleetFlight.js";
@@ -44,7 +44,7 @@ class SpyMessagesAnalyzer {
 
   clean(force) {
     if (
-      OGIData.options.spyTableAppend &&
+      OGBIData.options.spyTableAppend &&
       !force &&
       this.#onTrash === !!document.querySelector('.messagesTrashcanBtns button.custom_btn[disabled="disabled"]')
     )
@@ -86,7 +86,7 @@ class SpyMessagesAnalyzer {
       this.#spyTableHeader(table);
     }
 
-    if (!OGIData.options.spyTableEnable) {
+    if (!OGBIData.options.spyTableEnable) {
       table.classList.add("ogl-hidden");
 
       return;
@@ -107,7 +107,7 @@ class SpyMessagesAnalyzer {
 
   #spyTableOptions(table) {
     if (document.querySelector('.messagesTrashcanBtns button.custom_btn[disabled="disabled"]')) return;
-    const options = OGIData.options;
+    const options = OGBIData.options;
 
     const tableOptions = createDOM("div", { class: "ogl-tableOptions" });
     const enableTable = tableOptions.appendChild(
@@ -118,7 +118,7 @@ class SpyMessagesAnalyzer {
       enableTable.classList.toggle("ogl-active");
       table.classList.toggle("ogl-hidden");
       options.spyTableEnable = !options.spyTableEnable;
-      OGIData.options = options;
+      OGBIData.options = options;
 
       window.dispatchEvent(new CustomEvent("ogi-spyTableReload"));
     });
@@ -135,7 +135,7 @@ class SpyMessagesAnalyzer {
     appendOption.addEventListener("click", () => {
       appendOption.classList.toggle("ogl-active");
       options.spyTableAppend = !options.spyTableAppend;
-      OGIData.options = options;
+      OGBIData.options = options;
     });
 
     const autoDelete = tableOptions.appendChild(
@@ -147,7 +147,7 @@ class SpyMessagesAnalyzer {
     if (options.autoDeleteEnable) autoDelete.classList.add("ogl-active");
     autoDelete.addEventListener("click", () => {
       options.autoDeleteEnable = !options.autoDeleteEnable;
-      OGIData.options = options;
+      OGBIData.options = options;
       this.clean(true);
       window.dispatchEvent(new CustomEvent("ogi-spyTableReload"));
     });
@@ -167,18 +167,18 @@ class SpyMessagesAnalyzer {
     if (this.#flightContextCache) return this.#flightContextCache;
 
     const origins = [];
-    (OGIData.empire || []).forEach((planet) => {
+    (OGBIData.empire || []).forEach((planet) => {
       // a moon shares its planet's coordinates, so it adds no separate origin
       const parsed = this.#parseCoords(planet.coordinates);
       if (parsed) origins.push(parsed);
     });
 
-    const json = OGIData.json;
+    const json = OGBIData.json;
     const settings = json.universeSettingsTooltip || {};
 
     // The cargo already chosen for this table decides the flight time, so the estimate matches
     // the fleet the player intends to send rather than some notional ship.
-    const chosen = (json.ships || {})[OGIData.options.spyFret];
+    const chosen = (json.ships || {})[OGBIData.options.spyFret];
 
     this.#flightContextCache = {
       origins,
@@ -245,7 +245,7 @@ class SpyMessagesAnalyzer {
 
     header.querySelectorAll("th").forEach((th) => {
       const filter = th.getAttribute("data-filter");
-      const options = OGIData.options;
+      const options = OGBIData.options;
       if (options.spyFilter === filter) th.classList.add("ogl-active");
 
       th.addEventListener("click", () => {
@@ -254,7 +254,7 @@ class SpyMessagesAnalyzer {
           header.querySelector("th.ogl-active")?.classList?.remove("ogl-active");
           th.classList.add("ogl-active");
 
-          OGIData.options = options;
+          OGBIData.options = options;
 
           table.querySelector("tbody")?.remove();
           this.#displaySpyTable();
@@ -264,7 +264,7 @@ class SpyMessagesAnalyzer {
 
     const cargoSpan = createDOM("span", {
       style: "display: flex;",
-      class: `ogl-option ogl-fleet-ship choice ogl-fleet-${OGIData.options.spyFret}`,
+      class: `ogl-option ogl-fleet-ship choice ogl-fleet-${OGBIData.options.spyFret}`,
     });
 
     const cargoChoice = this.#cargoChoice(cargoSpan);
@@ -283,7 +283,7 @@ class SpyMessagesAnalyzer {
   }
 
   #cargoChoice(cargoSpan) {
-    const gridCol = OGIData.ships[ship.EspionageProbe].cargoCapacity ? 4 : 3;
+    const gridCol = OGBIData.ships[ship.EspionageProbe].cargoCapacity ? 4 : 3;
 
     const cargoChoice = createDOM("div", {
       style: `display: grid; grid-template-columns: repeat(${gridCol}, minmax(0, 1fr))`,
@@ -313,10 +313,10 @@ class SpyMessagesAnalyzer {
     cargoChoice.appendChild(pathFinder);
 
     const saveDefaultCargo = (e) => {
-      const options = OGIData.options;
+      const options = OGBIData.options;
       const oldValue = options.spyFret;
       options.spyFret = parseInt(e.target.getAttribute("data-ship"));
-      OGIData.options = options;
+      OGBIData.options = options;
 
       cargoSpan.classList.remove(`ogl-fleet-${oldValue}`);
       cargoSpan.classList.add(`ogl-fleet-${options.spyFret}`);
@@ -335,7 +335,7 @@ class SpyMessagesAnalyzer {
     largeCargo.addEventListener("click", saveDefaultCargo);
     pathFinder.addEventListener("click", saveDefaultCargo);
 
-    if (OGIData.ships[ship.EspionageProbe].cargoCapacity) {
+    if (OGBIData.ships[ship.EspionageProbe].cargoCapacity) {
       cargoChoice.classList.add("spio");
 
       const probe = cargoChoice.appendChild(
@@ -373,7 +373,7 @@ class SpyMessagesAnalyzer {
   #spyTableBody(table) {
     let body = table.querySelector("tbody");
 
-    if (!OGIData.options.spyTableAppend || !body) {
+    if (!OGBIData.options.spyTableAppend || !body) {
       body = createDOM("tbody");
       table.appendChild(body);
     }
@@ -390,7 +390,7 @@ class SpyMessagesAnalyzer {
 
     const reports = Object.values(this.#spyReports);
 
-    const spyFilter = OGIData.options.spyFilter;
+    const spyFilter = OGBIData.options.spyFilter;
     reports.sort((a, b) => {
       if (spyFilter === "$") {
         return compare(b.renta, a.renta);
@@ -511,7 +511,7 @@ class SpyMessagesAnalyzer {
         toFormattedNumber(report.renta, null, true)
       );
 
-      if (OGIData.options.rvalLimit <= Math.round((report.total * report.loot) / 100)) {
+      if (OGBIData.options.rvalLimit <= Math.round((report.total * report.loot) / 100)) {
         gainCol.classList.add("ogl-good");
       }
 
@@ -552,7 +552,7 @@ class SpyMessagesAnalyzer {
 
       const fleetCol = createDOM("td", {}, toFormattedNumber(report.fleet, null, true));
       if (
-        Math.round(report.fleet * OGIData.universeSettingsTooltip.debrisFactor) >= OGIData.options.rvalLimit ||
+        Math.round(report.fleet * OGBIData.universeSettingsTooltip.debrisFactor) >= OGBIData.options.rvalLimit ||
         report.fleet === "No Data"
       ) {
         fleetCol.classList.add("ogl-care");
@@ -564,7 +564,7 @@ class SpyMessagesAnalyzer {
       bodyRow.appendChild(defCol);
 
       const shipCol = createDOM("td", { class: "ogl-cargo-choice" });
-      const shipId = OGIData.options.spyFret;
+      const shipId = OGBIData.options.spyFret;
 
       const ships = {
         smallCargo: {
@@ -581,7 +581,7 @@ class SpyMessagesAnalyzer {
         },
       };
 
-      if (OGIData.ships[ship.EspionageProbe].cargoCapacity) {
+      if (OGBIData.ships[ship.EspionageProbe].cargoCapacity) {
         ships.probe = {
           id: ship.EspionageProbe,
           count: report.pb,
@@ -655,20 +655,20 @@ class SpyMessagesAnalyzer {
       }
 
       optColSimButton.addEventListener("click", () => {
-        if (!OGIData.options.simulator) {
+        if (!OGBIData.options.simulator) {
           popup(
             null,
             createDOM("div", { class: "ogl-warning-dialog overmark" }, "External tool not configured in 'Settings'")
           );
         } else {
           let apiTechData = {
-            109: { level: OGIData.technology[109] },
-            110: { level: OGIData.technology[110] },
-            111: { level: OGIData.technology[111] },
-            115: { level: OGIData.technology[115] },
-            117: { level: OGIData.technology[117] },
-            118: { level: OGIData.technology[118] },
-            114: { level: OGIData.technology[114] },
+            109: { level: OGBIData.technology[109] },
+            110: { level: OGBIData.technology[110] },
+            111: { level: OGBIData.technology[111] },
+            115: { level: OGBIData.technology[115] },
+            117: { level: OGBIData.technology[117] },
+            118: { level: OGBIData.technology[118] },
+            114: { level: OGBIData.technology[114] },
           };
           let coords = currentCoords.split(":");
           let payloadJson = {
@@ -685,18 +685,18 @@ class SpyMessagesAnalyzer {
             ],
           };
           const base64 = btoa(JSON.stringify(payloadJson));
-          window.open(`${OGIData.options.simulator}en?SR_KEY=${report.apiKey}#prefill=${base64}`, "_blank");
+          window.open(`${OGBIData.options.simulator}en?SR_KEY=${report.apiKey}#prefill=${base64}`, "_blank");
         }
       });
       optCol.appendChild(optColSimButton);
 
-      if (OGIData.options.ptreTK) {
+      if (OGBIData.options.ptreTK) {
         const optColPtreButton = createDOM("a", { class: "ogl-text-btn" }, "P");
         optCol.appendChild(optColPtreButton);
 
         optColPtreButton.addEventListener("click", () => {
           ptreService
-            .importSpy(OGIData.options.ptreTK, report.apiKey)
+            .importSpy(OGBIData.options.ptreTK, report.apiKey)
             .then((result) => fadeBox(result.message_verbose, result.code !== 1))
             .catch((reason) => fadeBox(reason, true));
         });
@@ -727,15 +727,15 @@ class SpyMessagesAnalyzer {
         optCol.appendChild(optColDeleteButton);
 
         if (
-          OGIData.options.autoDeleteEnable &&
-          Math.round((parseInt(report.fleet) || 0) * OGIData.universeSettingsTooltip.debrisFactor) +
+          OGBIData.options.autoDeleteEnable &&
+          Math.round((parseInt(report.fleet) || 0) * OGBIData.universeSettingsTooltip.debrisFactor) +
             Math.round(((parseInt(report.total) || 0) * (parseInt(report.loot) || 0)) / 100) +
             Math.round(
               (parseInt(report.defense) || 0) *
-                (1 - OGIData.universeSettingsTooltip.repairFactor) *
-                OGIData.universeSettingsTooltip.debrisFactorDef
+                (1 - OGBIData.universeSettingsTooltip.repairFactor) *
+                OGBIData.universeSettingsTooltip.debrisFactorDef
             ) <
-            OGIData.options.rvalLimit
+            OGBIData.options.rvalLimit
         ) {
           this.reportsToDelete.push({ report, row: bodyRow });
         }
@@ -815,7 +815,7 @@ class SpyMessagesAnalyzer {
           }%, rgba(115, 229, 255, 0.78) ${report.resRatio[0]}%\n, rgba(115, 229, 255, 0.78) ${
             report.resRatio[0] + report.resRatio[1]
           }%, rgb(166, 224, 176) ${report.resRatio[2]}%)`;
-          if (renta[round] >= OGIData.options.rvalLimit) extraTotal.classList.add("ogl-good");
+          if (renta[round] >= OGBIData.options.rvalLimit) extraTotal.classList.add("ogl-good");
 
           extraLine.appendChild(createDOM("td"));
           extraLine.appendChild(createDOM("td"));
@@ -833,7 +833,7 @@ class SpyMessagesAnalyzer {
               resources: Math.ceil((report.total * Math.pow(1 - report.loot / 100, round) * report.loot) / 100),
             });
 
-            if (ship.id === OGIData.options.spyFret) currentValue = value;
+            if (ship.id === OGBIData.options.spyFret) currentValue = value;
 
             extraShip.setAttribute(`data-ship-${ship.id}`, value);
           }
@@ -844,7 +844,7 @@ class SpyMessagesAnalyzer {
           const extraFleetQueryParams = this.#fleetDispatchLink(
             report.coords,
             report.planetTargetType,
-            OGIData.options.spyFret,
+            OGBIData.options.spyFret,
             currentValue
           );
 
@@ -966,7 +966,7 @@ class SpyMessagesAnalyzer {
   }
 
   #ptreSpy() {
-    if (!OGIData.options.ptreTK) return;
+    if (!OGBIData.options.ptreTK) return;
 
     const universe = window.location.host.replace(/\D/g, "");
     const ptreJSON = {};
@@ -980,7 +980,7 @@ class SpyMessagesAnalyzer {
       const id = message.getAttribute("data-msg-id");
 
       // Check if the spy data already exists and skip if it does
-      if (OGIData.spies[id]) return;
+      if (OGBIData.spies[id]) return;
 
       try {
         const playerID = message
@@ -1008,7 +1008,7 @@ class SpyMessagesAnalyzer {
 
         ptreJSON[id] = {
           player_id: spy.sourcePlayerId,
-          teamkey: OGIData.options.ptreTK,
+          teamkey: OGBIData.options.ptreTK,
           galaxy: spy.galaxy,
           system: spy.system,
           position: spy.position,
@@ -1022,7 +1022,7 @@ class SpyMessagesAnalyzer {
 
         message.classList.add("ogl-reportReady");
 
-        OGIData.spies[id] = spy;
+        OGBIData.spies[id] = spy;
       } catch (err) {
         // Don't let one unexpected message shape (missing player tooltip, attack button,
         // etc.) throw and stop the rest of the batch from being sent to PTRE.

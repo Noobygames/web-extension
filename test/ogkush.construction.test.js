@@ -1,5 +1,5 @@
 /**
- * `OGInfinity` itself.
+ * `OGBeyondInfinity` itself.
  *
  * What is left of the class after Phase 3 of refactoring.md is the boot sequence and
  * the context objects it hands to the extracted page modules. This file covers the
@@ -21,7 +21,7 @@ const INTRO_URL = "https://s1-en.ogame.gameforge.com/game/index.php?page=ingame&
 
 const browser = setupBrowser({ url: INTRO_URL });
 document.documentElement.dataset.ogiCallbackEventToken = "0123456789ab";
-const { OGInfinity } = await import("../src/ogkush.js");
+const { OGBeyondInfinity: OGBeyondInfinity } = await import("../src/ogkush.js");
 
 test.after(() => browser.cleanup());
 
@@ -31,13 +31,13 @@ function onOverviewPage(run) {
     url: "https://s1-en.ogame.gameforge.com/game/index.php?page=ingame&component=overview",
   });
   try {
-    run(new OGInfinity());
+    run(new OGBeyondInfinity());
   } finally {
     page.cleanup();
   }
 }
 
-test("OGInfinity can be constructed from a page fixture", () => {
+test("OGBeyondInfinity can be constructed from a page fixture", () => {
   // The point of the readPageContext() seam: before it, this line threw on the very
   // first statement of the constructor and no test could get past it.
   onOverviewPage((instance) => {
@@ -138,7 +138,7 @@ test("every context the page modules receive carries the fields they read", () =
 
 test("a context is a snapshot of plain values, never the controller itself", () => {
   // The rule from refactoring.md Phase 3: an extracted module may not be able to reach
-  // back into OGInfinity. A context that leaked the instance - or a method bound to it
+  // back into OGBeyondInfinity. A context that leaked the instance - or a method bound to it
   // - would make every later cut harder, and nothing would fail loudly.
   onOverviewPage((instance) => {
     const contexts = [
@@ -156,7 +156,7 @@ test("a context is a snapshot of plain values, never the controller itself", () 
     for (const context of contexts) {
       for (const [key, value] of Object.entries(context)) {
         assert.notEqual(value, instance, `${key} hands the module the controller itself`);
-        assert.equal(value instanceof OGInfinity, false, `${key} hands the module an OGInfinity`);
+        assert.equal(value instanceof OGBeyondInfinity, false, `${key} hands the module an OGBeyondInfinity`);
       }
     }
   });

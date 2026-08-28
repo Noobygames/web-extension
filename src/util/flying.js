@@ -1,6 +1,6 @@
 import missionType from "./enum/missionType.js";
 import * as needsUtil from "./needs.js";
-import OGIData from "./OGIData.js";
+import OGBIData from "./OGIData.js";
 import { fromFormattedNumber } from "./numbers.js";
 
 const isOwnPlanet = (coords) => {
@@ -60,7 +60,7 @@ export default function () {
     const origin = originCoords + (originIsMoon ? "M" : "P");
     const dest = destCoords + (destIsMoon ? "M" : "P");
     let own = false;
-    OGIData.empire.forEach((planet) => {
+    OGBIData.empire.forEach((planet) => {
       if (planet.coordinates === line.children[4].textContent.trim()) own = true;
     });
 
@@ -151,7 +151,7 @@ export default function () {
 
       const shipName = shipRow.querySelector("td:nth-child(1)")?.textContent.trim().slice(0, -1);
       const shipCounter = fromFormattedNumber(shipRow.querySelector("td:nth-child(2)")?.textContent.trim());
-      const id = OGIData.json.shipNames[shipName];
+      const id = OGBIData.json.shipNames[shipName];
 
       if (!id) {
         return;

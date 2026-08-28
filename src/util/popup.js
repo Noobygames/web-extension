@@ -1,5 +1,5 @@
 import { createDOM } from "./dom.js";
-import OGIData from "./OGIData.js";
+import OGBIData from "./OGIData.js";
 import PlayerClass from "./enum/playerClass.js";
 
 let resolvedPlayerClass = null;
@@ -34,7 +34,7 @@ export function popup(header, content) {
   if (!overlay) {
     overlay = document.body.appendChild(createDOM("div", { class: "ogl-dialogOverlay" }));
     overlay.addEventListener("click", (event) => {
-      if (event.target === overlay && !OGIData.welcome) {
+      if (event.target === overlay && !OGBIData.welcome) {
         overlay.classList.remove("ogl-active");
       }
     });
@@ -44,10 +44,10 @@ export function popup(header, content) {
     dialog = overlay.appendChild(createDOM("div", { class: "ogl-dialog" }));
     let close = dialog.appendChild(createDOM("div", { class: "close-tooltip" }));
     close.addEventListener("click", () => {
-      let welcome = OGIData.welcome;
+      let welcome = OGBIData.welcome;
       if (welcome) {
         welcome = false;
-        OGIData.welcome = welcome;
+        OGBIData.welcome = welcome;
         if (getPlayerClass() === PlayerClass.NONE) {
           window.location.href = "?page=ingame&component=characterclassselection";
         } else {

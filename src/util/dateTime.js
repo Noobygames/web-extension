@@ -3,7 +3,7 @@ export default {
    * Parses the `dd.mm.yyyy hh:mm:ss` OGame prints in message headers.
    *
    * It swaps the first two components and lets `Date` parse the result as
-   * `mm/dd/yyyy`, which is the only reason it works. Lifted out of `OGInfinity` in
+   * `mm/dd/yyyy`, which is the only reason it works. Lifted out of `OGBeyondInfinity` in
    * Phase 3 of refactoring.md, unchanged.
    */
   dateStrToDate: (datestr) => {

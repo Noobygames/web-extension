@@ -1,30 +1,15 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
+import { createDOM } from "../../util/dom.js";
 import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import { tabs } from "../../util/tabs.js";
-import { getOption } from "../conf-options.js";
 // Re-exported: see the note in ctxpage/empire/index.js.
 export { resourceDetail, updateresourceDetail } from "./resourceDetail.js";
-import { CARGO_SHIP_IDS } from "../../util/harvestPlanner.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { SUPPLIES_TECHID, FACILITIES_TECHID } from "../../util/gameConstants.js";
-import { building, consumption, minesProduction } from "../../util/gameFormulas.js";
 
 import { defenseOverview, fleetOverview, harvestOverview, minesOverview } from "./tables.js";
 
 /**
  * The empire overview popup: mines, fleet, defence and harvest across every planet.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md, then split. This file is
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md, then split. This file is
  * the popup and its tabs; the resource panel in the top bar is next to it.
  */
 function overview(context) {

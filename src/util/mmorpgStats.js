@@ -5,7 +5,7 @@ import OgamePageData from "./OgamePageData.js";
  *
  * The array below is a position lookup, not a list: mmorpg-stat.eu identifies a
  * country by its index in it, so entries may never be reordered or removed, only
- * appended. Lifted out of `OGInfinity` in Phase 3 of refactoring.md; the universe
+ * appended. Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md; the universe
  * number is a parameter now instead of `this.universe`.
  *
  * @param {string|number} universe the digits of the universe host, e.g. "282"

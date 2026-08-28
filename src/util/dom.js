@@ -15,7 +15,7 @@ export function createDOM(element, attributes, textContent) {
 
 /**
  * Like {@link createDOM}, but the content is inserted as HTML through DOMPurify
- * instead of as text. Lifted out of `OGInfinity.createDOM()` unchanged: that copy
+ * instead of as text. Lifted out of `OGBeyondInfinity.createDOM()` unchanged: that copy
  * differed from {@link createDOM} in exactly two ways, both kept here - the content
  * goes through DOMPurify, and a numeric `0` counts as content instead of being
  * skipped as falsy.

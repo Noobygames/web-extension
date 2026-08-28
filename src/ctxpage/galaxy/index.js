@@ -1,36 +1,25 @@
 import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
+import { createDOM } from "../../util/dom.js";
 import * as wait from "../../util/wait.js";
-import * as time from "../../util/time.js";
 import * as stalkUtil from "../../util/stalk.js";
 import * as ptreService from "../../util/service.ptre.js";
-import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import DateTime from "../../util/dateTime.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import dataHelper from "../../util/dataHelper.js";
 import markerui from "../../util/markerui.js";
-import highlight, { setHighlightCoords } from "../../util/highlightTarget.js";
-import OGIObserver from "../../util/observer.js";
-import planetType from "../../util/enum/planetType.js";
-import shipEnum from "../../util/enum/ship.js";
-import missionType from "../../util/enum/missionType.js";
-import { pageSignal } from "../../util/abort.js";
+import highlight from "../../util/highlightTarget.js";
 import { getOption } from "../conf-options.js";
-import { generateMMORPGLink } from "../../util/mmorpgStats.js";
 import { CLAIM_FREE, claimCssClass, claimStatus, indexClaims } from "../../util/targetClaims.js";
 import { renderPlanet } from "./renderPlanet.js";
+import { pageContextRequest } from "../../util/service.callbackEvent.js";
+import { addTemplateSelector } from "../fleetdispatch/templates.js";
 
 /**
  * Galaxy view: the per-row tooltips and markers, the activity read-out, the target
  * claims shared through PTRE, the stalk overlay and the target list.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md.
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md.
  *
  * Compliance note (AGENTS.md 1.5.1): nothing in here attaches a direct-probe action to
  * a coordinate. The target list shows coordinates and links into galaxy view, where
@@ -118,7 +107,7 @@ function onGalaxyUpdate(context) {
   displayContentGalaxy = (b) => {
     dc(b);
     var json = $.parseJSON(b);
-    if (!OGIData.keepTooltip) {
+    if (!OGBIData.keepTooltip) {
       document.querySelector(".ogl-tooltip") && document.querySelector(".ogl-tooltip").classList.remove("ogl-active");
       if (timeout) clearTimeout(timeout);
       timeout = setTimeout(() => {
@@ -126,13 +115,13 @@ function onGalaxyUpdate(context) {
         timeout = null;
       }, 200);
     }
-    OGIData.keepTooltip = false;
+    OGBIData.keepTooltip = false;
     callback(galaxy, system);
   };
   let rc = renderContentGalaxy;
   renderContentGalaxy = (b) => {
     rc(b);
-    if (!OGIData.keepTooltip) {
+    if (!OGBIData.keepTooltip) {
       document.querySelector(".ogl-tooltip") && document.querySelector(".ogl-tooltip").classList.remove("ogl-active");
       if (timeout) clearTimeout(timeout);
       timeout = setTimeout(() => {
@@ -140,7 +129,7 @@ function onGalaxyUpdate(context) {
         timeout = null;
       }, 200);
     }
-    OGIData.keepTooltip = false;
+    OGBIData.keepTooltip = false;
     callback(galaxy, system);
   };
 
@@ -152,7 +141,7 @@ function onGalaxyUpdate(context) {
 }
 
 function applyTargetClaims(context, galaxy, system) {
-  const teamKey = OGIData.json.options.ptreTK;
+  const teamKey = OGBIData.json.options.ptreTK;
   if (!teamKey) return;
 
   const requestId = `${galaxy}:${system}`;
@@ -185,7 +174,7 @@ function renderTargetClaims(context, galaxy, system, claims) {
       coordinates,
       claims,
       ownPlayerId: context.playerId,
-      ttlMinutes: Number(OGIData.json.options.claimTtlMinutes) || undefined,
+      ttlMinutes: Number(OGBIData.json.options.claimTtlMinutes) || undefined,
     });
 
     if (result.status === CLAIM_FREE) return;
@@ -221,11 +210,11 @@ function addGalaxyMarkers(context) {
     let coords = galaxy + ":" + system + ":" + Number(index + 1);
     let playerDiv = element.querySelector(".cellPlayerName > span.tooltipRel");
     const playerId = playerDiv?.getAttribute("rel")?.replace("player", "");
-    if (OGIData.json.markers[coords]) {
-      if (!playerId || OGIData.json.markers[coords].id != playerId) {
-        delete OGIData.json.markers[coords];
-        context.markedPlayers = getMarkedPlayers(context, OGIData.json.markers);
-        if (OGIData.json.options.targetList) {
+    if (OGBIData.json.markers[coords]) {
+      if (!playerId || OGBIData.json.markers[coords].id != playerId) {
+        delete OGBIData.json.markers[coords];
+        context.markedPlayers = getMarkedPlayers(context, OGBIData.json.markers);
+        if (OGBIData.json.options.targetList) {
           targetList(context, false);
           targetList(context, true);
           document.querySelector(`.ogl-target-list .ogl-stalkPlanets [data-coords="${coords}"]`).remove();
@@ -233,25 +222,25 @@ function addGalaxyMarkers(context) {
       } else {
         //console.log('marked');
         element.classList.add("ogl-marked");
-        element.setAttribute("data-marked", OGIData.json.markers[coords].color);
-        OGIData.json.markers[coords].moon = element.querySelector(".cellMoon .tooltipRel") ? true : false;
+        element.setAttribute("data-marked", OGBIData.json.markers[coords].color);
+        OGBIData.json.markers[coords].moon = element.querySelector(".cellMoon .tooltipRel") ? true : false;
       }
-      OGIData.Save();
-    } else if (OGIData.json.playerMarkers && OGIData.json.playerMarkers[playerId]) {
+      OGBIData.Save();
+    } else if (OGBIData.json.playerMarkers && OGBIData.json.playerMarkers[playerId]) {
       //there is no marker for these coord but there is a marker for this player
 
       //Auto add marker
-      OGIData.json.markers[coords] = {
-        color: OGIData.json.playerMarkers[playerId].color,
+      OGBIData.json.markers[coords] = {
+        color: OGBIData.json.playerMarkers[playerId].color,
         id: playerId,
       };
 
       //Save data
-      OGIData.Save();
+      OGBIData.Save();
 
       //Update UI
       element.classList.add("ogl-marked");
-      element.setAttribute("data-marked", OGIData.json.playerMarkers[playerId].color);
+      element.setAttribute("data-marked", OGBIData.json.playerMarkers[playerId].color);
     }
   });
 }
@@ -448,13 +437,13 @@ function scan(context) {
       const playerIdStr = String(playerId);
       if (
         isPtrePos &&
-        OGIData.json.options.ptreTK &&
+        OGBIData.json.options.ptreTK &&
         playerId > -1 &&
-        (OGIData.json.sideStalk.indexOf(playerId) > -1 ||
-          OGIData.json.sideStalk.indexOf(playerIdStr) > -1 ||
+        (OGBIData.json.sideStalk.indexOf(playerId) > -1 ||
+          OGBIData.json.sideStalk.indexOf(playerIdStr) > -1 ||
           context.markedPlayers.indexOf(playerIdStr) > -1 ||
-          (OGIData.json.searchHistory.length > 0 &&
-            playerIdStr == OGIData.json.searchHistory[OGIData.json.searchHistory.length - 1].id))
+          (OGBIData.json.searchHistory.length > 0 &&
+            playerIdStr == OGBIData.json.searchHistory[OGBIData.json.searchHistory.length - 1].id))
       ) {
         let planetActivity = row.querySelector("[data-planet-id] .activity.minute15")
           ? "*"
@@ -466,7 +455,7 @@ function scan(context) {
         ptreJSON[coords] = {};
         ptreJSON[coords].id = planetId;
         ptreJSON[coords].player_id = playerId;
-        ptreJSON[coords].teamkey = OGIData.json.options.ptreTK;
+        ptreJSON[coords].teamkey = OGBIData.json.options.ptreTK;
         ptreJSON[coords].mv = !!row.querySelector('span[class*="vacation"]');
         ptreJSON[coords].activity = planetActivity;
         ptreJSON[coords].galaxy = galaxy;
@@ -512,7 +501,7 @@ function scan(context) {
   // Any failure here must NOT propagate to the OGame galaxy render path.
   try {
     const serverTimeMs = serverTime && typeof serverTime.getTime !== "undefined" ? serverTime.getTime() : null;
-    const ptreKey = OGIData.json.options.ptreTK || null;
+    const ptreKey = OGBIData.json.options.ptreTK || null;
     pageContextRequest(
       "ptre",
       "galaxy",
@@ -585,8 +574,8 @@ function generateHiscoreLink(context, playerid) {
 
 function targetList(context, show) {
   let renderTagetList = () => {
-    let galaxy = OGIData.json.targetTabs.g == -1 ? false : true;
-    let system = OGIData.json.targetTabs.s == -1 ? false : true;
+    let galaxy = OGBIData.json.targetTabs.g == -1 ? false : true;
+    let system = OGBIData.json.targetTabs.s == -1 ? false : true;
     let div = createDOM("div", { class: "ogl-target-list" });
     let header = div.appendChild(createDOM("div", { class: "ogk-controls" }));
     let markers = header.appendChild(createDOM("div"));
@@ -594,14 +583,14 @@ function targetList(context, show) {
       let toggle = createDOM("div", { class: "tooltip ogl-toggle", title: Translator.translate(40) });
       toggle.setAttribute("data-toggle", color);
       markers.appendChild(toggle);
-      if (!OGIData.json.options.hiddenTargets[color]) toggle.classList.add("ogl-active");
+      if (!OGBIData.json.options.hiddenTargets[color]) toggle.classList.add("ogl-active");
       toggle.addEventListener("click", () => {
-        OGIData.json.options.hiddenTargets[color] = OGIData.json.options.hiddenTargets[color] ? false : true;
-        OGIData.Save();
-        if (OGIData.json.options.hiddenTargets[color]) toggle.classList.remove("ogl-active");
+        OGBIData.json.options.hiddenTargets[color] = OGBIData.json.options.hiddenTargets[color] ? false : true;
+        OGBIData.Save();
+        if (OGBIData.json.options.hiddenTargets[color]) toggle.classList.remove("ogl-active");
         else toggle.classList.add("ogl-active");
         content.querySelectorAll(`[data-marked="${color}"]`).forEach((planet) => {
-          if (OGIData.json.options.hiddenTargets[color]) planet.classList.add("ogl-colorHidden");
+          if (OGBIData.json.options.hiddenTargets[color]) planet.classList.add("ogl-colorHidden");
           else planet.classList.remove("ogl-colorHidden");
         });
         checkEmpty(galaxy, system);
@@ -610,15 +599,15 @@ function targetList(context, show) {
     let filterTabs = header.appendChild(createDOM("div", { class: "ogl-tabList", style: "margin-bottom: 5px;" }));
     let tabG = filterTabs.appendChild(createDOM("div", { class: "ogl-tab" + (!galaxy ? " ogl-active" : "") }, "Gs"));
     tabG.addEventListener("click", () => {
-      if (OGIData.json.targetTabs.g == -1) {
-        OGIData.json.targetTabs.g = 0;
+      if (OGBIData.json.targetTabs.g == -1) {
+        OGBIData.json.targetTabs.g = 0;
         galaxy = true;
-        OGIData.Save();
+        OGBIData.Save();
         tabG.classList.remove("ogl-active");
       } else {
-        OGIData.json.targetTabs.g = -1;
+        OGBIData.json.targetTabs.g = -1;
         galaxy = false;
-        OGIData.Save();
+        OGBIData.Save();
         let active = header.querySelector(".ogl-tab[data-galaxy].ogl-active");
         if (active) active.classList.remove("ogl-active");
         document.querySelectorAll("a.ogl-galaxyHidden").forEach((target) => {
@@ -630,15 +619,15 @@ function targetList(context, show) {
     });
     let tabS = filterTabs.appendChild(createDOM("div", { class: "ogl-tab" + (!system ? " ogl-active" : "") }, "Ss"));
     tabS.addEventListener("click", () => {
-      if (OGIData.json.targetTabs.s == -1) {
-        OGIData.json.targetTabs.s = 0;
+      if (OGBIData.json.targetTabs.s == -1) {
+        OGBIData.json.targetTabs.s = 0;
         system = true;
-        OGIData.Save();
+        OGBIData.Save();
         tabS.classList.remove("ogl-active");
       } else {
-        OGIData.json.targetTabs.s = -1;
+        OGBIData.json.targetTabs.s = -1;
         system = false;
-        OGIData.Save();
+        OGBIData.Save();
         let active = header.querySelector(".ogl-tab[data-system].ogl-active");
         if (active) active.classList.remove("ogl-active");
         document.querySelectorAll("a.ogl-systemHidden").forEach((target) => {
@@ -671,7 +660,7 @@ function targetList(context, show) {
       for (let s = 0; s < step * 10; s += step) {
         if (system) {
           let children = content.querySelector(
-            `[data-galaxy="${OGIData.json.targetTabs.g}"][data-system="${s}"]:not(.ogl-colorHidden)`
+            `[data-galaxy="${OGBIData.json.targetTabs.g}"][data-system="${s}"]:not(.ogl-colorHidden)`
           );
           if (children) header.querySelector(`.ogl-tab[data-system="${s}"]`).classList.remove("ogl-isEmpty");
           else header.querySelector(`.ogl-tab[data-system="${s}"]`).classList.add("ogl-isEmpty");
@@ -680,13 +669,13 @@ function targetList(context, show) {
         }
       }
     };
-    for (let coords in OGIData.json.markers) {
-      if (OGIData.json.markers[coords] == "") {
-        delete OGIData.json.markers[coords];
-        context.markedPlayers = getMarkedPlayers(context, OGIData.json.markers);
+    for (let coords in OGBIData.json.markers) {
+      if (OGBIData.json.markers[coords] == "") {
+        delete OGBIData.json.markers[coords];
+        context.markedPlayers = getMarkedPlayers(context, OGBIData.json.markers);
       }
     }
-    let keys = Object.keys(OGIData.json.markers).sort((a, b) => {
+    let keys = Object.keys(OGBIData.json.markers).sort((a, b) => {
       let coordsA = a
         .split(":")
         .map((x) => x.padStart(3, "0"))
@@ -700,7 +689,7 @@ function targetList(context, show) {
     let step = 50;
     for (let i = 0; i < step * 10; i += step) {
       let sTab = systemTabList.appendChild(createDOM("div", { class: "ogl-tab", "data-system": i }, i));
-      if (OGIData.json.targetTabs.s == i && system) sTab.classList.add("ogl-active");
+      if (OGBIData.json.targetTabs.s == i && system) sTab.classList.add("ogl-active");
       sTab.addEventListener("click", (event) => {
         if (!system) return;
         header.querySelectorAll(".ogl-tab[data-system].ogl-active").forEach((e) => e.classList.remove("ogl-active"));
@@ -711,15 +700,15 @@ function targetList(context, show) {
           if (planet.getAttribute("data-system") == i) {
             planet.classList.remove("ogl-systemHidden");
           }
-          OGIData.json.targetTabs.s = i;
+          OGBIData.json.targetTabs.s = i;
         });
-        OGIData.Save();
+        OGBIData.Save();
       });
     }
     for (let i = 1; i <= 10; i++) {
       let gTab = galaxyTabList.appendChild(createDOM("div", { class: "ogl-tab", "data-galaxy": i }, "G" + i));
-      if (OGIData.json.targetTabs.g == i && galaxy) gTab.classList.add("ogl-active");
-      if (OGIData.json.targetTabs.g == 0) gTab.click();
+      if (OGBIData.json.targetTabs.g == i && galaxy) gTab.classList.add("ogl-active");
+      if (OGBIData.json.targetTabs.g == 0) gTab.click();
       gTab.addEventListener("click", (event) => {
         if (!galaxy) return;
         header.querySelectorAll(".ogl-tab[data-galaxy]").forEach((e) => e.classList.remove("ogl-active"));
@@ -730,28 +719,28 @@ function targetList(context, show) {
             planet.classList.remove("ogl-galaxyHidden");
           }
         });
-        OGIData.json.targetTabs.g = i;
-        OGIData.Save();
+        OGBIData.json.targetTabs.g = i;
+        OGBIData.Save();
         checkEmpty(galaxy, system);
       });
     }
     keys.forEach((coords) => {
-      if (OGIData.json.markers[coords]) {
-        let a = renderPlanet(context, coords, false, false, OGIData.json.markers[coords].moon);
+      if (OGBIData.json.markers[coords]) {
+        let a = renderPlanet(context, coords, false, false, OGBIData.json.markers[coords].moon);
         let splitted = coords.split(":");
         a.setAttribute("data-coords", coords);
         a.setAttribute("data-galaxy", splitted[0]);
         a.setAttribute("data-system", Math.floor(splitted[1] / step) * step);
-        if (OGIData.json.options.hiddenTargets[OGIData.json.markers[coords].color]) {
+        if (OGBIData.json.options.hiddenTargets[OGBIData.json.markers[coords].color]) {
           a.classList.add("ogl-colorHidden");
         }
         if (galaxy) {
-          if (OGIData.json.targetTabs.g != splitted[0]) {
+          if (OGBIData.json.targetTabs.g != splitted[0]) {
             a.classList.add("ogl-galaxyHidden");
           }
         }
         if (system) {
-          if (OGIData.json.targetTabs.s != Math.floor(splitted[1] / step) * step) {
+          if (OGBIData.json.targetTabs.s != Math.floor(splitted[1] / step) * step) {
             a.classList.add("ogl-systemHidden");
           }
         }

@@ -2,7 +2,7 @@ import { createDOM } from "../../util/dom.js";
 import { tooltip } from "../../util/tooltip.js";
 import Translator from "../../util/translate.js";
 import Player from "../../util/player.js";
-import OGIObserver from "../../util/observer.js";
+import OGBIObserver from "../../util/observer.js";
 import { getLogger } from "../../util/logger.js";
 
 /**
@@ -22,7 +22,7 @@ import { getLogger } from "../../util/logger.js";
  *   at that coordinate, which is exactly the flow the rules require - the
  *   player then clicks the game's own probe icon there.
  * - The attack entry only opens `fleetdispatch` with the target prefilled, the
- *   same navigation `OGInfinity.renderPlanet()` has always used for stalk and
+ *   same navigation `OGBeyondInfinity.renderPlanet()` has always used for stalk and
  *   target lists (src/ogkush.js). One click, one page load, no game action:
  *   the player still picks ships and mission and confirms in the game's UI.
  * - Nothing here polls, schedules or refreshes anything. The MutationObserver
@@ -183,7 +183,7 @@ export function openPrivateChat(playerId) {
     return;
   }
 
-  // Same fallback as OGInfinity.sendMessage() for pages without the chat bar.
+  // Same fallback as OGBeyondInfinity.sendMessage() for pages without the chat bar.
   document.location = `?page=ingame&component=chat&playerId=${playerId}`;
 }
 
@@ -451,7 +451,7 @@ export function enhanceChat(root) {
 }
 
 /**
- * Entry point, called once from `OGInfinity.start()`.
+ * Entry point, called once from `OGBeyondInfinity.start()`.
  *
  * The chat bar renders its history asynchronously and appends every new
  * message, so a one-shot pass over the DOM would only ever catch what happened
@@ -475,7 +475,7 @@ export function initChatEnhancements() {
 
   enhanceChat(document);
 
-  const observe = new OGIObserver();
+  const observe = new OGBIObserver();
   roots.forEach((root) =>
     observe(root, (mutations) => {
       for (const mutation of mutations) {

@@ -1,22 +1,22 @@
-import OGIData from "./OGIData.js";
+import OGBIData from "./OGIData.js";
 import { createDOM } from "./dom.js";
 import { toFormattedNumber } from "./numbers.js";
 import planetType from "./enum/planetType.js";
 import { tooltip } from "./tooltip.js";
-import OGIObserver from "./observer.js";
+import OGBIObserver from "./observer.js";
 import flying from "./flying.js";
 import Translator from "./translate.js";
 
 const needs = {
-  ...OGIData.needs,
+  ...OGBIData.needs,
 };
 
-const obs = new OGIObserver();
+const obs = new OGBIObserver();
 
 export function display() {
   if (document.getElementById("eventboxLoading").style.display === "block") return;
 
-  OGIData.json.flying = flying();
+  OGBIData.json.flying = flying();
   document.querySelectorAll(".smallplanet").forEach((planet) => {
     const coords = planet.querySelector(".planet-koords")?.textContent;
 
@@ -64,7 +64,7 @@ export function getNeedsByCoords(coords, isMoon) {
 
   if (needsTarget === undefined) return;
 
-  const flying = { ...OGIData.json.flying };
+  const flying = { ...OGBIData.json.flying };
   const flyingTarget = isMoon ? flying.planets?.[coords]?.moon : flying.planets?.[coords]?.planet;
 
   const metal = Math.max((needsTarget?.metal || 0) - (planet?.metal || 0) - (flyingTarget?.metal || 0), 0);
@@ -106,7 +106,7 @@ export function append(coords, isMoon, resources) {
     };
   }
 
-  OGIData.needs = needs;
+  OGBIData.needs = needs;
 }
 
 export function lock(coords, isMoon, needed) {
@@ -199,7 +199,7 @@ function displayLocks(planet, isMoon) {
         sidePlanetDiv.querySelectorAll("button.ogl-sideLockRemove").forEach((button) => button.remove());
       }
 
-      OGIData.needs = needs;
+      OGBIData.needs = needs;
     };
 
     deleteAllEmpty.addEventListener("click", () => {
@@ -247,12 +247,12 @@ function createLockIcon(planet, isMoon) {
   const deleteBtn = tooltipContent.appendChild(createDOM("div", { style: "width: 75px;", class: "icon icon_against" }));
   deleteBtn.addEventListener("click", () => {
     if (!isMoon) {
-      OGIData.needs[planetId].planet = {};
+      OGBIData.needs[planetId].planet = {};
     } else {
-      OGIData.needs[planetId].moon = {};
+      OGBIData.needs[planetId].moon = {};
     }
 
-    OGIData.needSync = true;
+    OGBIData.needSync = true;
     document.querySelector(".ogl-tooltip .close-tooltip").click();
     displayLocks(planet, isMoon);
 
@@ -286,7 +286,7 @@ function createLockIcon(planet, isMoon) {
 }
 
 function getPlanetByCoords(coords) {
-  for (const planet of OGIData.empire) {
+  for (const planet of OGBIData.empire) {
     if (planet.coordinates === `[${coords}]`) return planet;
   }
 

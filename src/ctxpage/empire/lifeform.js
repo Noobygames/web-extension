@@ -1,41 +1,8 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as wait from "../../util/wait.js";
+import { fromFormattedNumber } from "../../util/numbers.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
-import AllianceClass from "../../util/enum/allianceClass.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
 import { pageSignal } from "../../util/abort.js";
-import { updateresourceDetail } from "../empireOverview/index.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { RESEARCH_INFO } from "../../util/enum/researchInfo.js";
-import {
-  CRAWLER_OVERLOAD_MAX,
-  CRYSTAL_GENERAL_INCOMING,
-  CRYSTAL_POS_BONUS,
-  ENGINEER_ENERGY_BONUS,
-  GEOLOGIST_CRAWLER_BONUS,
-  GEOLOGIST_RESOURCE_BONUS,
-  IONTECHNOLOGY_BONUS,
-  MAX_CRAWLERS_PER_MINE,
-  METAL_GENERAL_INCOMING,
-  METAL_POS_BONUS,
-  OFFICER_ENERGY_BONUS,
-  OFFICER_RESOURCE_BONUS,
-  PLASMATECH_BONUS,
-  TRADER_ENERGY_BONUS,
-  TRADER_RESOURCE_BONUS,
-  SUPPLIES_TECHID,
-  FACILITIES_TECHID,
-} from "../../util/gameConstants.js";
-import { building, consumption, minesProduction, research } from "../../util/gameFormulas.js";
-import ogiMode from "../../util/enum/ogiMode.js";
 
 import { updateEmpireProduction } from "./production.js";
 
@@ -43,14 +10,14 @@ import { updateEmpireProduction } from "./production.js";
 async function updateLifeform(context) {
   // WIP
   if (!context.hasLifeforms) return;
-  OGIData.json.lifeformBonus = await getLifeformBonus(context);
+  OGBIData.json.lifeformBonus = await getLifeformBonus(context);
   // temporary hack until code reworked to work with unique needLifeformUpdate
   // TODO: implement unique needLifeformUpdate
-  OGIData.empire.forEach((planet) => {
-    OGIData.json.needLifeformUpdate[planet.id] = false;
+  OGBIData.empire.forEach((planet) => {
+    OGBIData.json.needLifeformUpdate[planet.id] = false;
   });
   updateEmpireProduction(context);
-  OGIData.Save();
+  OGBIData.Save();
 }
 
 async function getLifeformBonus(context) {
@@ -65,7 +32,7 @@ async function getLifeformBonus(context) {
       // update selectedLifeforms & their levels
       htmlDocument.querySelectorAll(".smallplanet a.planetlink").forEach((elem) => {
         const name = elem.getAttribute("title").split("<br/>")[1].split(":")[1].trim();
-        OGIData.json.selectedLifeforms[elem.href.split("cp=")[1]] = Translator.GetClassFromLifeformName(name);
+        OGBIData.json.selectedLifeforms[elem.href.split("cp=")[1]] = Translator.GetClassFromLifeformName(name);
       });
       const lifeformLevel = {};
       htmlDocument.querySelectorAll("lifeform-level-bonuses div.lifeform-item-icon").forEach((iconDiv) => {
@@ -151,8 +118,8 @@ async function getLifeformBonus(context) {
 
 async function updateLifeformPlanetBonus(context) {
   const lifeformPlanetBonus = {};
-  OGIData.empire.forEach((planet) => {
-    const lifeform = OGIData.json.selectedLifeforms[planet.id];
+  OGBIData.empire.forEach((planet) => {
+    const lifeform = OGBIData.json.selectedLifeforms[planet.id];
 
     // research cost & time reduction bonus
     const lfLabBuildingId = Number("1" + lifeform?.slice(-1) + "103");
@@ -205,7 +172,7 @@ async function updateLifeformPlanetBonus(context) {
       technologyTimeReduction: technologyTimeReduction,
     };
   });
-  OGIData.json.lifeformPlanetBonus = lifeformPlanetBonus;
+  OGBIData.json.lifeformPlanetBonus = lifeformPlanetBonus;
 }
 
 export { updateLifeform, getLifeformBonus, updateLifeformPlanetBonus };

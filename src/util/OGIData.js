@@ -5,9 +5,9 @@ const localStorageKey = "ogk-data";
 /** Where an unparseable ogk-data is moved so it is not lost when the store is reset. */
 const corruptStorageKey = "ogk-data-corrupt";
 
-const logger = getLogger("OGIData");
+const logger = getLogger("OGBIData");
 
-class OGIData {
+class OGBIData {
   _json;
   get playerId() {
     return this._json.playerId;
@@ -278,7 +278,7 @@ class OGIData {
   constructor() {
     const at = perf.isEnabled() ? performance.now() : 0;
     const raw = localStorage.getItem(localStorageKey);
-    this._json = OGIData.#parse(raw);
+    this._json = OGBIData.#parse(raw);
     perf.accumulate("ogk-data parse", perf.isEnabled() ? performance.now() - at : 0, raw ? raw.length : 0);
   }
 
@@ -332,4 +332,4 @@ class OGIData {
   }
 }
 
-export default new OGIData();
+export default new OGBIData();

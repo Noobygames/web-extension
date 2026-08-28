@@ -1,63 +1,11 @@
 import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { tabs } from "../../util/tabs.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import * as time from "../../util/time.js";
-import * as wait from "../../util/wait.js";
-import DateTime from "../../util/dateTime.js";
+import { createDOM } from "../../util/dom.js";
+import { toFormattedNumber } from "../../util/numbers.js";
 import Translator from "../../util/translate.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGIData.js";
 import PlayerClass from "../../util/enum/playerClass.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import dataHelper from "../../util/dataHelper.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import missionType from "../../util/enum/missionType.js";
-import itemType from "../../util/enum/itemType.js";
-import itemImageID from "../../util/enum/itemImageID.js";
-import AllianceClass from "../../util/enum/allianceClass.js";
-import { fleetCost } from "../../util/fleetCost.js";
-import flying from "../../util/flying.js";
-import { getOption } from "../../ctxpage/conf-options.js";
-import { generateMMORPGLink } from "../../util/mmorpgStats.js";
-import { BUIDLING_INFO } from "../../util/enum/buildingInfo.js";
-import { RESEARCH_INFO } from "../../util/enum/researchInfo.js";
-import {
-  CRAWLER_OVERLOAD_MAX,
-  CRYSTAL_GENERAL_INCOMING,
-  CRYSTAL_POS_BONUS,
-  ENGINEER_ENERGY_BONUS,
-  FACILITIES_TECHID,
-  GEOLOGIST_CRAWLER_BONUS,
-  GEOLOGIST_RESOURCE_BONUS,
-  IONTECHNOLOGY_BONUS,
-  MAX_CRAWLERS_PER_MINE,
-  METAL_GENERAL_INCOMING,
-  METAL_POS_BONUS,
-  OFFICER_ENERGY_BONUS,
-  OFFICER_RESOURCE_BONUS,
-  PLASMATECH_BONUS,
-  SHIP_EXPEDITION_POINTS,
-  SUPPLIES_TECHID,
-  TRADER_ENERGY_BONUS,
-  TRADER_RESOURCE_BONUS,
-} from "../../util/gameConstants.js";
-import {
-  building,
-  consumption,
-  getBestRoi,
-  minesProduction,
-  research,
-  roiAstrophysics,
-  roiLfBuilding,
-  roiLfResearch,
-  roiMine,
-  roiPlasmatechnology,
-} from "../../util/gameFormulas.js";
+import { CRAWLER_OVERLOAD_MAX } from "../../util/gameConstants.js";
+import { getBestRoi } from "../../util/gameFormulas.js";
 
 import { statsState } from "./state.js";
 
@@ -85,7 +33,7 @@ function roiStats() {
     3,
     "tech"
   )}</option><option  value="0">${Translator.translate(52)}</option>`;
-  OGIData.empire.forEach(
+  OGBIData.empire.forEach(
     (planet) => (filterOptions += `<option  value="${planet.id}">${planet.coordinates}\t${planet.name}</option>`)
   );
 
@@ -100,16 +48,16 @@ function roiStats() {
     )
   );
   filter.querySelector("#filterRoi").addEventListener("change", () => updateRoi());
-  filter.querySelector("#reverseFilter").checked = OGIData.json.options.reverseFilter;
+  filter.querySelector("#reverseFilter").checked = OGBIData.json.options.reverseFilter;
 
   filter.querySelector("#reverseFilter").addEventListener("change", () => {
-    OGIData.json.options.reverseFilter = filter.querySelector("#reverseFilter").checked;
-    OGIData.Save();
+    OGBIData.json.options.reverseFilter = filter.querySelector("#reverseFilter").checked;
+    OGBIData.Save();
     updateRoi();
   });
 
   let crawlerPercent = Math.min(
-    OGIData.json.options.crawlerPercent,
+    OGBIData.json.options.crawlerPercent,
     statsState.context.playerClass == PlayerClass.MINER ? CRAWLER_OVERLOAD_MAX : 1
   );
   function crawlerClass(crawlerPercent) {
@@ -196,19 +144,19 @@ function roiStats() {
       )}"> </input>`
     )
   );
-  crawler.querySelector("#optLimitCrawler").checked = OGIData.json.options.limitCrawler;
+  crawler.querySelector("#optLimitCrawler").checked = OGBIData.json.options.limitCrawler;
 
   crawler.querySelector("#optLimitCrawler").addEventListener("change", () => {
-    OGIData.json.options.limitCrawler = crawler.querySelector("#optLimitCrawler").checked;
-    OGIData.Save();
+    OGBIData.json.options.limitCrawler = crawler.querySelector("#optLimitCrawler").checked;
+    OGBIData.Save();
     updateRoi();
   });
 
   crawler.querySelector("#crawlerPercent").addEventListener("change", () => {
-    OGIData.json.options.crawlerPercent = crawler.querySelector("#crawlerPercent").value / 100;
+    OGBIData.json.options.crawlerPercent = crawler.querySelector("#crawlerPercent").value / 100;
     crawler.querySelector("#crawlerPercent").classList.remove("overcharge", "undermark", "middlemark", "overmark");
-    crawler.querySelector("#crawlerPercent").classList.add(crawlerClass(OGIData.json.options.crawlerPercent));
-    OGIData.Save();
+    crawler.querySelector("#crawlerPercent").classList.add(crawlerClass(OGBIData.json.options.crawlerPercent));
+    OGBIData.Save();
     updateRoi();
   });
 
@@ -217,7 +165,7 @@ function roiStats() {
     createDOM("input", {
       class: "ogl-tradeRate-input metal",
       type: "text",
-      value: toFormattedNumber(OGIData.json.options.tradeRate[0]),
+      value: toFormattedNumber(OGBIData.json.options.tradeRate[0]),
     })
   );
   metalTradeRate.addEventListener("keyup", (e) => {
@@ -233,20 +181,20 @@ function roiStats() {
         input = 1;
         fadeBox(Translator.translate(122), true);
       }
-      if (!input) input = his.json.options.tradeRate[0];
+      if (!input) input = OGBIData.json.options.tradeRate[0];
       metalTradeRate.value = toFormattedNumber(input);
-      OGIData.json.options.tradeRate[0] = input;
-      OGIData.Save();
+      OGBIData.json.options.tradeRate[0] = input;
+      OGBIData.Save();
       updateRoi();
     }, 100);
   });
   metalTradeRate.addEventListener("blur", () => {
     let input = metalTradeRate.value.replace(",", ".");
-    if (input === "") input = OGIData.json.options.tradeRate[0];
+    if (input === "") input = OGBIData.json.options.tradeRate[0];
     input = Math.round(parseFloat(input) * 100) / 100;
     metalTradeRate.value = toFormattedNumber(input);
-    OGIData.json.options.tradeRate[0] = input;
-    OGIData.Save();
+    OGBIData.json.options.tradeRate[0] = input;
+    OGBIData.Save();
     updateRoi();
   });
   tradeRateGrid.appendChild(createDOM("a", { class: "ogl-option resourceIcon crystal" }));
@@ -254,7 +202,7 @@ function roiStats() {
     createDOM("input", {
       class: "ogl-tradeRate-input crystal",
       type: "text",
-      value: toFormattedNumber(OGIData.json.options.tradeRate[1]),
+      value: toFormattedNumber(OGBIData.json.options.tradeRate[1]),
     })
   );
   crystalTradeRate.addEventListener("keyup", (e) => {
@@ -270,20 +218,20 @@ function roiStats() {
         input = 1;
         fadeBox(Translator.translate(122), true);
       }
-      if (!input) input = his.json.options.tradeRate[1];
+      if (!input) input = OGBIData.json.options.tradeRate[1];
       crystalTradeRate.value = toFormattedNumber(input);
-      OGIData.json.options.tradeRate[1] = input;
-      OGIData.Save();
+      OGBIData.json.options.tradeRate[1] = input;
+      OGBIData.Save();
       updateRoi();
     }, 100);
   });
   crystalTradeRate.addEventListener("blur", () => {
     let input = crystalTradeRate.value.replace(",", ".");
-    if (input === "") input = OGIData.json.options.tradeRate[1];
+    if (input === "") input = OGBIData.json.options.tradeRate[1];
     input = Math.round(parseFloat(input) * 100) / 100;
     crystalTradeRate.value = toFormattedNumber(input);
-    OGIData.json.options.tradeRate[1] = input;
-    OGIData.Save();
+    OGBIData.json.options.tradeRate[1] = input;
+    OGBIData.Save();
     updateRoi();
   });
   tradeRateGrid.appendChild(createDOM("a", { class: "ogl-option resourceIcon deuterium" }));
@@ -291,7 +239,7 @@ function roiStats() {
     createDOM("input", {
       class: "ogl-tradeRate-input deuterium",
       type: "text",
-      value: toFormattedNumber(OGIData.json.options.tradeRate[2]),
+      value: toFormattedNumber(OGBIData.json.options.tradeRate[2]),
     })
   );
   deuteriumTradeRate.addEventListener("keyup", (e) => {
@@ -307,20 +255,20 @@ function roiStats() {
         input = 1;
         fadeBox(Translator.translate(122), true);
       }
-      if (!input) input = his.json.options.tradeRate[2];
+      if (!input) input = OGBIData.json.options.tradeRate[2];
       deuteriumTradeRate.value = toFormattedNumber(input);
-      OGIData.json.options.tradeRate[2] = input;
-      OGIData.Save();
+      OGBIData.json.options.tradeRate[2] = input;
+      OGBIData.Save();
       updateRoi();
     }, 100);
   });
   deuteriumTradeRate.addEventListener("blur", () => {
     let input = deuteriumTradeRate.value.replace(",", ".");
-    if (input === "") input = OGIData.json.options.tradeRate[2];
+    if (input === "") input = OGBIData.json.options.tradeRate[2];
     input = Math.round(parseFloat(input) * 100) / 100;
     deuteriumTradeRate.value = toFormattedNumber(input);
-    OGIData.json.options.tradeRate[2] = input;
-    OGIData.Save();
+    OGBIData.json.options.tradeRate[2] = input;
+    OGBIData.Save();
     updateRoi();
   });
 

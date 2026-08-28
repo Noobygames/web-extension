@@ -1,23 +1,9 @@
 import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as wait from "../../util/wait.js";
-import * as time from "../../util/time.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import Translator from "../../util/translate.js";
-import DateTime from "../../util/dateTime.js";
-import OGIData from "../../util/OGIData.js";
+import { createDOM } from "../../util/dom.js";
+import { toFormattedNumber } from "../../util/numbers.js";
+import OGBIData from "../../util/OGIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import shipEnum from "../../util/enum/ship.js";
-import planetType from "../../util/enum/planetType.js";
-import missionType from "../../util/enum/missionType.js";
-import { getOption } from "../conf-options.js";
 import * as stalkUtil from "../../util/stalk.js";
-import * as ptreService from "../../util/service.ptre.js";
 import dataHelper from "../../util/dataHelper.js";
 import markerui from "../../util/markerui.js";
 import { generateMMORPGLink } from "../../util/mmorpgStats.js";
@@ -27,7 +13,7 @@ import { generateHiscoreLink, highlightTarget, stalk } from "../galaxy/index.js"
  * Looking at other players: the search box, the stalk panel on the left, and the
  * highscore additions.
  *
- * Lifted out of `OGInfinity` in Phase 3 of refactoring.md.
+ * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md.
  *
  * Compliance note (AGENTS.md 1.5.1): these views show coordinates and link into
  * galaxy view. None of them attaches a probe action to a coordinate - that is exactly
@@ -77,8 +63,8 @@ function getPlayerStatus(context, status, noob) {
 
 function playerSearch(context, show, name) {
   let renderPlayerInfo = (player) => {
-    OGIData.json.playerSearch = player.name;
-    OGIData.Save();
+    OGBIData.json.playerSearch = player.name;
+    OGBIData.Save();
     let planetsColumn = createDOM("div", { class: "ogl-planets-col" });
     let controlRow = planetsColumn.appendChild(createDOM("div", { class: "ogl-search-controls" }));
     let name = `<span>${player.name}</span> <span class="${getPlayerStatus(
@@ -91,7 +77,7 @@ function playerSearch(context, show, name) {
     controlRow.appendChild(DOM.createDOMSanitized("span", {}, name));
     let btns = controlRow.appendChild(createDOM("div"));
 
-    if (OGIData.json.options.ptreTK) {
+    if (OGBIData.json.options.ptreTK) {
       let ptreLink = btns.appendChild(
         createDOM(
           "a",
@@ -218,16 +204,16 @@ function playerSearch(context, show, name) {
       });
       if (activeId == player.id) playerNode.classList.add("ogl-active");
       playerNode.addEventListener("click", () => {
-        OGIData.json.searchHistory.forEach((elem, i) => {
+        OGBIData.json.searchHistory.forEach((elem, i) => {
           if (elem.id == player.id) {
-            OGIData.json.searchHistory.splice(i, 1);
+            OGBIData.json.searchHistory.splice(i, 1);
           }
         });
-        OGIData.json.searchHistory.push(player);
-        if (OGIData.json.searchHistory.length > 5) {
-          OGIData.json.searchHistory.shift();
+        OGBIData.json.searchHistory.push(player);
+        if (OGBIData.json.searchHistory.length > 5) {
+          OGBIData.json.searchHistory.shift();
         }
-        OGIData.Save();
+        OGBIData.Save();
         if (activeNode) activeNode.classList.remove("ogl-active");
         playerNode.classList.add("ogl-active");
         activeNode = playerNode;
@@ -261,7 +247,7 @@ function playerSearch(context, show, name) {
       }
     } else {
       searchResult.appendChild(createDOM("div", { class: "historic" }, "Historic"));
-      updatePlayerList(OGIData.json.searchHistory.slice().reverse());
+      updatePlayerList(OGBIData.json.searchHistory.slice().reverse());
     }
   };
   let content = createDOM("div", { class: "ogl-search-content" });
@@ -276,7 +262,7 @@ function playerSearch(context, show, name) {
     searchResult = document.querySelector(".ogl-search-content .mCSB_container");
   }, 200);
   searchResult.appendChild(createDOM("div", { class: "historic" }, "Historic"));
-  updatePlayerList(OGIData.json.searchHistory.slice().reverse());
+  updatePlayerList(OGBIData.json.searchHistory.slice().reverse());
   if (name) {
     updateSearch(name, false, true);
     input.value = name;
@@ -290,8 +276,8 @@ function playerSearch(context, show, name) {
     document.querySelector("#planetList").style.display = "block";
     document.querySelector("#countColonies").style.display = "block";
     document.querySelector(".ogl-search-content").remove();
-    OGIData.json.playerSearch = "";
-    OGIData.Save();
+    OGBIData.json.playerSearch = "";
+    OGBIData.Save();
   }
 }
 
@@ -300,7 +286,7 @@ function addPlayerMarkerUI(context, parent, id) {
 }
 
 function sendMessage(context, id) {
-  if (OGIData.json.tchat) {
+  if (OGBIData.json.tchat) {
     ogame.chat.loadChatLogWithPlayer(Number(id));
   } else {
     document.location = `/game/index.php?page=ingame&component=chat&&playerId=${id}`;
@@ -358,9 +344,9 @@ function betterHighscore(context) {
             addPlayerMarkerUI(context, colors, highscorePlayerId);
 
             // Update UI with player marker
-            if (OGIData.json.playerMarkers[highscorePlayerId]) {
+            if (OGBIData.json.playerMarkers[highscorePlayerId]) {
               position.classList.add("ogl-marked");
-              position.setAttribute("data-marked", OGIData.json.playerMarkers[highscorePlayerId].color);
+              position.setAttribute("data-marked", OGBIData.json.playerMarkers[highscorePlayerId].color);
             }
 
             dataHelper.getPlayer(highscorePlayerId).then((p) => {

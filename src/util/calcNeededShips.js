@@ -1,5 +1,5 @@
 import * as Numbers from "./numbers.js";
-import OGIData from "./OGIData.js";
+import OGBIData from "./OGIData.js";
 
 /**
  * How many cargo ships are needed to move a pile of resources.
@@ -17,7 +17,7 @@ import OGIData from "./OGIData.js";
 export function calcNeededShips(options) {
   options = options || {};
 
-  const json = OGIData.json || {};
+  const json = OGBIData.json || {};
 
   let resources = options.resources;
 
