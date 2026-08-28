@@ -1,6 +1,6 @@
 import { createDOM, createDOMSanitized } from "../../util/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import Translator from "../../util/translate.js";
 import shipEnum from "../../util/enum/ship.js";
 

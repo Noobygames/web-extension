@@ -1,7 +1,7 @@
 /**
  * `ctxpage/fleetdispatch/` - the cargo helpers.
  *
- * These tests came from `test/ogkush.calculations.test.js`, where they ran against
+ * These tests came from `test/ogCore.calculations.test.js`, where they ran against
  * `OGBeyondInfinity.prototype`. Phase 3 of refactoring.md moved the fleet-dispatch page out
  * of the monolith; the tests moved with it, and every expected value is unchanged -
  * which is what verifies the move.
@@ -19,7 +19,7 @@ const browser = setupBrowser({
   url: "https://s1-en.ogame.gameforge.com/game/index.php?page=ingame&component=fleetdispatch",
 });
 
-const OGIData = (await import("../../src/util/OGIData.js")).default;
+const OGBIData = (await import("../../src/util/OGBIData.js")).default;
 const { calcNeededShips, selectBestCargoShip } = await import("../../src/ctxpage/fleetdispatch/index.js");
 
 test.after(() => {
@@ -30,7 +30,7 @@ test.after(() => {
 
 /** What the two helpers read out of the store. */
 function withStore() {
-  OGIData.json = {
+  OGBIData.json = {
     options: { fret: 203 },
     ships: {
       202: { cargoCapacity: 5000 },

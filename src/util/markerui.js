@@ -1,7 +1,7 @@
 import { createDOM } from "./dom.js";
 import { tooltip } from "./tooltip.js";
 import Player from "./player.js";
-import OGBIData from "./OGIData.js";
+import OGBIData from "./OGBIData.js";
 import * as stalk from "./stalk.js";
 
 const colors = ["red", "orange", "yellow", "green", "blue", "violet", "gray", "brown"];

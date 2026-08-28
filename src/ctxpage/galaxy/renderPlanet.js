@@ -1,5 +1,5 @@
 import { createDOM } from "../../util/dom.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import { probingWarning } from "../settings/index.js";
 import { setHighlightCoords } from "../../util/highlightTarget.js";
 
@@ -20,7 +20,7 @@ function renderPlanet(context, coords, main, scanned, moon, deleted) {
   let plaspy = panel.appendChild(createDOM("button", { class: "icon_eye" }));
   let plaFleet = panel.appendChild(createDOM("div", { class: "ogl-atk" }));
   plaspy.addEventListener("click", (e) => {
-    // sendShipsWithPopup(6, coords[0], coords[1], coords[2], 0, OGIData.json.spyProbes);
+    // sendShipsWithPopup(6, coords[0], coords[1], coords[2], 0, OGBIData.json.spyProbes);
     // disable direct probing in stalks and target list until complete removal or GF start to wake up
     probingWarning();
     e.stopPropagation();
@@ -48,7 +48,7 @@ function renderPlanet(context, coords, main, scanned, moon, deleted) {
   plaFleet = panel.appendChild(createDOM("div", { class: "ogl-atk" }));
   plaspy = panel.appendChild(createDOM("button", { class: "icon_eye" }));
   plaspy.addEventListener("click", (e) => {
-    // sendShipsWithPopup(6, coords[0], coords[1], coords[2], 3, OGIData.json.spyProbes);
+    // sendShipsWithPopup(6, coords[0], coords[1], coords[2], 3, OGBIData.json.spyProbes);
     // disable direct probing in stalks and target list until complete removal or GF start to wake up
     probingWarning();
     e.stopPropagation();

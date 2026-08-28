@@ -14,7 +14,7 @@ It is used in the project to expose, for example, the commands:
 - `ptre.galaxy(changes, ptreKey?, serverTime?)`
 - `messages.expeditionType(message)`
 
-See the real registration in `src/ctxcontent/index.js` and its consumption in `src/ogkush.js` and `src/ctxpage/messages-analyzer/index.js`.
+See the real registration in `src/ctxcontent/index.js` and its consumption in `src/ogCore.js` and `src/ctxpage/messages-analyzer/index.js`.
 
 ---
 
@@ -39,7 +39,7 @@ Exported functions:
 - Context: Content script (`chrome.runtime` must exist).
 - Effect: Listens for request events and replies with events keyed by the request "referer".
   - Without `presetToken`: generates a random token and publishes it in `data-ogiCallbackEventToken`.
-  - With `presetToken`: uses the token the caller already published, and does not touch the dataset. This is what `main.js` does, so that `ogkush.js` can be injected at `document_start` in parallel with this module instead of waiting behind it — see `docs/performance.md` §7. In that mode either half may initialise first, so the dataset is not consulted: `pageContextInit()` may already have replaced the token with the `"1"` placeholder.
+  - With `presetToken`: uses the token the caller already published, and does not touch the dataset. This is what `main.js` does, so that `ogCore.js` can be injected at `document_start` in parallel with this module instead of waiting behind it — see `docs/performance.md` §7. In that mode either half may initialise first, so the dataset is not consulted: `pageContextInit()` may already have replaced the token with the `"1"` placeholder.
 - Errors that can be thrown:
   - "Invalid context execution" if not running in a content script.
   - "service callback event is already initialized" on a second call in the same realm (or, without `presetToken`, if the dataset already carries a token).

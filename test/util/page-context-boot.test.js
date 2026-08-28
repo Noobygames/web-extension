@@ -1,7 +1,7 @@
 /**
  * The `document_start` invariant for page-context modules.
  *
- * `main.js` gets `ogkush.js` injected as early as the browser allows so its ~70
+ * `main.js` gets `ogCore.js` injected as early as the browser allows so its ~70
  * module files load, parse and compile in parallel with the game's own page
  * load. At that moment `<head>` is empty and `<body>` does not exist yet, so
  * **no module in that graph may read the DOM at module-evaluation time** - it
@@ -12,7 +12,7 @@
  * document with no meta tags and no body content, and requires them to survive.
  *
  * Separate file because it uses `importFresh()` - see the header of
- * OGIData.construction.test.js for why that must not share a file with
+ * OGBIData.construction.test.js for why that must not share a file with
  * behaviour tests.
  */
 import test from "node:test";

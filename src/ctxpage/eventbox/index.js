@@ -1,6 +1,6 @@
 import { createDOM } from "../../util/dom.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import { updateresourceDetail } from "../empireOverview/index.js";
 import { updateEmpireData } from "../empire/index.js";
 

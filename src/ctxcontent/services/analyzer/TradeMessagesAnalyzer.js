@@ -1,6 +1,6 @@
 import { getLogger } from "../../../util/logger.js";
 import { messagesTabs } from "../../../ctxpage/messages/index.js";
-import OGBIData from "../../../util/OGIData.js";
+import OGBIData from "../../../util/OGBIData.js";
 import MessageType from "../../../util/enum/messageType.js";
 import { toFormattedNumber } from "../../../util/numbers.js";
 import { createDOM } from "../../../util/dom.js";
@@ -85,7 +85,7 @@ class TradeMessagesAnalyzer {
         };
       }
 
-      /*OGIData.tradesSums = tradesSums;*/
+      /*OGBIData.tradesSums = tradesSums;*/
 
       trades[msgId] = {
         date: newDate,
@@ -100,7 +100,7 @@ class TradeMessagesAnalyzer {
 
       addStandardUnit(trades[msgId], message);
 
-      /*OGIData.trades = trades;*/
+      /*OGBIData.trades = trades;*/
     });
   }
 }

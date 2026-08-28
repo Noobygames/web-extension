@@ -1,5 +1,5 @@
 /**
- * Static guards for the modules Phase 3 of `refactoring.md` pulled out of `ogkush.js`.
+ * Static guards for the modules Phase 3 of `refactoring.md` pulled out of `ogCore.js`.
  *
  * Both describe failures nothing else here sees: the bundle builds, ESLint is silent
  * (`no-undef` is off for this codebase), and the module only breaks when a user opens
@@ -93,19 +93,19 @@ function ownBindings(source) {
 }
 
 /**
- * A binding that stayed behind in `ogkush.js` while its users moved out is a
+ * A binding that stayed behind in `ogCore.js` while its users moved out is a
  * `ReferenceError` the first time the moved code runs. Twelve existed at once during
  * the cut - `PLAYER_CLASS_*`, the expedition tier tables, `CARGO_SHIP_IDS`,
  * `CLAIM_FREE`, `isOwnPlanet`, `debounce`, `logger` - and every one of them built,
  * linted and bundled cleanly.
  */
-test("no extracted module uses a binding that only ogkush.js declares", () => {
-  const ogkush = withoutComments(read("src/ogkush.js"));
+test("no extracted module uses a binding that only ogCore.js declares", () => {
+  const ogCore = withoutComments(read("src/ogCore.js"));
 
   // Module-scope declarations only: no indentation, so not class members.
-  const ogkushOnly = new Set();
-  for (const match of ogkush.matchAll(/^(?:const|let|var|function)\s+([A-Za-z_$][\w$]*)/gm)) {
-    ogkushOnly.add(match[1]);
+  const ogCoreOnly = new Set();
+  for (const match of ogCore.matchAll(/^(?:const|let|var|function)\s+([A-Za-z_$][\w$]*)/gm)) {
+    ogCoreOnly.add(match[1]);
   }
 
   const offenders = [];
@@ -113,7 +113,7 @@ test("no extracted module uses a binding that only ogkush.js declares", () => {
     const source = withoutComments(read(file));
     const own = ownBindings(source);
 
-    for (const name of ogkushOnly) {
+    for (const name of ogCoreOnly) {
       if (own.has(name)) continue;
       // Not a property access, not part of a longer identifier, not an object key.
       if (new RegExp(`(?<![.\\w$'"\`])\\b${name}\\b\\s*(?![:\\w$])`).test(source)) {
@@ -187,9 +187,9 @@ test("the only `this` left in an extracted module belongs to an OGame object", (
  * referencing them as values (`minesStats` rather than `minesStats()`) - the
  * bundle silently shrank by 109 KB and six tabs stopped existing.
  */
-test("every extracted module is reachable from ogkush.js", () => {
+test("every extracted module is reachable from ogCore.js", () => {
   const seen = new Set();
-  const queue = ["src/ogkush.js"];
+  const queue = ["src/ogCore.js"];
 
   while (queue.length) {
     const file = queue.pop();

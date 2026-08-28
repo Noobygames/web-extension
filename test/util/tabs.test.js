@@ -1,7 +1,7 @@
 /**
  * `util/tabs.js` - the tab strip behind the statistics popup.
  *
- * It came out of `ogkush.js` in Phase 3 of refactoring.md as the first piece of that
+ * It came out of `ogCore.js` in Phase 3 of refactoring.md as the first piece of that
  * file's UI to get any coverage at all. The behaviour worth pinning is that panels
  * are built lazily and thrown away on switch: a builder that assumes it runs once, or
  * a panel that keeps a timer alive after being discarded, is a leak nothing else here

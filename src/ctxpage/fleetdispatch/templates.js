@@ -1,6 +1,6 @@
 import { getOption, setOption } from "../conf-options.js";
 import * as DOM from "../../util/dom.js";
-import OGIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import OGIObserver from "../../util/observer.js";
 import Translator from "../../util/translate.js";
 
@@ -38,7 +38,7 @@ export function addTemplateSelector(templateDivId, templateType, updateCallback)
       options.standardFleetId = id;
       options.standardFleetType = type;
       setOption("expedition", options);
-      OGIData.Save();
+      OGBIData.Save();
       if (typeof updateCallback === "function") updateCallback();
     };
   };

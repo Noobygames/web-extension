@@ -1,11 +1,11 @@
 import { createDOM, createSVG } from "../../util/dom.js";
 import * as wait from "../../util/wait.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import { pageSignal } from "../../util/abort.js";
 import { updateresourceDetail } from "../empireOverview/index.js";
 import ogiMode from "../../util/enum/ogiMode.js";
-// Re-exported so ogkush.js keeps one import path per page, and so the split parts
+// Re-exported so ogCore.js keeps one import path per page, and so the split parts
 // stay reachable from the module graph.
 export { updateLifeform } from "./lifeform.js";
 export { ProcessProductionProgressData, updateProductionProgress } from "./production.js";

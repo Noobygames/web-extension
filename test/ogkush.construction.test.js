@@ -15,13 +15,13 @@ import assert from "node:assert/strict";
 import { setupBrowser } from "./helpers/globals.js";
 import { overviewPage } from "./fixtures/ogamePage.js";
 
-// An excluded page: ogkush.js runs a boot IIFE at module scope, and "intro" is one of
+// An excluded page: ogCore.js runs a boot IIFE at module scope, and "intro" is one of
 // the three components it bails out on before it touches the DOM or the network.
 const INTRO_URL = "https://s1-en.ogame.gameforge.com/game/index.php?page=ingame&component=intro";
 
 const browser = setupBrowser({ url: INTRO_URL });
 document.documentElement.dataset.ogiCallbackEventToken = "0123456789ab";
-const { OGBeyondInfinity: OGBeyondInfinity } = await import("../src/ogkush.js");
+const { OGBeyondInfinity: OGBeyondInfinity } = await import("../src/ogCore.js");
 
 test.after(() => browser.cleanup());
 

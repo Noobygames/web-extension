@@ -82,7 +82,7 @@ const braveArgs = [
 ];
 
 // Without this, the Web Store build of OGI stays active next to the local one:
-// both match the same OGame hosts, both inject ogkush.js, and both write the
+// both match the same OGame hosts, both inject ogCore.js, and both write the
 // same localStorage["ogk-data"] key. This flag switches every other extension
 // off for this browser session only - nothing is uninstalled or unchecked, so
 // the next normal Brave start has everything back.

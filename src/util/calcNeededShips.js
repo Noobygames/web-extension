@@ -1,5 +1,5 @@
 import * as Numbers from "./numbers.js";
-import OGBIData from "./OGIData.js";
+import OGBIData from "./OGBIData.js";
 
 /**
  * How many cargo ships are needed to move a pile of resources.
@@ -8,7 +8,7 @@ import OGBIData from "./OGIData.js";
  * Two things it must NOT do, both of which it used to:
  *
  *  - re-parse localStorage["ogk-data"]. That blob reaches a few hundred KB on an established
- *    account, and JSON.parse of it costs milliseconds - per call. OGIData already holds the
+ *    account, and JSON.parse of it costs milliseconds - per call. OGBIData already holds the
  *    parsed object in memory, so it is read from there instead.
  *  - read the resource bar when the caller already passed an explicit amount. The three
  *    querySelector calls and their number parsing were discarded in that case, and they made

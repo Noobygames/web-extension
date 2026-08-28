@@ -48,7 +48,7 @@ import { rollup } from "rollup";
  *   only on demand). Bundling it in would put already-minified code inside an
  *   otherwise readable file, for one request that is not on the boot path.
  */
-const ENTRY_POINTS = ["ogkush.js", "ctxcontent/index.js"];
+const ENTRY_POINTS = ["ogCore.js", "ctxcontent/index.js"];
 
 /**
  * Directories that exist only to be imported by the entry points above.

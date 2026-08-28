@@ -72,7 +72,7 @@ Two things make this stick where `make dev` does not:
 - It builds into `local-extension/`, **not** `dist/`. `dist/` is wiped by `make clean` and by every other build target, and a browser drops an unpacked extension whose directory disappears.
 - The extension id is pinned by a local keypair, so it no longer depends on the absolute path. That matters because `chrome.storage.local` — the per-universe `DataHelper` data and the galaxy snapshot — is keyed by extension id, so moving the repo would otherwise orphan all of it. `make install-brave-id` prints the id; the private key lives in `.local-extension-key.pem`, is gitignored, never leaves your machine, and is unrelated to the Web Store key. Keep it: deleting it changes the id.
 
-If the profile you load it into already has OGI from the store, disable the store version on `brave://extensions` first — see the note below on why.
+If the profile you load it into already has OGBI from the store, disable the store version on `brave://extensions` first — see the note below on why.
 
 Firefox cannot do this: unsigned add-ons are always temporary there and are dropped on restart. A permanent Firefox install has to be signed through AMO.
 
@@ -90,9 +90,9 @@ For a quick throwaway test instead of a permanent install:
 
 This builds `dist/unpacked/chrome` and starts Brave with the extension loaded into a throwaway profile under `dist/.brave-dev-profile`, so it never interferes with your everyday browser profile. Use `make brave-main` to use your normal Brave profile instead (close Brave first, otherwise the running instance ignores the command line flags).
 
-**The Web Store version is switched off automatically.** Both builds match the same OGame hosts, both inject `ogkush.js` and both write the same `localStorage["ogk-data"]` key, so running them side by side gives you duplicated UI and corrupted data. The launcher therefore passes `--disable-extensions-except`, which disables every other extension _for that browser session only_ — nothing is uninstalled, and a normal Brave start has all your extensions back. Pass `--keep-extensions` to `scripts/launch-brave.mjs` if you explicitly want them enabled.
+**The Web Store version is switched off automatically.** Both builds match the same OGame hosts, both inject `ogCore.js` and both write the same `localStorage["ogk-data"]` key, so running them side by side gives you duplicated UI and corrupted data. The launcher therefore passes `--disable-extensions-except`, which disables every other extension _for that browser session only_ — nothing is uninstalled, and a normal Brave start has all your extensions back. Pass `--keep-extensions` to `scripts/launch-brave.mjs` if you explicitly want them enabled.
 
-If you load the build by hand instead (see below) into a profile that already has OGI from the store, disable the store version yourself on `brave://extensions` first.
+If you load the build by hand instead (see below) into a profile that already has OGBI from the store, disable the store version yourself on `brave://extensions` first.
 
 If Brave is not found automatically, point at it explicitly:
 
@@ -105,12 +105,12 @@ For Firefox: run `make dev-firefox`, then `about:debugging#/runtime/this-firefox
 The unpacked build stamps the version (defaults to the one in `package.json`, override with `make dev VERSION=9.9.9`) and drops two manifest keys that only apply to store releases: `update_url`, and the `extension_ids` whitelist in `web_accessible_resources` — a locally loaded build gets a different extension id, so that whitelist would lock out the build itself.
 
 The build also bundles the ES modules: `src/` stays one file per module, but the
-browser is handed one file per execution context — `ogkush.js` (69 modules,
+browser is handed one file per execution context — `ogCore.js` (69 modules,
 1.15 MB, seven levels of imports deep) and `ctxcontent/index.js`. That module
 graph was a request waterfall in front of every single page load, and OGame
 reloads on every view change. It is a plain concatenation with the imports
 resolved: **no minification, no obfuscation**, all comments intact. Run
-`OGI_NO_BUNDLE=1 make dev` to load the raw per-file graph instead, which is
+`OGBI_NO_BUNDLE=1 make dev` to load the raw per-file graph instead, which is
 easier to step through in a debugger.
 
 ## Code formatting

@@ -4,7 +4,7 @@ import { toFormattedNumber } from "../../util/numbers.js";
 import * as standardUnit from "../../util/standardUnit.js";
 import DateTime from "../../util/dateTime.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import dataHelper from "../../util/dataHelper.js";
 import { fleetCost } from "../../util/fleetCost.js";
 

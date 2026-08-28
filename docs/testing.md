@@ -64,14 +64,14 @@ Stub expose `chrome._store` (the Map) and `chrome._calls` (call counters) for as
 
 ### `importFresh(specifier)`
 
-Load module under cache-busting URL so module-level singleton re-evaluate. Needed for `OGIData`, `OgamePageData`, `service.callbackEvent` — behaviour depend on state captured at import time.
+Load module under cache-busting URL so module-level singleton re-evaluate. Needed for `OGBIData`, `OgamePageData`, `service.callbackEvent` — behaviour depend on state captured at import time.
 
 **Use only when test is about construction.** Two reasons:
 
 1. Defeats point of singleton — everywhere else, shared instance is more faithful model of real page.
-2. Node coverage reporter merge every URL for a path into one row, keep last evaluation seen. One `importFresh()` make whole module look barely covered. `src/util/OGIData.js` report ~36% for exactly this reason; accessors in fact exercised exhaustively by `test/util/OGIData.test.js`. Construction tests moved to `OGIData.construction.test.js` to contain damage, but merged multi-file run still report low number. Treat that row as artefact, not gap.
+2. Node coverage reporter merge every URL for a path into one row, keep last evaluation seen. One `importFresh()` make whole module look barely covered. `src/util/OGBIData.js` report ~36% for exactly this reason; accessors in fact exercised exhaustively by `test/util/OGBIData.test.js`. Construction tests moved to `OGBIData.construction.test.js` to contain damage, but merged multi-file run still report low number. Treat that row as artefact, not gap.
 
-Where singleton can reset through own API, prefer that — `OGIData.json = {…}` is full reset, keep report honest.
+Where singleton can reset through own API, prefer that — `OGBIData.json = {…}` is full reset, keep report honest.
 
 ## What is covered
 
@@ -85,7 +85,7 @@ Where singleton can reset through own API, prefer that — `OGIData.json = {…}
 | Numbers           | `util/numbers.js`, `cleanValue.js`                                                     | Both locales, unit suffixes, parse/format round-trip. 83% / 100%                                      |
 | Context bridge    | `util/service.callbackEvent.js`                                                        | Full request/response round-trip across both contexts, error paths, concurrency, Firefox `cloneInto`. |
 | Context detection | `util/runContext.js`                                                                   | Chrome/Edge/Firefox, script injection. 96%                                                            |
-| Page storage      | `util/OGIData.js`                                                                      | Write-through contract, generic check that **every** setter persists.                                 |
+| Page storage      | `util/OGBIData.js`                                                                     | Write-through contract, generic check that **every** setter persists.                                 |
 | Version gate      | `util/OgamePageData.js`                                                                | `isAtLeast_13_0_0` across version shapes.                                                             |
 | Options           | `ctxpage/conf-options.js`                                                              | Defaults, deep merge, proxy guards.                                                                   |
 | Content storage   | `ctxcontent/services/universe.storage.js`                                              | Key namespacing, Map/Set round-trip. 95%                                                              |
@@ -102,7 +102,7 @@ overview page is ~400 KB markup and hide which attribute a test depend on.
 Every selector in there is one `src/` read. **OGame 13 markup only** - v12
 support dropped, no second variant to keep in step.
 
-**Reaching into `ogkush.js`.** Module export `OGBeyondInfinity` for tests only, and
+**Reaching into `ogCore.js`.** Module export `OGBeyondInfinity` for tests only, and
 `test/bundle.test.js` assert this stay the _only_ export of page bundle.
 Importing module run its boot IIFE, so test file `setupBrowser()` URL use
 `component=intro` - one of three pages IIFE bail out on before touching
@@ -110,7 +110,7 @@ DOM or network.
 
 Not covered, rough order of value:
 
-- **The extracted page modules** (`ctxpage/stats/`, `ctxpage/fleetdispatch/`, `ctxpage/galaxy/`, …). Phase 3 moved ~17k lines out of `ogkush.js`; almost none has behavioural coverage. `test/ctxpage/module-wiring.test.js` guards the wiring statically — module reachable, no binding left behind in `ogkush.js`, `this` only where an OGame object owns it — but nothing opens the pages they draw.
+- **The extracted page modules** (`ctxpage/stats/`, `ctxpage/fleetdispatch/`, `ctxpage/galaxy/`, …). Phase 3 moved ~17k lines out of `ogCore.js`; almost none has behavioural coverage. `test/ctxpage/module-wiring.test.js` guards the wiring statically — module reachable, no binding left behind in `ogCore.js`, `this` only where an OGame object owns it — but nothing opens the pages they draw.
 - **`SpyMessagesAnalyzer`** (1k lines) and **`ExpeditionMessagesAnalyzer`** — only `support()` and `clean()` covered. Parsing paths need full spy-report and expedition-message fixtures.
 - **`ctxcontent/data-helper.js`** — `update()` orchestration and `loading` race behind issue #131.
 - `util/translate.js`, `util/stalk.js`, `util/flying.js`, `util/needs.js`.
@@ -133,12 +133,12 @@ Current entries:
 | `contentContextInit` throws `ReferenceError`        | `service.callbackEvent.js`          | `!chrome.runtime` dereference undeclared global in page context.                                                                                 |
 | `pageContextInit()` overwrites the token with `"1"` | `service.callbackEvent.js`          | Second init latch onto token nobody listen on.                                                                                                   |
 | a precision of `0` is ignored                       | `numbers.js`                        | `precision ? precision : 0` treat valid `0` as absent.                                                                                           |
-| mutating a getter result does not persist           | `OGIData.js`                        | Contract trap, not bug — but failure is silent. Flagged in review on PR #546.                                                                    |
+| mutating a getter result does not persist           | `OGBIData.js`                       | Contract trap, not bug — but failure is silent. Flagged in review on PR #546.                                                                    |
 | pretty-printed XML crashes the parsers              | `ctxcontent/helpers/*`              | `childNodes` include text nodes; work only because live API minifies.                                                                            |
 | an error response surfaces as a `TypeError`         | `ctxcontent/helpers/*`              | `fetchXml()` check neither `response.ok` nor `<parsererror>`.                                                                                    |
-| `roiMine` charges the target level once per level   | `ogkush.js`                         | Cost loop count `lvl` but pass `tolvl` to `building()`, so 20→25 upgrade priced as 5× level 25.                                                  |
-| ~~`getBestRoi` averages over two empire lists~~     | `util/gameFormulas.js`              | **Fixed by the Phase 3 move**: both reads collapsed onto `OGIData.json.empire`, so they can no longer drift. Prefix dropped.                     |
-| `TradeMessagesAnalyzer` discards what it computes   | `analyzer/TradeMessagesAnalyzer.js` | Both writes back to `OGIData` commented out, nothing else write `trades`, so trade statistics have no source.                                    |
+| `roiMine` charges the target level once per level   | `ogCore.js`                         | Cost loop count `lvl` but pass `tolvl` to `building()`, so 20→25 upgrade priced as 5× level 25.                                                  |
+| ~~`getBestRoi` averages over two empire lists~~     | `util/gameFormulas.js`              | **Fixed by the Phase 3 move**: both reads collapsed onto `OGBIData.json.empire`, so they can no longer drift. Prefix dropped.                    |
+| `TradeMessagesAnalyzer` discards what it computes   | `analyzer/TradeMessagesAnalyzer.js` | Both writes back to `OGBIData` commented out, nothing else write `trades`, so trade statistics have no source.                                   |
 | one bad message blanks the battle-report tab        | `analyzer/FightMessagesAnalyzer.js` | Neither message filter check `data-raw-messagetype`, so `JSON.parse(null).owner` throw out of `analyze()` and rest of pass skipped.              |
 | `readPageContext` throws on an incomplete page      | `util/pageContext.js`               | Three separate null dereferences (player-id meta, empty planet list, universe meta). Lifted verbatim out of constructor; recorded, not repaired. |
 

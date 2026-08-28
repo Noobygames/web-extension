@@ -18,9 +18,9 @@ FIREFOX_DIR  := $(UNPACKED_DIR)/firefox
 BRAVE_PROFILE ?= dist/.brave-dev-profile
 
 # consumed by scripts/help.mjs
-export OGI_VERSION := $(VERSION)
-export OGI_CHROME_DIR := $(CHROME_DIR)
-export OGI_FIREFOX_DIR := $(FIREFOX_DIR)
+export OGBI_VERSION := $(VERSION)
+export OGBI_CHROME_DIR := $(CHROME_DIR)
+export OGBI_FIREFOX_DIR := $(FIREFOX_DIR)
 
 .PHONY: help install install-brave install-brave-id format check test test-watch coverage bench build dev dev-firefox brave brave-main brave-open clean clean-profile
 
@@ -49,9 +49,9 @@ bench:
 	npm run bench
 
 # Unpacked builds - loadable via "Load unpacked" / "Load Temporary Add-on".
-# Both bundle the module graph into one file per context. OGI_NO_BUNDLE=1 skips
+# Both bundle the module graph into one file per context. OGBI_NO_BUNDLE=1 skips
 # that, for debugging against the real per-file paths.
-NO_BUNDLE := $(if $(OGI_NO_BUNDLE),--no-bundle,)
+NO_BUNDLE := $(if $(OGBI_NO_BUNDLE),--no-bundle,)
 
 dev:
 	node scripts/build-unpacked.mjs --target=chrome --version=$(VERSION) --out=$(CHROME_DIR) $(NO_BUNDLE)

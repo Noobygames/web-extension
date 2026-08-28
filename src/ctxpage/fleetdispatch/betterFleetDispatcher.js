@@ -11,7 +11,7 @@ import * as wait from "../../util/wait.js";
 import * as time from "../../util/time.js";
 import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import dataHelper from "../../util/dataHelper.js";
 import shipEnum from "../../util/enum/ship.js";

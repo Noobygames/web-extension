@@ -199,7 +199,7 @@ export class DataHelper {
    *        Keys "1".."15". Enrichment collected live in the page context.
    * @param {string|null} teamKey - PTRE team key. When null/empty, PTRE work is skipped
    *        and only the non-PTRE side effects run.
-   * @param {number|null} serverTime - Milliseconds from a JS `Date` built by ogkush from the
+   * @param {number|null} serverTime - Milliseconds from a JS `Date` built by ogCore from the
    *        OGame page's wall-clock server time. NOT a reliable UTC Unix ms: the value is
    *        interpreted in the browser's timezone, so on a server whose timezone differs
    *        from the browser's (e.g. `.en` for a CEST user) it is offset by the timezone

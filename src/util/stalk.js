@@ -6,7 +6,7 @@ import dateTime from "./dateTime.js";
 import highlightTarget, { setHighlightCoords } from "./highlightTarget.js";
 import player from "./player.js";
 import OgamePageData from "./OgamePageData.js";
-import OGBIData from "./OGIData.js";
+import OGBIData from "./OGBIData.js";
 import { loading } from "./loading.js";
 import { action } from "./ptre.js";
 import Translator from "./translate.js";
@@ -122,13 +122,13 @@ function getRemovedFromHistoricText(playerName) {
   return Translator.translate(229).replace("{player}", playerName);
 }
 
-// Removal is committed to OGIData straight away and the undo row is pure UI on top of it, so a
+// Removal is committed to OGBIData straight away and the undo row is pure UI on top of it, so a
 // page navigation inside the undo window simply leaves the player removed - there is no pending
 // state that could be silently lost the other way round. `index` is kept so restore puts the
 // player back where it was rather than at the end of the list.
 //
-// OGIData writes through on assignment but NOT on in-place mutation, hence copy -> splice ->
-// reassign; splicing OGIData.sideStalk directly would update the array in memory and never persist.
+// OGBIData writes through on assignment but NOT on in-place mutation, hence copy -> splice ->
+// reassign; splicing OGBIData.sideStalk directly would update the array in memory and never persist.
 function removeSideStalkPlayer(playerId) {
   playerId = parseInt(playerId);
   const sideStalk = OGBIData.sideStalk.slice();

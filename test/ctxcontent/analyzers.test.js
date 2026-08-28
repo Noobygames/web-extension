@@ -23,7 +23,7 @@ const browser = setupBrowser({ url: "https://s1-en.ogame.gameforge.com/game/inde
 globalThis.playerId = 12345;
 
 const { messagesTabs } = await import("../../src/ctxpage/messages/index.js");
-const OGIData = (await import("../../src/util/OGIData.js")).default;
+const OGBIData = (await import("../../src/util/OGBIData.js")).default;
 const SpyMessagesAnalyzer = (await import("../../src/ctxcontent/services/analyzer/SpyMessagesAnalyzer.js")).default;
 const ExpeditionMessagesAnalyzer = (
   await import("../../src/ctxcontent/services/analyzer/ExpeditionMessagesAnalyzer.js")
@@ -38,9 +38,9 @@ test.after(() => {
   browser.cleanup();
 });
 
-/** A fresh, empty store for every test - OGIData is a singleton over localStorage. */
+/** A fresh, empty store for every test - OGBIData is a singleton over localStorage. */
 function resetStore(options = {}) {
-  OGIData.json = {
+  OGBIData.json = {
     options: { standardUnitBase: 0, tradeRate: [2.5, 1.5, 1], ...options },
     harvests: {},
     trades: {},
@@ -146,9 +146,9 @@ test("a harvest from position 16 is booked as an expedition and labelled as one"
   new HarvestMessagesAnalyzer().analyze(callableOf(row), messagesTabs.COMMON);
 
   assert.ok(row.classList.contains("ogk-expedition"));
-  assert.deepEqual(OGIData.expeditionSums["27.08.26"].harvest, [1000, 500, 250]);
-  assert.equal(OGIData.combatsSums["27.08.26"], undefined);
-  assert.equal(OGIData.harvests["1001"].metal, 1000);
+  assert.deepEqual(OGBIData.expeditionSums["27.08.26"].harvest, [1000, 500, 250]);
+  assert.equal(OGBIData.combatsSums["27.08.26"], undefined);
+  assert.equal(OGBIData.harvests["1001"].metal, 1000);
   assert.ok(row.querySelector(".msgTitle .ogk-label"), "the standard-unit label was appended");
 });
 
@@ -166,8 +166,8 @@ test("a harvest anywhere else is booked against the combat totals", () => {
 
   new HarvestMessagesAnalyzer().analyze(callableOf(row), messagesTabs.COMMON);
 
-  assert.deepEqual(OGIData.combatsSums["27.08.26"].harvest, [10, 20, 30]);
-  assert.equal(OGIData.expeditionSums["27.08.26"], undefined);
+  assert.deepEqual(OGBIData.combatsSums["27.08.26"].harvest, [10, 20, 30]);
+  assert.equal(OGBIData.expeditionSums["27.08.26"], undefined);
 });
 
 test("harvest totals accumulate across messages of the same day", () => {
@@ -186,7 +186,7 @@ test("harvest totals accumulate across messages of the same day", () => {
 
   new HarvestMessagesAnalyzer().analyze(callableOf(...rows), messagesTabs.COMMON);
 
-  assert.equal(OGIData.expeditionSums["27.08.26"].harvest[0], 200);
+  assert.equal(OGBIData.expeditionSums["27.08.26"].harvest[0], 200);
 });
 
 test("a message of another type is left alone entirely", () => {
@@ -197,7 +197,7 @@ test("a message of another type is left alone entirely", () => {
   new HarvestMessagesAnalyzer().analyze(callableOf(row), messagesTabs.COMMON);
 
   assert.equal(row.className, "msg", "no class was added");
-  assert.deepEqual(OGIData.harvests, {});
+  assert.deepEqual(OGBIData.harvests, {});
 });
 
 test("re-analyzing the same harvest does not double-count it", () => {
@@ -216,7 +216,7 @@ test("re-analyzing the same harvest does not double-count it", () => {
   analyzer.analyze(callableOf(row), messagesTabs.COMMON);
   analyzer.analyze(callableOf(row), messagesTabs.COMMON);
 
-  assert.equal(OGIData.expeditionSums["27.08.26"].harvest[0], 100, "the msgId cache held");
+  assert.equal(OGBIData.expeditionSums["27.08.26"].harvest[0], 100, "the msgId cache held");
   assert.equal(row.querySelectorAll(".msgTitle .ogk-label").length, 2, "but the label is appended again");
 });
 
@@ -275,9 +275,9 @@ test("a transport between two of your own planets is skipped", () => {
 });
 
 test("KNOWN BUG: TradeMessagesAnalyzer computes trades and then throws them away", () => {
-  // Both writes back to the store are commented out (`/*OGIData.trades = trades;*/`
+  // Both writes back to the store are commented out (`/*OGBIData.trades = trades;*/`
   // and the same for `tradesSums`), and no other module writes either key - the
-  // legacy analyzer does not handle transports at all. So `OGIData.trades` stays
+  // legacy analyzer does not handle transports at all. So `OGBIData.trades` stays
   // empty forever, the msgId cache one line above it can never hit, and the label
   // is recomputed on every render. The trade statistics have no source of data.
   resetStore();
@@ -292,8 +292,8 @@ test("KNOWN BUG: TradeMessagesAnalyzer computes trades and then throws them away
 
   new TradeMessagesAnalyzer().analyze(callableOf(row), messagesTabs.GROUP_SHIPPING);
 
-  assert.deepEqual(OGIData.trades, {}, "nothing was persisted");
-  assert.deepEqual(OGIData.tradesSums, {});
+  assert.deepEqual(OGBIData.trades, {}, "nothing was persisted");
+  assert.deepEqual(OGBIData.tradesSums, {});
 });
 
 // --------------------------------------------------------------------------
@@ -307,8 +307,8 @@ test("ExpeditionMessagesAnalyzer ignores messages that are not expeditions or di
 
   new ExpeditionMessagesAnalyzer().analyze(callableOf(row), messagesTabs.EXPEDITION);
 
-  assert.deepEqual(OGIData.expeditions, {});
-  assert.deepEqual(OGIData.discoveries, {});
+  assert.deepEqual(OGBIData.expeditions, {});
+  assert.deepEqual(OGBIData.discoveries, {});
 });
 
 /** A complete expedition combat report, with every attribute the parser reads. */
@@ -336,10 +336,10 @@ test("an expedition fight is booked with its losses and marked as an expedition"
   new FightMessagesAnalyzer().analyze(callableOf(row), messagesTabs.BATTLE_REPORT);
 
   assert.ok(row.classList.contains("ogk-expedition"));
-  assert.equal(OGIData.combats["4001"].win, true, "the defender winning is a win for the player");
-  assert.equal(OGIData.combats["4001"].draw, false);
-  assert.deepEqual(OGIData.combats["4001"].losses, { 204: 3 });
-  assert.deepEqual(OGIData.expeditionSums["27.08.26"].losses, { 204: 3 });
+  assert.equal(OGBIData.combats["4001"].win, true, "the defender winning is a win for the player");
+  assert.equal(OGBIData.combats["4001"].draw, false);
+  assert.deepEqual(OGBIData.combats["4001"].losses, { 204: 3 });
+  assert.deepEqual(OGBIData.expeditionSums["27.08.26"].losses, { 204: 3 });
 });
 
 test("an expedition fight nobody won is recorded as a draw, not a loss", () => {
@@ -351,8 +351,8 @@ test("an expedition fight nobody won is recorded as a draw, not a loss", () => {
     messagesTabs.BATTLE_REPORT
   );
 
-  assert.equal(OGIData.combats["4002"].draw, true);
-  assert.equal(OGIData.combats["4002"].win, false);
+  assert.equal(OGBIData.combats["4002"].draw, true);
+  assert.equal(OGBIData.combats["4002"].win, false);
 });
 
 test("an already-known expedition fight is re-labelled without being counted again", () => {
@@ -364,7 +364,7 @@ test("an already-known expedition fight is re-labelled without being counted aga
   analyzer.analyze(callableOf(row), messagesTabs.BATTLE_REPORT);
   analyzer.analyze(callableOf(row), messagesTabs.BATTLE_REPORT);
 
-  assert.deepEqual(OGIData.expeditionSums["27.08.26"].losses, { 204: 3 }, "losses were not doubled");
+  assert.deepEqual(OGBIData.expeditionSums["27.08.26"].losses, { 204: 3 }, "losses were not doubled");
 });
 
 test("KNOWN BUG: one message without combat data aborts the whole battle-report pass", () => {
@@ -387,8 +387,8 @@ test("KNOWN BUG: one message without combat data aborts the whole battle-report 
   // analyze() runs the expedition pass first and the ordinary-combat pass second, so
   // the damage is order-dependent: the expedition report was already booked, and
   // everything the second pass would have done is lost without a trace.
-  assert.ok(OGIData.combats["4005"], "the expedition pass had already finished");
-  assert.equal(OGIData.combats["4004"], undefined, "the pass that threw booked nothing");
+  assert.ok(OGBIData.combats["4005"], "the expedition pass had already finished");
+  assert.equal(OGBIData.combats["4004"], undefined, "the pass that threw booked nothing");
 });
 
 test("a spy flight that never came back carries no report and is skipped", () => {
@@ -398,7 +398,7 @@ test("a spy flight that never came back carries no report and is skipped", () =>
 
   new FightMessagesAnalyzer().analyze(callableOf(noReturn), messagesTabs.BATTLE_REPORT);
 
-  assert.deepEqual(OGIData.combats, {});
+  assert.deepEqual(OGBIData.combats, {});
 });
 
 // --------------------------------------------------------------------------

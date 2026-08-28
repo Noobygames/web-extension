@@ -3,7 +3,7 @@ import { createDOM } from "../../util/dom.js";
 import { toFormattedNumber } from "../../util/numbers.js";
 import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import { tooltip } from "../../util/tooltip.js";
 
 /**

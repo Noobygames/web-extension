@@ -65,7 +65,7 @@ document.addEventListener("ogi-chart", function (e) {
 
 // LZString is only used by the pantry sync, which most sessions never run.
 // Injected on demand rather than on every page load - see ensureLZString() in
-// ogkush.js.
+// ogCore.js.
 let lzStringInjected = false;
 document.addEventListener("ogi-lzstring", function (e) {
   if (lzStringInjected) return;
@@ -134,7 +134,7 @@ document.addEventListener("ogi-notification-cancel", function (e) {
 document.addEventListener("ogi-notification-sync", function (e) {
   if (!e.detail) throw new Error("No notification details provided");
   chrome.runtime.sendMessage({ eventType: "ogi-notification-sync", message: e.detail }, function (response) {
-    // The sync result has to be applied by the page-context Notifier, which owns OGIData.
+    // The sync result has to be applied by the page-context Notifier, which owns OGBIData.
     // Importing Notifier here would pull the page's localStorage singleton into the content
     // script and give it a second, always-stale copy of ogk-data - so the result goes back
     // over an event instead, the same way ogi-players / ogi-filter reply.
@@ -152,7 +152,7 @@ document.addEventListener("ogi-notification-sync", function (e) {
  *
  * Injection of the page-context scripts used to live at the bottom of this
  * function. It now happens in `main.js` at `document_start`, before this module
- * is even imported, so `ogkush.js` loads in parallel with this one instead of
+ * is even imported, so `ogCore.js` loads in parallel with this one instead of
  * behind it.
  *
  * @param {string} callbackToken the handshake token `main.js` minted and put on
@@ -162,7 +162,7 @@ export function main(callbackToken) {
   mainLogger.log("Starting Ogame Beyond Infinity");
 
   // Registered here rather than at module evaluation because `main.js` mints
-  // the token and publishes it at document_start, then injects ogkush.js
+  // the token and publishes it at document_start, then injects ogCore.js
   // without waiting for this module - so the token has to come in as an
   // argument, and an argument is only available once main() is called.
   contentContextInit(

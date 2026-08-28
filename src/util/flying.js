@@ -1,6 +1,6 @@
 import missionType from "./enum/missionType.js";
 import * as needsUtil from "./needs.js";
-import OGBIData from "./OGIData.js";
+import OGBIData from "./OGBIData.js";
 import { fromFormattedNumber } from "./numbers.js";
 
 const isOwnPlanet = (coords) => {
@@ -25,7 +25,7 @@ let lifeformsPresent = null;
 /**
  * Whether the account runs lifeforms, read off the DOM on first use.
  *
- * Lazy on purpose: `ogkush.js` is injected at `document_start` so its module
+ * Lazy on purpose: `ogCore.js` is injected at `document_start` so its module
  * graph loads in parallel with the game's page parse, and `.lifeform` does not
  * exist yet at that point. The default export only runs after DOMContentLoaded.
  *

@@ -3,7 +3,7 @@ import { tabs } from "../../util/tabs.js";
 import { toFormattedNumber } from "../../util/numbers.js";
 import DateTime from "../../util/dateTime.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 
 import { statsState } from "./state.js";
 import { discoveryBox, discoveryCostsBox } from "./boxes.js";

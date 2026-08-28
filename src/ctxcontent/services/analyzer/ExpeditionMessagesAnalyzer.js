@@ -1,6 +1,6 @@
 import { getLogger } from "../../../util/logger.js";
 import { messagesTabs } from "../../../ctxpage/messages/index.js";
-import OGBIData from "../../../util/OGIData.js";
+import OGBIData from "../../../util/OGBIData.js";
 import { createDOM } from "../../../util/dom.js";
 import { toFormattedNumber } from "../../../util/numbers.js";
 import { fleetCost } from "../../../util/fleetCost.js";

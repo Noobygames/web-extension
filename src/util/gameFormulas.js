@@ -5,19 +5,19 @@
  * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. The bodies are unchanged;
  * the only edits were the ones needed to drop `this`:
  *
- * - `this.json` became `OGIData.json` - `OGBeyondInfinity.init()` assigns one to the other,
+ * - `this.json` became `OGBIData.json` - `OGBeyondInfinity.init()` assigns one to the other,
  *   so it was always the same object.
- * - `this.saveData()` became `OGIData.Save()`, which is what it did.
+ * - `this.saveData()` became `OGBIData.Save()`, which is what it did.
  * - `this.playerClass` / `this.geologist` / `this.allOfficers` became an explicit
  *   `player` argument on the three functions that read them. A formula module must not
  *   hold a reference to the page controller.
  * - The file-local `PLAYER_CLASS_*` constants became the shared `PlayerClass` enum,
  *   which carries the same values.
  *
- * Two of these carry known defects, pinned by `test/ogkush.calculations.test.js`:
+ * Two of these carry known defects, pinned by `test/ogCore.calculations.test.js`:
  * `roiMine()` prices an upgrade as N times the target level instead of summing the
- * levels, and `getBestRoi()` averages over `OGIData.empire` while dividing by
- * `OGIData.json.empire.length`. Both were moved as they are - repairs belong in their
+ * levels, and `getBestRoi()` averages over `OGBIData.empire` while dividing by
+ * `OGBIData.json.empire.length`. Both were moved as they are - repairs belong in their
  * own commits, not in a move.
  */
 import { BUIDLING_INFO } from "./enum/buildingInfo.js";
@@ -32,13 +32,13 @@ import {
 } from "./gameConstants.js";
 import PlayerClass from "./enum/playerClass.js";
 import AllianceClass from "./enum/allianceClass.js";
-import OGBIData from "./OGIData.js";
+import OGBIData from "./OGBIData.js";
 
 export function consumption(id, lvl) {
   if (!BUIDLING_INFO[id].baseCons || !BUIDLING_INFO[id].factorCons) return 0;
   return Math.floor(
     BUIDLING_INFO[id].baseCons * lvl * Math.pow(BUIDLING_INFO[id].factorCons, id >= 11101 && lvl == 1 ? 0 : lvl) /*
-    (1 - OGIData.json.lifeformBonus.consumptionReduction?.[id]?.energy || 1)*/
+    (1 - OGBIData.json.lifeformBonus.consumptionReduction?.[id]?.energy || 1)*/
     // TODO: add lf consumption reduction bonus
   );
 }

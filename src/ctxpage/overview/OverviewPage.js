@@ -1,7 +1,7 @@
 import { getOption, setOption } from "../conf-options.js";
 import { createDOM } from "../../util/dom.js";
 import { getLogger } from "../../util/logger.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 
 class OverviewPage {
   logger;

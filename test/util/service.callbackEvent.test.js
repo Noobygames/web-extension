@@ -413,7 +413,7 @@ test("a request that gets its reply does not fire the timeout", async (t) => {
  * The preset-token path.
  *
  * `main.js` mints the token at `document_start` and publishes it before it
- * injects anything, so `ogkush.js` and the content bundle download in parallel
+ * injects anything, so `ogCore.js` and the content bundle download in parallel
  * instead of one behind the other. That only works if `contentContextInit()`
  * accepts a token it did not create - and, critically, if it still works when
  * the page context got there first and replaced the published token with the
@@ -455,7 +455,7 @@ test("a preset token still routes a request end to end", async () => {
 });
 
 test("the page context may consume the token before the content script registers", async () => {
-  // The real race: ogkush.js is injected first, so pageContextInit() can run -
+  // The real race: ogCore.js is injected first, so pageContextInit() can run -
   // and overwrite the dataset with "1" - before ctxcontent/index.js has been
   // evaluated. contentContextInit() must not read the dataset in that case.
   const browser = setupBrowser({ chrome: true });

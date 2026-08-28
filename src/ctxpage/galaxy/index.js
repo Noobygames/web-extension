@@ -4,7 +4,7 @@ import * as wait from "../../util/wait.js";
 import * as stalkUtil from "../../util/stalk.js";
 import * as ptreService from "../../util/service.ptre.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import dataHelper from "../../util/dataHelper.js";
 import markerui from "../../util/markerui.js";

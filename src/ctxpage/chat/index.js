@@ -23,7 +23,7 @@ import { getLogger } from "../../util/logger.js";
  *   player then clicks the game's own probe icon there.
  * - The attack entry only opens `fleetdispatch` with the target prefilled, the
  *   same navigation `OGBeyondInfinity.renderPlanet()` has always used for stalk and
- *   target lists (src/ogkush.js). One click, one page load, no game action:
+ *   target lists (src/ogCore.js). One click, one page load, no game action:
  *   the player still picks ships and mission and confirms in the game's UI.
  * - Nothing here polls, schedules or refreshes anything. The MutationObserver
  *   only reads chat markup the game itself put on the page the player opened -

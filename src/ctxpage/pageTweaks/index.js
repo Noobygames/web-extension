@@ -4,7 +4,7 @@ import { toFormattedNumber } from "../../util/numbers.js";
 import * as Numbers from "../../util/numbers.js";
 import * as popupUtil from "../../util/popup.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import PlayerClass from "../../util/enum/playerClass.js";
 import { getOption } from "../conf-options.js";

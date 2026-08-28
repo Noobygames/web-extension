@@ -2,7 +2,7 @@ import * as DOM from "../../util/dom.js";
 import { createDOM } from "../../util/dom.js";
 import { toFormattedNumber } from "../../util/numbers.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import PlayerClass from "../../util/enum/playerClass.js";
 import { CRAWLER_OVERLOAD_MAX } from "../../util/gameConstants.js";
 import { getBestRoi } from "../../util/gameFormulas.js";

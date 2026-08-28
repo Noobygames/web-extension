@@ -2,7 +2,7 @@ import { getOption } from "../conf-options.js";
 import { pageSignal } from "../../util/abort.js";
 import * as DOM from "../../util/dom.js";
 import { getLogger } from "../../util/logger.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import * as wait from "../../util/wait.js";
 
 class TraderImportExportPage {

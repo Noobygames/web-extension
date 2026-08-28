@@ -5,7 +5,7 @@ import * as DOM from "../../../../util/dom.js";
 import ship from "../../../../util/enum/ship.js";
 import planetType from "../../../../util/enum/planetType.js";
 import Translator from "../../../../util/translate.js";
-import OGBIData from "../../../../util/OGIData.js";
+import OGBIData from "../../../../util/OGBIData.js";
 import RecyclingYieldCalculator from "../../../../util/recyclingYieldCalculator.js";
 import * as standardUnit from "../../../../util/standardUnit.js";
 import { toFormattedNumber } from "../../../../util/numbers.js";

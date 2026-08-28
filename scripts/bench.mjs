@@ -59,7 +59,7 @@ function buildPage({ planets = 12, events = 40, buttons = 8 } = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// The 100ms button-wiring scan in ogkush.js
+// The 100ms button-wiring scan in ogCore.js
 // ---------------------------------------------------------------------------
 
 const SCAN_SELECTOR =

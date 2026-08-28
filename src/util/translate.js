@@ -1,5 +1,5 @@
 import OgamePageData from "./OgamePageData.js";
-import OGBIData from "./OGIData.js";
+import OGBIData from "./OGBIData.js";
 import { getLogger } from "./logger.js";
 import MissionType from "./enum/missionType.js";
 
@@ -2637,7 +2637,7 @@ let resolvedLanguage = null;
  * The player language, resolved on first use rather than at module evaluation.
  *
  * Lazy on purpose: `OgamePageData` reads the `<meta name="ogame-language">`
- * tag, and `ogkush.js` is injected at `document_start` so its module graph can
+ * tag, and `ogCore.js` is injected at `document_start` so its module graph can
  * load in parallel with the game's page parse. At that moment `<head>` is
  * still empty. Every caller runs after `DOMContentLoaded`.
  *

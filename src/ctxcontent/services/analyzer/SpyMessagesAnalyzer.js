@@ -15,7 +15,7 @@ import Player from "../../../util/player.js";
 import * as stalk from "../../../util/stalk.js";
 import PlayerClass from "../../../util/enum/playerClass.js";
 import OgamePageData from "../../../util/OgamePageData.js";
-import OGBIData from "../../../util/OGIData.js";
+import OGBIData from "../../../util/OGBIData.js";
 import Translator from "../../../util/translate.js";
 import { evaluateTarget } from "../../../util/farmEvaluator.js";
 import { formatDuration } from "../../../util/fleetFlight.js";

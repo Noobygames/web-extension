@@ -1,5 +1,5 @@
 import { getLogger } from "./logger.js";
-import OGIData from "./OGIData.js";
+import OGBIData from "./OGBIData.js";
 import Translator from "./translate.js";
 import MissionType from "./enum/missionType.js";
 import NotificationPriority from "./enum/NotificationPriority.js";
@@ -10,7 +10,7 @@ class Notifier {
 
     // The content script answers ogi-notification-sync on this event rather than calling into
     // this singleton directly - Notifier belongs to the page context and must not be imported
-    // by ctxcontent/**, which has its own module graph and would get a stale OGIData.
+    // by ctxcontent/**, which has its own module graph and would get a stale OGBIData.
     document.addEventListener("ogi-notification-sync-rep", (event) => {
       this.EndSyncNotifications(event.detail);
     });
@@ -28,7 +28,7 @@ class Notifier {
   }
   #dispatchNotification(event, notification, isScheduled) {
     if (!notification.domain) {
-      notification.domain = OGIData.json.universeDomain;
+      notification.domain = OGBIData.json.universeDomain;
     }
     this.#controlNotification(notification, isScheduled);
     this.#dispatchEvent(event, notification);
@@ -40,13 +40,13 @@ class Notifier {
   }
 
   #formatId(id) {
-    return `${OGIData.json.universeId}-${id}`;
+    return `${OGBIData.json.universeId}-${id}`;
   }
   #formatFleetArrivalId(fleetId, isBack) {
     return this.#formatId(`fleet-${fleetId}-${isBack ? "return" : "arrival"}`);
   }
   #formatTitle(title) {
-    return `${OGIData.json.universeName} - ${title}`;
+    return `${OGBIData.json.universeName} - ${title}`;
   }
 
   #createOrUpdateScheduledNotification(notification, sendDispatch = true) {
@@ -56,16 +56,16 @@ class Notifier {
     }
 
     //Save for synchronization in case of multiple devices
-    OGIData.notifications[notification.id] = notification;
-    OGIData.Save();
-    this.logger.debug(`Saved scheduled notification ${notification.id} to OGIData.`, notification);
+    OGBIData.notifications[notification.id] = notification;
+    OGBIData.Save();
+    this.logger.debug(`Saved scheduled notification ${notification.id} to OGBIData.`, notification);
   }
 
   ScheduleNotification(id, category, priority, title, message, url, date) {
     this.#createOrUpdateScheduledNotification({
       id: this.#formatId(id),
       category: category,
-      domain: OGIData.json.universeDomain,
+      domain: OGBIData.json.universeDomain,
       priority: priority,
       title: this.#formatTitle(title),
       message: message,
@@ -78,8 +78,8 @@ class Notifier {
   EndSyncNotifications(notificationResult) {
     if (!notificationResult) return;
 
-    OGIData.lastSyncNotification = notificationResult.SyncDate;
-    OGIData.Save();
+    OGBIData.lastSyncNotification = notificationResult.SyncDate;
+    OGBIData.Save();
 
     this.logger.info(
       `Synchronized notifications: ${notificationResult.Saved.length} saved, ${notificationResult.Canceled.length} canceled`,
@@ -91,25 +91,25 @@ class Notifier {
     const now = Date.now();
     const fiveMinutes = 5 * 60 * 1000;
 
-    const minutesAgoSync = Math.floor((now - new Date(OGIData.lastSyncNotification).getTime()) / 60000);
+    const minutesAgoSync = Math.floor((now - new Date(OGBIData.lastSyncNotification).getTime()) / 60000);
 
-    this.logger.debug(`Last notifications sync was ${minutesAgoSync} minutes ago (${OGIData.lastSyncNotification})`);
+    this.logger.debug(`Last notifications sync was ${minutesAgoSync} minutes ago (${OGBIData.lastSyncNotification})`);
     //if force or last sync was more than 5 minutes ago, then sync
-    if (force || this.#isObsoleteSinceMinutes(OGIData.lastSyncNotification, 5)) {
+    if (force || this.#isObsoleteSinceMinutes(OGBIData.lastSyncNotification, 5)) {
       this.logger.info(`Start syncing notifications (Forced: ${force})`);
 
       //remove notified notifications or obsoletes since 30 minutes
-      for (const [obsoleteNotificationId, obsoleteNotification] of Object.entries(OGIData.notifications).filter(
+      for (const [obsoleteNotificationId, obsoleteNotification] of Object.entries(OGBIData.notifications).filter(
         ([, x]) => x.notified || this.#isObsoleteSinceMinutes(x.when, 30)
       )) {
-        delete OGIData.notifications[obsoleteNotificationId];
+        delete OGBIData.notifications[obsoleteNotificationId];
         this.logger.info(`Removed obsolete notification ${obsoleteNotificationId}`, obsoleteNotification);
       }
-      OGIData.Save();
+      OGBIData.Save();
 
       this.#dispatchEvent("ogi-notification-sync", {
-        domain: OGIData.json.universeDomain,
-        notifications: Object.values(OGIData.notifications),
+        domain: OGBIData.json.universeDomain,
+        notifications: Object.values(OGBIData.notifications),
       });
     }
   }
@@ -118,11 +118,11 @@ class Notifier {
     if (sendDispatch) {
       this.#dispatchEvent("ogi-notification-cancel", { id: id });
     }
-    if (OGIData.notifications[id]) {
+    if (OGBIData.notifications[id]) {
       //Save for synchronization in case of multiple devices
-      delete OGIData.notifications[id];
+      delete OGBIData.notifications[id];
       this.logger.info(`Cancelled notification ${id}`);
-      OGIData.Save();
+      OGBIData.Save();
     }
   }
   CancelScheduledNotification(id) {
@@ -156,7 +156,7 @@ class Notifier {
 
   IsFleetArrivalNotificationScheduled(fleetId, isBack) {
     const formattedId = this.#formatFleetArrivalId(fleetId, isBack);
-    const exists = OGIData.notifications[formattedId] !== undefined && OGIData.notifications[formattedId] !== null;
+    const exists = OGBIData.notifications[formattedId] !== undefined && OGBIData.notifications[formattedId] !== null;
     return exists;
   }
 
@@ -172,7 +172,7 @@ class Notifier {
       }
     }
     //remove notifications about fleets that are no longer present
-    for (const [obsoleteNotificationId, obsoleteNotification] of Object.entries(OGIData.notifications).filter(
+    for (const [obsoleteNotificationId, obsoleteNotification] of Object.entries(OGBIData.notifications).filter(
       ([id, x]) => x.category === "fleet" && !possibleRemainingFleetIds.includes(id)
     )) {
       this.#cancelScheduledNotification(obsoleteNotificationId, true);
@@ -188,8 +188,8 @@ class Notifier {
     }`;
 
     const destination = isMoon
-      ? OGIData.empire.find((x) => x.coordinates === coords)?.moon
-      : OGIData.empire.find((x) => x.coordinates === coords);
+      ? OGBIData.empire.find((x) => x.coordinates === coords)?.moon
+      : OGBIData.empire.find((x) => x.coordinates === coords);
 
     const destinationNameTranslated = destination ? `\n${Translator.translate(127)}: ${destination.name}` : "";
 
@@ -198,8 +198,8 @@ class Notifier {
     })`;
 
     const url = destination
-      ? `https://${OGIData.json.universeDomain}/game/index.php?page=ingame&component=fleetdispatch&cp=${destination.id}`
-      : `https://${OGIData.json.universeDomain}/game/index.php?page=ingame&component=overview`;
+      ? `https://${OGBIData.json.universeDomain}/game/index.php?page=ingame&component=fleetdispatch&cp=${destination.id}`
+      : `https://${OGBIData.json.universeDomain}/game/index.php?page=ingame&component=overview`;
 
     const message = `${missionTranslated}${destinationNameTranslated}\n${coordsTranslated}`;
 
@@ -207,7 +207,7 @@ class Notifier {
       this.#createOrUpdateScheduledNotification({
         id: id,
         category: "fleet",
-        domain: OGIData.json.universeDomain,
+        domain: OGBIData.json.universeDomain,
         priority: NotificationPriority.VERY_HIGH,
         title: this.#formatTitle(title),
         message: message,

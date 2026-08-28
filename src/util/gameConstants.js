@@ -2,7 +2,7 @@
  * The scalar game constants: officer and technology bonuses, position multipliers,
  * technology-id groupings, and the expedition point value of every ship.
  *
- * Lifted verbatim out of `ogkush.js` in Phase 3 of refactoring.md.
+ * Lifted verbatim out of `ogCore.js` in Phase 3 of refactoring.md.
  *
  * `CRAWLER_OVERLOAD_MAX` is NOT redefined here. `util/productionEngine.js` already
  * exported it, and a second copy of a number that has to agree is exactly the kind of

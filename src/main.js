@@ -5,13 +5,13 @@
  * instead of waiting for `DOMContentLoaded` the way this file used to:
  *
  * - All three page-context scripts are injected immediately, so the browser
- *   fetches, parses and compiles `ogkush.js` in parallel with the game's own
+ *   fetches, parses and compiles `ogCore.js` in parallel with the game's own
  *   page load instead of doing it afterwards. A dynamically inserted `<script>`
- *   is async, so `ogkush.js` waits for DOMContentLoaded itself before it
+ *   is async, so `ogCore.js` waits for DOMContentLoaded itself before it
  *   touches the DOM.
  * - `ctxcontent/index.js` only talks to `chrome.*` and the universe API and
  *   never reads the game DOM, so waiting for the DOM only delayed it. It loads
- *   next to `ogkush.js` rather than in front of it: the handshake token both
+ *   next to `ogCore.js` rather than in front of it: the handshake token both
  *   halves need is minted here and published before either is started.
  * - The wide-layout classes are put on <html> from a small cached mirror of the
  *   options, before the game paints, so changing pages no longer shows the
@@ -32,7 +32,7 @@
  * anything else runs.
  *
  * `util/service.callbackEvent.js` used to mint this when the content module was
- * evaluated, which forced `ogkush.js` to be injected *after* that module had
+ * evaluated, which forced `ogCore.js` to be injected *after* that module had
  * loaded - `pageContextInit()` throws without a token. Minting it here breaks
  * that dependency, so the 1.1 MB page bundle and the content bundle download at
  * the same time instead of one behind the other. Keep the generator in step
@@ -65,7 +65,7 @@ function injectScript(path, asModule = false) {
  * Content scripts share the page's localStorage, and `ctxpage/wide-layout.js`
  * mirrors its three switches into the small `ogi-layout` key exactly so this
  * can happen at `document_start`. Doing it here instead of waiting for
- * `ogkush.js` is what removes the "vanilla width first, wide layout a moment
+ * `ogCore.js` is what removes the "vanilla width first, wide layout a moment
  * later" jump on every page change. `wide-layout.js` re-applies the same
  * classes later from the real options, so a stale mirror self-heals.
  *
@@ -73,7 +73,7 @@ function injectScript(path, asModule = false) {
  * automatic.
  */
 function applyCachedLayout() {
-  // Same exclusion list the ogkush.js entry point uses. Those pages never got
+  // Same exclusion list the ogCore.js entry point uses. Those pages never got
   // the classes before, because `applyWideLayout()` runs inside `start()` and
   // `start()` never runs there - applying them here would be a new, unreviewed
   // layout change on the intro, empire and combat-simulator screens.
@@ -109,10 +109,10 @@ const callbackToken = createCallbackToken();
 document.documentElement.dataset.ogiCallbackEventToken = callbackToken;
 
 // DOMPurify is needed as soon as the start-up sequence runs; LZString is not -
-// only the pantry sync uses it, and ogkush.js pulls it in on demand over the
+// only the pantry sync uses it, and ogCore.js pulls it in on demand over the
 // `ogi-lzstring` event.
 injectScript("libs/purify.min.js");
-injectScript("ogkush.js", true);
+injectScript("ogCore.js", true);
 
 import(chrome.runtime.getURL("./ctxcontent/index.js"))
   .then((contentScript) => contentScript.main(callbackToken))

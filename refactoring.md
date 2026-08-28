@@ -13,16 +13,16 @@ Zahlen aus aktuellem `master` gemessen, nicht geschätzt.
 | Messung                                | Wert                                                               |
 | :------------------------------------- | :----------------------------------------------------------------- |
 | `src/**` ohne `libs/`                  | ~~33.859~~ **33.580** Zeilen (Phase 1)                             |
-| davon `src/ogkush.js`                  | ~~19.024~~ → **1.846 Zeilen**, **40 Methoden** (Phase 3)           |
-| Testabdeckung                          | 391 → **502 Tests**; `ogkush.js` erstmals dabei (Rechenkerne)      |
-| Dateien ohne jede Abdeckung            | vor Phase 2: 34, darunter `ogkush.js` und `background.js`          |
+| davon `src/ogCore.js`                  | ~~19.024~~ → **1.846 Zeilen**, **40 Methoden** (Phase 3)           |
+| Testabdeckung                          | 391 → **502 Tests**; `ogCore.js` erstmals dabei (Rechenkerne)      |
+| Dateien ohne jede Abdeckung            | vor Phase 2: 34, darunter `ogCore.js` und `background.js`          |
 | `npm run check`                        | ~~404 Fehler~~ **0** — Phase 0 erledigt, gatet in CI               |
-| `document.querySelector*` in ogkush.js | 424                                                                |
-| `this.json.*` vs. `OGIData.*`          | 755 vs. 120 — zwei Zugriffswege auf denselben Store                |
+| `document.querySelector*` in ogCore.js | 424                                                                |
+| `this.json.*` vs. `OGBIData.*`         | 755 vs. 120 — zwei Zugriffswege auf denselben Store                |
 | `this.saveData()`                      | 82 Aufrufe, jeder serialisiert den kompletten Blob                 |
 | jQuery `$(…)`                          | 87 Stellen                                                         |
 | `setInterval`                          | 15 Stellen, drei davon reine Polling-Schleifen auf ein Promise     |
-| Tote Methoden in ogkush.js             | ~~13~~ 0 (Phase 1); plus `autoHarvest()`, in Phase 3 nachgereicht  |
+| Tote Methoden in ogCore.js             | ~~13~~ 0 (Phase 1); plus `autoHarvest()`, in Phase 3 nachgereicht  |
 | `TODO`/`FIXME`/`WIP`/`@deprecated`     | 41 Marker in 7 Dateien — vollständige Liste in Abschnitt 3         |
 | Toter Zweitbaum im Repo                | `local-extension-backup/`, 123 Dateien, 33.535 JS-Zeilen, getrackt |
 
@@ -37,8 +37,8 @@ Vier größte Methoden allein: `betterFleetDispatcher()` 1.545 Zeilen, `minesSta
 1. **AGENTS.md schlägt jede Architektur-Präferenz.** Kein Refactoring erhöht Zahl der Hintergrund-Requests pro Seitenaufruf, bündelt Aktionen, verzögert etwas zeitlich oder macht Code unlesbar. Wer Datei aufteilt, teilt Compliance-Kommentare mit auf.
 2. **Kein Minifizieren, kein Obfuskieren** — Review der Origin-Toolentwickler liest Quelltext (`AGENTS.md` §0). Rollup-Build bleibt `treeshake: false`, ohne Terser.
 3. **`test/bundle.test.js` muss grün bleiben.** Bündeln bricht Modul-Auswertungsreihenfolge lautlos; dieser Test merkt es als einziger. Jede Verschiebung von Top-Level-Code dagegen prüfen.
-4. **`OGIData`-Write-Through-Contract bleibt.** `OGIData.options = {...}` persistiert, `OGIData.options.foo = 1` nicht. Dokumentiert und mit `TRAP:`-Tests festgenagelt (`docs/performance.md`, „Coalescing the store writes — reverted"). Wer daran arbeitet, reduziert **Zahl** der Schreibvorgänge, verzögert sie nicht.
-5. **Nichts im Page-Context liest DOM zur Modul-Auswertungszeit.** `ogkush.js` wird bei `document_start` injiziert, `<head>` dann leer. Neue Module folgen Lazy-Muster von `OgamePageData` und `translate.js`.
+4. **`OGBIData`-Write-Through-Contract bleibt.** `OGBIData.options = {...}` persistiert, `OGBIData.options.foo = 1` nicht. Dokumentiert und mit `TRAP:`-Tests festgenagelt (`docs/performance.md`, „Coalescing the store writes — reverted"). Wer daran arbeitet, reduziert **Zahl** der Schreibvorgänge, verzögert sie nicht.
+5. **Nichts im Page-Context liest DOM zur Modul-Auswertungszeit.** `ogCore.js` wird bei `document_start` injiziert, `<head>` dann leer. Neue Module folgen Lazy-Muster von `OgamePageData` und `translate.js`.
 6. **`src/manifest.json` und `src/manifest-firefox.json` immer im Paar ändern.**
 7. **Jede Phase einzeln releasbar.** Kein „Big Bang"-Branch, drei Wochen offen.
 
@@ -52,8 +52,8 @@ Reihenfolge nicht beliebig. Regel: **erst Sicherheitsnetz, dann Schnitte.**
 Phase 0  Werkzeug reparieren        [ERLEDIGT]  -> Lint ist grün und gatet in CI
 Phase 1  Toter Code + Delegaten     [ERLEDIGT]  -> 370 Zeilen weg, 123 Dateien untracked
 Phase 2  Charakterisierungstests    [ERLEDIGT]  -> 485 Tests, 7 neue Fehler gefunden
-Phase 3  ogkush.js aufteilen        [ERLEDIGT]  -> 19.024 -> 1.846 Zeilen
-Phase 4  Store-Zugriff vereinheitl. (1 Woche)   -> this.json -> OGIData
+Phase 3  ogCore.js aufteilen        [ERLEDIGT]  -> 19.024 -> 1.846 Zeilen
+Phase 4  Store-Zugriff vereinheitl. (1 Woche)   -> this.json -> OGBIData
 Phase 5  Seitenweises Code-Splitting(1 Woche)   -> Boot-Payload halbieren
 Phase 6  Altlasten & Doku-Drift     (laufend)
 ```
@@ -71,7 +71,7 @@ Abschnitt 3 = vollständige Marker-Inventur; jeder Marker dort einer Phase oder 
 
 ## 3. Bestandsaufnahme: `TODO`, `FIXME`, `WIP`, `@deprecated`
 
-Vollständige Liste aus `src/`, `test/`, `scripts/`, `packaging.sh`, `Makefile` — ohne `src/libs/` (Fremdcode), ohne `local-extension*` (Phase 1, Problem E). **41 Marker in 7 Dateien**, 27 davon in `ogkush.js`.
+Vollständige Liste aus `src/`, `test/`, `scripts/`, `packaging.sh`, `Makefile` — ohne `src/libs/` (Fremdcode), ohne `local-extension*` (Phase 1, Problem E). **41 Marker in 7 Dateien**, 27 davon in `ogCore.js`.
 
 Keiner wiederauffindbar notiert: kein Ticketbezug, kein Datum, kein Autor. Teil davon älter als Spielrelease, auf das er wartet.
 
@@ -97,7 +97,7 @@ v12-Support gefallen. Alle vier Marker weg, zusammen mit 34 `isAtLeast_13_0_0`-V
 
 ### 3.3 Produktionsberechnung — 8 TODOs, getesteter Zweitmotor existiert bereits
 
-`updateEmpireProduction()` (`ogkush.js:12539`–`12818`, 279 Zeilen, mit `// WIP` überschrieben) trägt:
+`updateEmpireProduction()` (`ogCore.js:12539`–`12818`, 279 Zeilen, mit `// WIP` überschrieben) trägt:
 
 | Zeile       | Lücke                                                                                                                      |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------- |
@@ -110,7 +110,7 @@ v12-Support gefallen. Alle vier Marker weg, zusammen mit 34 `isAtLeast_13_0_0`-V
 | `14123`     | Lifeform-Verbrauchsreduktion fehlt                                                                                         |
 | `14373`     | „check if own population factor is needed"                                                                                 |
 
-Gleichzeitig liegt in `src/util/productionEngine.js` Produktionsmodell mit **100 % Abdeckung** (`plasmaBonus`, `effectiveCrawlers`, `crawlerBonus`, `realProduction`, `productionBreakdown`) — benutzt an **einer** Stelle, `realProductionTooltip()`. Dritte Kopie der Crawler-Mathematik in `roiMine()` (`ogkush.js:16599`–`16688`).
+Gleichzeitig liegt in `src/util/productionEngine.js` Produktionsmodell mit **100 % Abdeckung** (`plasmaBonus`, `effectiveCrawlers`, `crawlerBonus`, `realProduction`, `productionBreakdown`) — benutzt an **einer** Stelle, `realProductionTooltip()`. Dritte Kopie der Crawler-Mathematik in `roiMine()` (`ogCore.js:16599`–`16688`).
 
 Drei Modelle, eines getestet, Löcher stecken in den zwei ungetesteten.
 
@@ -120,21 +120,21 @@ Drei Modelle, eines getestet, Löcher stecken in den zwei ungetesteten.
 
 | Ort                        | Alias                                | Ersatz                        |
 | :------------------------- | :----------------------------------- | :---------------------------- |
-| `ogkush.js:140`            | `createDOM`                          | `DOM.createDOM`               |
-| `ogkush.js:145`            | `createSVG`                          | `DOM.createSVG`               |
-| `ogkush.js:151`            | `toFormatedNumber`                   | `Numbers.toFormattedNumber`   |
-| `ogkush.js:156`            | `fromFormatedNumber`                 | `Numbers.fromFormattedNumber` |
-| `ogkush.js:14081`          | `Element.prototype.html` / DOMPurify | globale Funktion              |
+| `ogCore.js:140`            | `createDOM`                          | `DOM.createDOM`               |
+| `ogCore.js:145`            | `createSVG`                          | `DOM.createSVG`               |
+| `ogCore.js:151`            | `toFormatedNumber`                   | `Numbers.toFormattedNumber`   |
+| `ogCore.js:156`            | `fromFormatedNumber`                 | `Numbers.fromFormattedNumber` |
+| `ogCore.js:14081`          | `Element.prototype.html` / DOMPurify | globale Funktion              |
 | `SpyReport.js:158`, `:171` | zwei Getter                          | — nicht benannt               |
 
-Vier Modul-Aliase = Hauptgrund, warum `ogkush.js` sich nicht sauber schneiden lässt: datei-globale Kurznamen, die jede herausgezogene Datei mitnehmen müsste.
+Vier Modul-Aliase = Hauptgrund, warum `ogCore.js` sich nicht sauber schneiden lässt: datei-globale Kurznamen, die jede herausgezogene Datei mitnehmen müsste.
 
-→ **Einordnung: Phase 3, mechanischer erster Schritt jedes Schnitts.** Wer Modul herauszieht, ersetzt darin Aliase durch Importe. Aliase in `ogkush.js` fallen weg, sobald letzte Nutzung weg. Für `SpyReport.js:158/171` fehlt Angabe, wodurch ersetzen — Autor muss klären, sonst Markierung wertlos.
+→ **Einordnung: Phase 3, mechanischer erster Schritt jedes Schnitts.** Wer Modul herauszieht, ersetzt darin Aliase durch Importe. Aliase in `ogCore.js` fallen weg, sobald letzte Nutzung weg. Für `SpyReport.js:158/171` fehlt Angabe, wodurch ersetzen — Autor muss klären, sonst Markierung wertlos.
 
 ### 3.5 Abgeschaltete Features, die noch im Startpfad hängen
 
-- **Tooltip-Kette** (`ogkush.js:106`, `:1763`, `:14935`) — siehe Phase 1, Problem D. ~120 tote Zeilen, ein wirkungsloser Aufruf in `start()`.
-- **`showTabTimer()`** — Aufruf in `start()` (`ogkush.js:1782`) auskommentiert, Methode (`:18704`, ~22 Zeilen) enthält siebenzeiligen TODO-Block: in Uhrbereich verschieben, OGame-Zeitstempel nutzen, Zeitzonen-Indikator und Ping-Anzeige integrieren, Performance-API statt eigener Messung, umbenennen, wieder aktivieren. Das ist **Feature-Entwurf im Kommentar**, kein TODO. Gehört nach `docs/roadmap.md` oder in Issue; Methode wird gelöscht.
+- **Tooltip-Kette** (`ogCore.js:106`, `:1763`, `:14935`) — siehe Phase 1, Problem D. ~120 tote Zeilen, ein wirkungsloser Aufruf in `start()`.
+- **`showTabTimer()`** — Aufruf in `start()` (`ogCore.js:1782`) auskommentiert, Methode (`:18704`, ~22 Zeilen) enthält siebenzeiligen TODO-Block: in Uhrbereich verschieben, OGame-Zeitstempel nutzen, Zeitzonen-Indikator und Ping-Anzeige integrieren, Performance-API statt eigener Messung, umbenennen, wieder aktivieren. Das ist **Feature-Entwurf im Kommentar**, kein TODO. Gehört nach `docs/roadmap.md` oder in Issue; Methode wird gelöscht.
 
 → **Einordnung: Phase 1 (löschen), Entwurf nach `docs/roadmap.md` umziehen.**
 
@@ -142,11 +142,11 @@ Vier Modul-Aliase = Hauptgrund, warum `ogkush.js` sich nicht sauber schneiden l�
 
 | Ort                                      | Aufgabe                                                                                                                                                                    | Wohin                                            |
 | :--------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
-| `ogkush.js:12228`–`12232`                | `updateLifeform()`: `// WIP` + „temporary hack until code reworked to work with unique needLifeformUpdate" — setzt das Flag für **alle** Planeten zurück, statt pro Planet | Phase 3, Modul 8                                 |
-| `ogkush.js:13699`                        | `checkDebris()`: „reuse code?, hide debris image with css?, align style"                                                                                                   | Phase 3, Modul 5                                 |
-| `ogkush.js:14634`                        | „make throttle class for reuse it?" — Drosselung ist ad hoc eingebaut                                                                                                      | Phase 3, dann `util/`                            |
-| `ogkush.js:16075`                        | PTRE-Team-Key: ungültiges Format wird **stillschweigend** geschluckt, Fehlertext fehlt                                                                                     | Phase 6, kleiner UX-Fix                          |
-| `ogkush.js:19008`                        | „workaround for 'DOMPurify not defined' issue" — der `waitForDefinition`-Block im Boot                                                                                     | bleibt, aber Kommentar erklärt das _Warum_ nicht |
+| `ogCore.js:12228`–`12232`                | `updateLifeform()`: `// WIP` + „temporary hack until code reworked to work with unique needLifeformUpdate" — setzt das Flag für **alle** Planeten zurück, statt pro Planet | Phase 3, Modul 8                                 |
+| `ogCore.js:13699`                        | `checkDebris()`: „reuse code?, hide debris image with css?, align style"                                                                                                   | Phase 3, Modul 5                                 |
+| `ogCore.js:14634`                        | „make throttle class for reuse it?" — Drosselung ist ad hoc eingebaut                                                                                                      | Phase 3, dann `util/`                            |
+| `ogCore.js:16075`                        | PTRE-Team-Key: ungültiges Format wird **stillschweigend** geschluckt, Fehlertext fehlt                                                                                     | Phase 6, kleiner UX-Fix                          |
+| `ogCore.js:19008`                        | „workaround for 'DOMPurify not defined' issue" — der `waitForDefinition`-Block im Boot                                                                                     | bleibt, aber Kommentar erklärt das _Warum_ nicht |
 | `messages-analyzer/index.js:513`         | auskommentierter Deuterium-Parser                                                                                                                                          | Phase 1, Punkt 5                                 |
 | `ctxcontent/helpers/universe.data.js:75` | „Need mapping implementation to lifeforms" — der einzige `universe.*`-TODO, der **nicht** zu 3.1 gehört                                                                    | eigener PR, zusammen mit 3.1                     |
 | `scripts/install-local.mjs:61`           | erklärender Kommentar zu Firefox-Temporär-Add-ons                                                                                                                          | kein Handlungsbedarf                             |
@@ -155,7 +155,7 @@ Vier Modul-Aliase = Hauptgrund, warum `ogkush.js` sich nicht sauber schneiden l�
 
 **Kein** Wildwuchs, sondern Repo-Konvention aus `docs/testing.md`: Tests, die absichtlich falsches Verhalten festschreiben, damit Fix als bewusste Änderung sichtbar wird. Aktuell **11 `KNOWN BUG:`** und **3 `TRAP:`**.
 
-Drei `TRAP:`-Tests (`test/util/OGIData.test.js:127`, `:187`, `:206`) beschreiben Write-Through-Contract und bleiben — Leitplanke 4 in Testform.
+Drei `TRAP:`-Tests (`test/util/OGBIData.test.js:127`, `:187`, `:206`) beschreiben Write-Through-Contract und bleiben — Leitplanke 4 in Testform.
 
 Elf `KNOWN BUG:`-Tests = echte Fehler mit bekanntem Ort:
 
@@ -164,13 +164,13 @@ Elf `KNOWN BUG:`-Tests = echte Fehler mit bekanntem Ort:
 | `test/util/service.callbackEvent.test.js`  | 46, 349, 366  | Bridge: `ReferenceError` ohne `chrome`; Token wird mit `"1"` überschrieben; Anfrage auf unbekanntes Token wird **nie** aufgelöst |
 | `test/util/ogame.coordinate.test.js`       | 125, 138, 148 | Falscher Fehlertyp; `toNumber` ignoriert Instanztyp; `toString` liefert `undefined` statt zu werfen                              |
 | `test/ctxcontent/universe.helpers.test.js` | 219, 235      | Formatiertes XML lässt die Parser abstürzen; Fehlerantwort kommt als `TypeError`                                                 |
-| `test/util/OGIData.construction.test.js`   | 56            | Beschädigter `localStorage`-Inhalt lässt den Import abstürzen                                                                    |
+| `test/util/OGBIData.construction.test.js`  | 56            | Beschädigter `localStorage`-Inhalt lässt den Import abstürzen                                                                    |
 | `test/util/runContext.test.js`             | 103           | Unbekannter Browser wirft, statt einen Kontext zu melden                                                                         |
 | `test/util/numbers.test.js`                | 64            | Präzision `0` wird ignoriert                                                                                                     |
 
-Zwei davon mehr als Schönheitsfehler: **nie auflösende Promise** in Bridge (`service.callbackEvent.test.js:366`) hängt aufrufende Stelle dauerhaft, und **Absturz bei beschädigtem `localStorage`** (`OGIData.construction.test.js:56`) heißt: eine kaputte Speicherung macht Extension unbenutzbar, ohne Selbstheilung.
+Zwei davon mehr als Schönheitsfehler: **nie auflösende Promise** in Bridge (`service.callbackEvent.test.js:366`) hängt aufrufende Stelle dauerhaft, und **Absturz bei beschädigtem `localStorage`** (`OGBIData.construction.test.js:56`) heißt: eine kaputte Speicherung macht Extension unbenutzbar, ohne Selbstheilung.
 
-→ **Einordnung: die zwei oben in Phase 2 mitnehmen** (Bridge und `OGIData` werden dort ohnehin angefasst), restliche neun als eigene kleine PRs, jeweils „Fix + Präfix am Test entfernen", wie `docs/testing.md` vorschreibt. Kein stilles Löschen eines Tests.
+→ **Einordnung: die zwei oben in Phase 2 mitnehmen** (Bridge und `OGBIData` werden dort ohnehin angefasst), restliche neun als eigene kleine PRs, jeweils „Fix + Präfix am Test entfernen", wie `docs/testing.md` vorschreibt. Kein stilles Löschen eines Tests.
 
 ### 3.8 Regel für neue Marker
 
@@ -203,8 +203,8 @@ Ohne Nummer: sofort machen oder gar nicht schreiben. ESLint-Regelsatz aus Phase 
 **Was gemacht wurde.**
 
 1. **Vier redundante Stilregeln aus `.eslintrc.cjs` gelöscht.** `prettier/prettier` bleibt einzige Instanz für Stil. Kommentar an `extends`-Zeile hält fest, warum dort nichts wieder eingeschaltet werden darf. 404 → 164 Fehler, exakt die vorhergesagten 240. Mitgelöscht: wirkungsloser `overrides`-Block (`files`/`excludedFiles` ohne `rules` = No-op; `src/libs/` wird von `.eslintignore` ausgeschlossen).
-2. **Fünf tatsächlich unformatierte Dateien formatiert** — nur diese fünf: `ctxcontent/services/analyzer/ExpeditionMessagesAnalyzer.js`, `ctxcontent/services/analyzer/SpyMessagesAnalyzer.js`, `ctxpage/messages/index.js`, `ctxpage/traderOverview/TraderImportExportPage.js`, `util/enum/itemImageID.js`. `ogkush.js` war bereits Prettier-konform, nicht angefasst.
-3. **6 echte Funde behoben**, alle in `ogkush.js`, alle semantisch neutral:
+2. **Fünf tatsächlich unformatierte Dateien formatiert** — nur diese fünf: `ctxcontent/services/analyzer/ExpeditionMessagesAnalyzer.js`, `ctxcontent/services/analyzer/SpyMessagesAnalyzer.js`, `ctxpage/messages/index.js`, `ctxpage/traderOverview/TraderImportExportPage.js`, `util/enum/itemImageID.js`. `ogCore.js` war bereits Prettier-konform, nicht angefasst.
+3. **6 echte Funde behoben**, alle in `ogCore.js`, alle semantisch neutral:
 
    | Ort              | Fund                    | Änderung                                                                            |
    | :--------------- | :---------------------- | :---------------------------------------------------------------------------------- |
@@ -221,7 +221,7 @@ Ohne Nummer: sofort machen oder gar nicht schreiben. ESLint-Regelsatz aus Phase 
 - `npm run check` deckt jetzt auch `scripts/*.mjs` ab, wie `npm run format` schon tat. `bundle.mjs` und `build-unpacked.mjs` sind buildkritisch und waren ungelintet. Waren bereits sauber — Lücke schließt sich ohne eine einzige Änderung an ihnen.
 - `.prettierrc` bekommt `"endOfLine": "lf"` explizit. Prettiers Vorgabewert, ändert also nichts, hält aber Absicht fest, die vorher in der gelöschten `linebreak-style`-Regel steckte. Durchgesetzt ohnehin schon von `.gitattributes` (`* text=auto eol=lf`).
 
-**Bewusst nicht geändert: `printWidth: 120` und `trailingComma: "es5"`.** Beide weichen von Prettiers Vorgabe (80 / `"all"`) ab, beide dürften laut Auftrag angefasst werden. Änderung würde aber kompletten Baum umformatieren, `ogkush.js` eingeschlossen — genau der Diff, den `CLAUDE.md` und Phase 0 („Risiko praktisch keins") vermeiden wollen. 120 Spalten = bewusste, dokumentierte Projektentscheidung. Falls doch gewünscht: eigener Commit, nichts anderes darin, und `.git-blame-ignore-revs` anlegen.
+**Bewusst nicht geändert: `printWidth: 120` und `trailingComma: "es5"`.** Beide weichen von Prettiers Vorgabe (80 / `"all"`) ab, beide dürften laut Auftrag angefasst werden. Änderung würde aber kompletten Baum umformatieren, `ogCore.js` eingeschlossen — genau der Diff, den `CLAUDE.md` und Phase 0 („Risiko praktisch keins") vermeiden wollen. 120 Spalten = bewusste, dokumentierte Projektentscheidung. Falls doch gewünscht: eigener Commit, nichts anderes darin, und `.git-blame-ignore-revs` anlegen.
 
 **Exit-Kriterium — erfüllt.** `npm run check` = 0 Fehler, `prettier --check` grün über `src`, `test`, `scripts`, Tests 391/391, Lint gatet in CI.
 
@@ -231,19 +231,19 @@ Ohne Nummer: sofort machen oder gar nicht schreiben. ESLint-Regelsatz aus Phase 
 
 ## Phase 1 — Toter Code und Schein-Delegaten — **ERLEDIGT**
 
-`src/ogkush.js`: 19.024 → **18.654 Zeilen** (−370). Getrackte Dateien: 315 → **192** (−123). Tests 391 → **395**, alle grün. Lint 0. Build läuft (`ogkush.js`-Bundle 1128 KB).
+`src/ogCore.js`: 19.024 → **18.654 Zeilen** (−370). Getrackte Dateien: 315 → **192** (−123). Tests 391 → **395**, alle grün. Lint 0. Build läuft (`ogCore.js`-Bundle 1128 KB).
 
 ### Problem A — Methoden ohne Aufrufer
 
 Neun der zehn geplanten wirklich tot und weg: `calcAvailableFret`, `cleanValue`, `convertDuration`, `generateGalaxyLink`, `getJSON`, `hasActivityChanged`, `recordActivityChange`, `recordLostConnectivity`, `resetStalk` (148 Zeilen).
 
-**Der zehnte war nicht tot.** `fetchAndConvertRC` (96 Zeilen) wird aus `ctxpage/messages-analyzer/index.js:385` gerufen, Datei ist live — genau der Punkt, den Schritt 5 offen hält. Ursprünglicher Plan übersah den Aufruf, weil er über `this` aus einem `.call(this)` läuft und in keiner Suche nach `ogKush.fetchAndConvertRC` auftaucht. Bleibt, bis Entscheidung über Alt-Analyzer gefallen. Erklärt zugleich das knapp verfehlte Zeilenziel: diese eine Methode ist mehr als Hälfte der Lücke.
+**Der zehnte war nicht tot.** `fetchAndConvertRC` (96 Zeilen) wird aus `ctxpage/messages-analyzer/index.js:385` gerufen, Datei ist live — genau der Punkt, den Schritt 5 offen hält. Ursprünglicher Plan übersah den Aufruf, weil er über `this` aus einem `.call(this)` läuft und in keiner Suche nach `ogCore.fetchAndConvertRC` auftaucht. Bleibt, bis Entscheidung über Alt-Analyzer gefallen. Erklärt zugleich das knapp verfehlte Zeilenziel: diese eine Methode ist mehr als Hälfte der Lücke.
 
 ### Problem D — die abgeschaltete Tooltip-Kette
 
 Gelöscht: `goodbyeTipped`-Kommentarblock (33 Zeilen), `betterTooltip()` samt Aufruf in `start()`, `showTooltip()`, `betterAPITooltip()` — und im Nachlauf `trashsimTooltip()`, `this.eventAction` und der dadurch unbenutzte `json.js`-Import. Zusammen 174 Zeilen.
 
-Frage „Übergang tipped → tippy passiert oder aufgegeben?" entschieden: **passiert.** Beleg im Code selbst — `ogkush.js` ruft an anderer Stelle `ship._tippy.disable()`. Spiel benutzt tippy, Workaround wartete auf Ereignis, das längst eingetreten war.
+Frage „Übergang tipped → tippy passiert oder aufgegeben?" entschieden: **passiert.** Beleg im Code selbst — `ogCore.js` ruft an anderer Stelle `ship._tippy.disable()`. Spiel benutzt tippy, Workaround wartete auf Ereignis, das längst eingetreten war.
 
 **Eine Löschung entfernt echtes Feature:** `trashsimTooltip()` baute Trashsim-Prefill-Button in Flotten-Tooltips. Seit Abschaltung nicht erreichbar, hing aber nur an `showTooltip()`. Halb löschen wäre dritter Zustand, den Plan verbietet — also ganz weg. Historie hat ihn; wer ihn zurückwill, hängt ihn an tippy-Pfad, nicht an `Tipped.show`.
 
@@ -253,11 +253,11 @@ Ebenfalls weg: **`showTabTimer()`** (22 Zeilen), dessen Aufruf in `start()` ausk
 
 `tooltip()` (3 Aufrufe), `popup()` (15), `formatToUnits()` (1) aufgelöst, Aufrufstellen auf `utilTooltip.tooltip` / `popupUtil.popup` / `Numbers.formatToUnits` umgestellt.
 
-**Dabei echter Bug aufgefallen.** `SpyMessagesAnalyzer.js:660` rief `this.popup(…)` — aber `SpyMessagesAnalyzer` hat keine `popup`-Methode, erbt von nichts und ist nicht die `OGInfinity`-Klasse. Aufruf warf also `TypeError: this.popup is not a function`, genau in dem Zweig, der dem Benutzer sagen soll, dass kein externer Simulator konfiguriert ist. Jetzt direkter Import aus `util/popup.js`. Ohne Auflösung der Delegaten nicht aufgefallen: gleichnamige Klassenmethode in `ogkush.js` ließ Aufruf im ganzen Repo plausibel aussehen.
+**Dabei echter Bug aufgefallen.** `SpyMessagesAnalyzer.js:660` rief `this.popup(…)` — aber `SpyMessagesAnalyzer` hat keine `popup`-Methode, erbt von nichts und ist nicht die `OGBInfinity`-Klasse. Aufruf warf also `TypeError: this.popup is not a function`, genau in dem Zweig, der dem Benutzer sagen soll, dass kein externer Simulator konfiguriert ist. Jetzt direkter Import aus `util/popup.js`. Ohne Auflösung der Delegaten nicht aufgefallen: gleichnamige Klassenmethode in `ogCore.js` ließ Aufruf im ganzen Repo plausibel aussehen.
 
 ### Problem C — `createDOM` doppelt
 
-`createDOMSanitized()` liegt jetzt in `util/dom.js`, die 52 Aufrufstellen (51 in `ogkush.js`, 1 in `messages-analyzer`) zeigen darauf, Klassenmethode weg. **Nicht** durch `DOM.createDOM` ersetzt — Unterschied ist real und bleibt:
+`createDOMSanitized()` liegt jetzt in `util/dom.js`, die 52 Aufrufstellen (51 in `ogCore.js`, 1 in `messages-analyzer`) zeigen darauf, Klassenmethode weg. **Nicht** durch `DOM.createDOM` ersetzt — Unterschied ist real und bleibt:
 
 |                | `createDOM`                   | `createDOMSanitized`                 |
 | :------------- | :---------------------------- | :----------------------------------- |
@@ -285,7 +285,7 @@ Vorher geprüft: alle 123 Dateien haben Gegenstück in `src/`, keine Schlüssel 
 
 | Kriterium                | Ziel            | Ist                                                     |
 | :----------------------- | :-------------- | :------------------------------------------------------ |
-| `ogkush.js`              | < 18.500 Zeilen | **18.654** — verfehlt, siehe `fetchAndConvertRC` oben   |
+| `ogCore.js`              | < 18.500 Zeilen | **18.654** — verfehlt, siehe `fetchAndConvertRC` oben   |
 | Methode ohne Aufrufer    | 0               | **0** von 151                                           |
 | Funktion doppelt im Repo | 0               | **0** (`createDOM`, `cleanValue`, `generateGalaxyLink`) |
 | `git ls-files`           | −123            | **−123** (315 → 192)                                    |
@@ -297,7 +297,7 @@ Zeilenziel war Schätzung in diesem Plan, keine Anforderung, beruhte auf „10 t
 
 ## Phase 2 — Charakterisierungstests — **ERLEDIGT**
 
-Tests **395 → 485**, alle grün. Lint 0. Bundle 1122 KB. `ogkush.js` **18.435 Zeilen**.
+Tests **395 → 485**, alle grün. Lint 0. Bundle 1122 KB. `ogCore.js` **18.435 Zeilen**.
 
 ### Vorbedingung: v12-Support ist gefallen
 
@@ -316,18 +316,18 @@ Lesevorgänge **wörtlich** übernommen, einschließlich der drei Stellen, die a
 
 Nebenbei festgehalten: `stripCoordinateBrackets()` ist **nicht idempotent** — zweimal aufgerufen frisst es die Koordinaten an. Als `TRAP:` markiert.
 
-**`new OGInfinity()` läuft jetzt im Test.** Dafür exportiert `ogkush.js` die Klasse — ausschließlich zu diesem Zweck, dokumentiert an der Export-Zeile, und `test/bundle.test.js` prüft, dass es der **einzige** Export des Page-Bundles bleibt. Zur Laufzeit importiert die Datei niemand; sie wird als `<script type="module">` injiziert, wo ungenutzter Export wirkungslos ist.
+**`new OGBInfinity()` läuft jetzt im Test.** Dafür exportiert `ogCore.js` die Klasse — ausschließlich zu diesem Zweck, dokumentiert an der Export-Zeile, und `test/bundle.test.js` prüft, dass es der **einzige** Export des Page-Bundles bleibt. Zur Laufzeit importiert die Datei niemand; sie wird als `<script type="module">` injiziert, wo ungenutzter Export wirkungslos ist.
 
 Alternativweg — Methoden erst herausziehen, dann herausgezogenen Stand testen — prüft nicht die Verschiebung, nur ihr Ergebnis. Genau davor warnt diese Phase.
 
 ### Schritt 3 — die zwölf Rechenkerne
 
-Alle zwölf abgedeckt, 35 Tests in `test/ogkush.calculations.test.js`. Aufruf über `OGInfinity.prototype` mit selbstgebautem `this`; erwartete Werte stammen aus laufendem Code, nicht aus Nachrechnung — Punkt einer Charakterisierung.
+Alle zwölf abgedeckt, 35 Tests in `test/ogCore.calculations.test.js`. Aufruf über `OGBInfinity.prototype` mit selbstgebautem `this`; erwartete Werte stammen aus laufendem Code, nicht aus Nachrechnung — Punkt einer Charakterisierung.
 
 **Zwei echte Fehler dabei gefunden**, beide als `KNOWN BUG:` festgeschrieben:
 
 1. **`roiMine()` verrechnet sich um ein Vielfaches.** Kostenschleife zählt `lvl` hoch, übergibt aber `tolvl` an `building()`. Ausbau von 20 auf 25 wird als **fünfmal die Kosten von Stufe 25** bepreist statt als Summe der Stufen 21–25. Amortisationszeit systematisch zu hoch, umso mehr je mehr Stufen der Vorschlag überspringt — also genau bei den großen Sprüngen, für die man das Werkzeug benutzt. `roiLfBuilding()`, zwei Methoden weiter oben, macht dieselbe Schleife richtig.
-2. **`getBestRoi()` mittelt über zwei verschiedene Listen.** Summiert Minenstufen über `OGIData.empire`, teilt aber durch `this.json.empire.length`. In Produktion dasselbe Array, Fehler also latent. Driften beide auseinander, wird `averageMines` bei leerer `json.empire` **Infinity** — und `roiAstrophysics()` zählt dann `for (lvl = 1; lvl <= Infinity;
+2. **`getBestRoi()` mittelt über zwei verschiedene Listen.** Summiert Minenstufen über `OGBIData.empire`, teilt aber durch `this.json.empire.length`. In Produktion dasselbe Array, Fehler also latent. Driften beide auseinander, wird `averageMines` bei leerer `json.empire` **Infinity** — und `roiAstrophysics()` zählt dann `for (lvl = 1; lvl <= Infinity;
 lvl++)` und hängt die Seite auf. Beim Schreiben dieses Tests genau das passiert: erster Anlauf lief 120 Sekunden ins Timeout.
 
 ### Schritt 4 — `background.js`
@@ -342,7 +342,7 @@ lvl++)` und hängt die Seite auf. Beim Schreiben dieses Tests genau das passiert
 
 **Zwei weitere echte Fehler:**
 
-3. **`TradeMessagesAnalyzer` wirft weg, was es berechnet.** Beide Rückschreibungen in den Store auskommentiert (`/*OGIData.trades = trades;*/`), und **niemand sonst** schreibt `trades` — Alt-Analyzer behandelt Transporte gar nicht. `OGIData.trades` bleibt also für immer leer, `msgId`-Cache eine Zeile darüber kann nie greifen, Handelsstatistik hat keine Datenquelle.
+3. **`TradeMessagesAnalyzer` wirft weg, was es berechnet.** Beide Rückschreibungen in den Store auskommentiert (`/*OGBIData.trades = trades;*/`), und **niemand sonst** schreibt `trades` — Alt-Analyzer behandelt Transporte gar nicht. `OGBIData.trades` bleibt also für immer leer, `msgId`-Cache eine Zeile darüber kann nie greifen, Handelsstatistik hat keine Datenquelle.
 4. **Eine unpassende Nachricht leert den ganzen Kampfbericht-Tab.** Weder `#getExpeditionFight()` noch `#getFight()` prüft `data-raw-messagetype`; sie sehen nur auf Koordinaten und Hashcode. Alles andere landet im Parser, wo `JSON.parse(null).owner` wirft — und der Fehler verlässt `analyze()`, sodass jede Nachricht danach übersprungen wird. Harvest und Trade filtern beide zuerst auf den Typ.
 
 **Korrektur zur Phase-1-Notiz:** dort stand, dem neuen Pfad fehle gegenüber `messages-analyzer/index.js` nur die `.msg_date`-Zeitzonenumschreibung. Befund 3 zeigt, dass auch Handelsdaten in keinem der beiden Pfade ankommen. Entscheidung („neuer Pfad gewinnt") bleibt, aber Liste dessen, was vor dem Löschen entstehen muss, ist länger als gedacht.
@@ -354,24 +354,24 @@ lvl++)` und hängt die Seite auf. Beim Schreiben dieses Tests genau das passiert
 
 ### Exit-Kriterien
 
-| Kriterium                  | Ziel      | Ist                                                        |
-| :------------------------- | :-------- | :--------------------------------------------------------- |
-| Die 12 Rechenkerne         | abgedeckt | **12/12**, 35 Tests                                        |
-| `background.js`            | > 70 %    | **81 % Zeilen / 71 % Zweige**                              |
-| Analyzer                   | ≥ 1 Test  | **alle 5**, 19 Tests                                       |
-| `OGInfinity` konstruierbar | ja        | **ja** (`pageContext.js`, 100 %)                           |
-| `KNOWN BUG:`-Tests         | 11 → 9    | **9 alte, 2 behoben** — plus **7 neu gefundene**, jetzt 16 |
-| Tests gesamt               | —         | 395 → **485**                                              |
+| Kriterium                   | Ziel      | Ist                                                        |
+| :-------------------------- | :-------- | :--------------------------------------------------------- |
+| Die 12 Rechenkerne          | abgedeckt | **12/12**, 35 Tests                                        |
+| `background.js`             | > 70 %    | **81 % Zeilen / 71 % Zweige**                              |
+| Analyzer                    | ≥ 1 Test  | **alle 5**, 19 Tests                                       |
+| `OGBInfinity` konstruierbar | ja        | **ja** (`pageContext.js`, 100 %)                           |
+| `KNOWN BUG:`-Tests          | 11 → 9    | **9 alte, 2 behoben** — plus **7 neu gefundene**, jetzt 16 |
+| Tests gesamt                | —         | 395 → **485**                                              |
 
 Letzte Zeile ist eigentlicher Ertrag dieser Phase, nicht die Zahl: **sieben Fehler, die vorher niemand sehen konnte**, davon vier mit echter Wirkung im Spiel (`roiMine`-Kosten, Handelsstatistik ohne Daten, Kampfbericht-Tab, aufgehängte Seite bei Infinity). Genau der Zweck von Charakterisierungstests: sie finden nichts, indem sie klug sind, sondern indem sie Code zum ersten Mal ausführen.
 
-**Risiko für Phase 3.** Netz deckt Rechenkerne, Konstruktor, Service Worker und Tab-Verteilung ab. Deckt **nicht** die ~150 DOM-schreibenden Methoden in `ogkush.js` ab. Wer dort schneidet, hat weiterhin kein Netz — Phase 3 muss das Modul für Modul mitziehen, nicht darauf vertrauen, dass Phase 2 es erledigt hat.
+**Risiko für Phase 3.** Netz deckt Rechenkerne, Konstruktor, Service Worker und Tab-Verteilung ab. Deckt **nicht** die ~150 DOM-schreibenden Methoden in `ogCore.js` ab. Wer dort schneidet, hat weiterhin kein Netz — Phase 3 muss das Modul für Modul mitziehen, nicht darauf vertrauen, dass Phase 2 es erledigt hat.
 
 ---
 
-## Phase 3 — `ogkush.js` aufteilen — **ERLEDIGT**
+## Phase 3 — `ogCore.js` aufteilen — **ERLEDIGT**
 
-`src/ogkush.js`: 18.442 → **1.846 Zeilen**, 149 → **40 Methoden**. Tests 485 → **502**, alle grün.
+`src/ogCore.js`: 18.442 → **1.846 Zeilen**, 149 → **40 Methoden**. Tests 485 → **502**, alle grün.
 Lint 0. Bundle 1128 KB (vorher 1122). 36 neue Dateien, `src/ctxpage/` von 12 auf 40.
 
 Gemessen an der Ausgangslage des Plans: **19.024 → 1.846**, also 90 % der Datei verschoben.
@@ -404,8 +404,8 @@ Tabelle decken rund 12.000 Zeilen ab; darunter lagen weitere 4.500, die nirgends
 
 ### Wie der Zustand übergeben wird
 
-Die Plan-Regel „extrahierte Module bekommen **keine** Referenz auf die `OGInfinity`-Instanz" ist
-eingehalten. Jedes Modul bekommt ein einfaches Objekt; `OGInfinity` hat dafür acht Bauer:
+Die Plan-Regel „extrahierte Module bekommen **keine** Referenz auf die `OGBInfinity`-Instanz" ist
+eingehalten. Jedes Modul bekommt ein einfaches Objekt; `OGBInfinity` hat dafür acht Bauer:
 `playerBonuses()`, `dialogContext()`, `overviewContext()`, `settingsContext()`, `empireContext()`,
 `fleetContext()`, `galaxyContext()`, `planetBarContext()`, `technoContext()`, `pageContext()`.
 
@@ -413,7 +413,7 @@ Drei Fälle brauchten mehr als Werte, und in allen dreien steht ein Callback sta
 Methodenreferenz: der Ladewächter um `updateInfo()` (`isLoading` / `setLoading`), der Rückruf
 `flyingFleet()` / `updateSpaceShipsPresence()`, und der Setter `keyboardActionSkip`.
 
-`test/ogkush.construction.test.js` prüft für jeden Kontext, **welche Felder** er trägt, und dass
+`test/ogCore.construction.test.js` prüft für jeden Kontext, **welche Felder** er trägt, und dass
 keiner die Instanz selbst durchreicht.
 
 ### Sechs echte Fehler, gefunden beim Schneiden
@@ -423,17 +423,17 @@ keiner die Instanz selbst durchreicht.
    Modul OGames eigenes `fleetDispatcher`-Objekt. Als Klassenmethode konnten beide nebeneinander
    existieren, als Modulfunktion nicht — **die gesamte Flottenversand-Seite wäre tot gewesen.**
    Jetzt `initFleetDispatcher`. Gefunden von den migrierten Cargo-Tests.
-2. **`this` in `technologyDetails.show` gehört OGame, nicht OGI.** Die Funktion wird auf OGames
+2. **`this` in `technologyDetails.show` gehört OGame, nicht OGBI.** Die Funktion wird auf OGames
    eigenes Objekt gelegt; `this.technologyDetailsEndpoint` ist dessen Eigenschaft. Die pauschale
    Ersetzung nach `context.` hätte den Detailabruf auf `undefined` gestellt.
 3. **`that.createDOM(` war seit Phase 1 tot.** Damals wurde nur `this.createDOM(` umgeschrieben. Ein
    Aufruf im Lifeform-Bonus-Tooltip warf seitdem `TypeError`.
-4. **Zwölf Konstanten blieben in `ogkush.js` zurück**, während ihre Nutzer auszogen —
+4. **Zwölf Konstanten blieben in `ogCore.js` zurück**, während ihre Nutzer auszogen —
    `PLAYER_CLASS_*`, die drei Expeditions-Stufentabellen, `CARGO_SHIP_IDS`, `CLAIM_FREE`,
    `isOwnPlanet`, `debounce`, `ensureLZString`, `logger`. Jede davon ein `ReferenceError` beim
    ersten Aufruf, und jede hat gebaut, gelintet und gebündelt.
 5. **`statistics()` hat den übergebenen Kontext nie gespeichert.** Beim Modul-2-Schnitt bekam der
-   Aufruf in `ogkush.js` ein Kontextobjekt, die Signatur blieb aber parameterlos — das Statistik-
+   Aufruf in `ogCore.js` ein Kontextobjekt, die Signatur blieb aber parameterlos — das Statistik-
    Popup wäre auf `context.hasLifeforms` von `null` gelaufen.
 6. **Beim Aufteilen fielen zweimal ganze Dateien aus dem Modulgraphen.** `stats/index.js` referenziert
    seine Tabs als Werte (`minesStats`, nicht `minesStats()`), das Splitter-Werkzeug sah keine
@@ -452,12 +452,12 @@ Fünf der sechs Fehler oben sind unsichtbar: ESLint hat `no-undef` aus, das Bund
 Seite bricht erst, wenn jemand sie öffnet. `test/ctxpage/module-wiring.test.js` prüft deshalb
 statisch:
 
-- **kein extrahiertes Modul benutzt eine Bindung, die nur `ogkush.js` deklariert** (fängt 4),
+- **kein extrahiertes Modul benutzt eine Bindung, die nur `ogCore.js` deklariert** (fängt 4),
 - **das einzige `this` in einem Modul gehört einem OGame-Objekt** — mit namentlicher Liste, welche
   Lesezugriffe das sind (fängt 2),
-- **jedes extrahierte Modul ist von `ogkush.js` aus erreichbar** (fängt 6).
+- **jedes extrahierte Modul ist von `ogCore.js` aus erreichbar** (fängt 6).
 
-Dazu `test/ogkush.wiring.test.js`: kein `this.foo()` in `ogkush.js` zeigt auf eine Methode, die es
+Dazu `test/ogCore.wiring.test.js`: kein `this.foo()` in `ogCore.js` zeigt auf eine Methode, die es
 nicht mehr gibt (fängt 3).
 
 ### Tests, die mitgewandert sind
@@ -465,18 +465,18 @@ nicht mehr gibt (fängt 3).
 `test/util/gameFormulas.test.js` (27) und `test/ctxpage/fleetdispatch.test.js` (9) sind die
 Charakterisierungstests aus Phase 2, unverändert in ihren Erwartungswerten. **Das ist der Beleg für
 die Verschiebung**: die Zahlen wurden vor dem Schnitt aufgenommen und gelten danach noch.
-`test/util/tabs.test.js` (6) ist neu und deckt das Tab-Widget ab, das aus `ogkush.js` kam.
+`test/util/tabs.test.js` (6) ist neu und deckt das Tab-Widget ab, das aus `ogCore.js` kam.
 
-Eine Nebenwirkung des Schnitts ist eine Reparatur: `getBestRoi()` mittelte über `OGIData.empire`
+Eine Nebenwirkung des Schnitts ist eine Reparatur: `getBestRoi()` mittelte über `OGBIData.empire`
 und teilte durch `this.json.empire.length` — zwei Lesewege, die nur zufällig übereinstimmten. Im
-Modul sind beide `OGIData.json.empire`, das Auseinanderdriften ist damit unmöglich, und der
+Modul sind beide `OGBIData.json.empire`, das Auseinanderdriften ist damit unmöglich, und der
 `KNOWN BUG:`-Test dazu ist zu einem normalen Test geworden.
 
 ### Exit-Kriterien
 
 | Kriterium            | Ziel                       | Ist                                           |
 | :------------------- | :------------------------- | :-------------------------------------------- |
-| `ogkush.js`          | < 2.000 Zeilen             | **1.846**                                     |
+| `ogCore.js`          | < 2.000 Zeilen             | **1.846**                                     |
 | Datei > 1.000 Zeilen | keine außer `translate.js` | **drei übrig**, siehe unten                   |
 | Bundle-Test          | grün                       | **grün**, plus drei neue Verdrahtungs-Wächter |
 | Startup-Profil       | nicht schlechter           | **nicht gemessen** — braucht einen Browser    |
@@ -486,7 +486,7 @@ Modul sind beide `OGIData.json.empire`, das Auseinanderdriften ist damit unmögl
 (1.330 / 1.260) und `settings/index.js` (1.064 / 898). Weiter zu teilen heißt, diese Funktionen
 aufzubrechen — eine Umstrukturierung, keine Verschiebung, und damit ausdrücklich nicht das, was
 diese Phase tut. Sie sind der erste Punkt für danach.
-`ctxcontent/services/analyzer/SpyMessagesAnalyzer.js` (1.039) war nie Teil von `OGInfinity`.
+`ctxcontent/services/analyzer/SpyMessagesAnalyzer.js` (1.039) war nie Teil von `OGBInfinity`.
 
 **Das Startup-Profil ist offen.** `localStorage["ogi-perf"] = "1"` vor und nach dem Schnitt zu
 vergleichen verlangt einen laufenden Browser auf einer echten OGame-Seite; das steht noch aus, und
@@ -498,18 +498,18 @@ Reihenfolge, in einem Bundle, das 6 KB größer ist.
 
 ## Phase 4 — Ein Weg zum Store
 
-**Problem.** `this.json.*` (755 Stellen) und `OGIData.*` (120 Stellen) zeigen auf denselben `localStorage["ogk-data"]`. `this.json` wird in `init()` einmal auf `OGIData.json` gesetzt und danach direkt mutiert — umgeht die Setter, die Write-Through machen, weshalb es überall `this.saveData()` braucht (82 Aufrufe). Genau diese Doppelung ist der Grund, warum extrahiertes Modul aus Phase 3 sonst wieder Instanzreferenz mitschleppen müsste.
+**Problem.** `this.json.*` (755 Stellen) und `OGBIData.*` (120 Stellen) zeigen auf denselben `localStorage["ogk-data"]`. `this.json` wird in `init()` einmal auf `OGBIData.json` gesetzt und danach direkt mutiert — umgeht die Setter, die Write-Through machen, weshalb es überall `this.saveData()` braucht (82 Aufrufe). Genau diese Doppelung ist der Grund, warum extrahiertes Modul aus Phase 3 sonst wieder Instanzreferenz mitschleppen müsste.
 
 **Schritte.**
 
-1. Erst inventarisieren: welche der 755 Stellen **lesen** nur (trivial umstellbar), welche mutieren (brauchen `OGIData.x = …` statt `OGIData.x.y = …`).
+1. Erst inventarisieren: welche der 755 Stellen **lesen** nur (trivial umstellbar), welche mutieren (brauchen `OGBIData.x = …` statt `OGBIData.x.y = …`).
 2. Modul für Modul umstellen, in derselben Reihenfolge wie Phase 3, jeweils direkt nach dem Schnitt.
 3. Erst wenn Zone vollständig auf Setter umgestellt, dortige `saveData()`-Aufrufe entfernen — dann redundant.
 4. **Kein Deferred Write.** Bereits versucht und bewusst zurückgenommen (`docs/performance.md`). Gewinn kommt hier aus _weniger_ Schreibvorgängen, nicht aus _späteren_.
 
 **Nebenschauplatz gleicher Art:** `createCallbackToken()` existiert zweimal — in `util/service.callbackEvent.js` und handkopiert in `src/main.js`, weil klassisches Content-Script nicht importieren kann. Begründet und kommentiert, aber ungetestet: Test, der beide Implementierungen gegeneinander prüft, kostet zehn Zeilen und verhindert stilles Auseinanderlaufen.
 
-**Exit-Kriterium.** `this.json` existiert nicht mehr; `saveData()`-Aufrufe unter 20; `TRAP:`-Tests in `test/util/OGIData.test.js` unverändert grün.
+**Exit-Kriterium.** `this.json` existiert nicht mehr; `saveData()`-Aufrufe unter 20; `TRAP:`-Tests in `test/util/OGBIData.test.js` unverändert grün.
 
 ---
 
@@ -536,8 +536,8 @@ Code sagt selbst, wo Grenzen liegen: 37 Abfragen auf `this.page`, davon 18 auf `
 
 Kleinere Punkte, keine eigene Phase nötig, aber nicht vergessen. Jeder ein eigener Commit.
 
-- **Regelverstoß, weiterhin offen.** `ogkush.js:17815` startet auf Overview-Seite ein `setInterval`, das `location.reload()` aufruft, sobald Rohstoffspeicher volläuft. Timergesteuerter Seiten-Reload, damit **`AGENTS.md` §1.3 verboten** („Auto refreshing/reloading game page (timer or otherwise)"). `docs/performance.md` weist bereits darauf hin. Produktentscheidung, kein Refactoring: entweder entfernen oder in etwas umbauen, das Spieler selbst auslöst — **vor nächster Toleration-Einreichung**. Beide anderen `location.reload()`-Stellen (3134, 3145) in Ordnung, laufen aus Click-Handler.
-- **Polling auf ein Promise.** `sideOptions()` (ogkush.js:5056, 5084) und Statistik-Buttons starten `setInterval(…, 20)`, um auf `this.isLoading` zu warten — während `updateEmpireData()` direkt daneben Promise zurückgibt, das verworfen wird. Ersetzen durch `await`. Drei Stellen, je zwei Zeilen.
+- **Regelverstoß, weiterhin offen.** `ogCore.js:17815` startet auf Overview-Seite ein `setInterval`, das `location.reload()` aufruft, sobald Rohstoffspeicher volläuft. Timergesteuerter Seiten-Reload, damit **`AGENTS.md` §1.3 verboten** („Auto refreshing/reloading game page (timer or otherwise)"). `docs/performance.md` weist bereits darauf hin. Produktentscheidung, kein Refactoring: entweder entfernen oder in etwas umbauen, das Spieler selbst auslöst — **vor nächster Toleration-Einreichung**. Beide anderen `location.reload()`-Stellen (3134, 3145) in Ordnung, laufen aus Click-Handler.
+- **Polling auf ein Promise.** `sideOptions()` (ogCore.js:5056, 5084) und Statistik-Buttons starten `setInterval(…, 20)`, um auf `this.isLoading` zu warten — während `updateEmpireData()` direkt daneben Promise zurückgibt, das verworfen wird. Ersetzen durch `await`. Drei Stellen, je zwei Zeilen.
 - **jQuery.** 87 `$(…)`-Stellen hängen am jQuery der Spielseite. Keine Panik-Migration, aber: neuer Code nutzt es nicht, und wer Datei in Phase 3 anfasst, ersetzt jQuery-Aufrufe darin gleich mit.
 - **`innerHTML`.** 69 Stellen. Laufen über `Element.prototype.html`, also durch DOMPurify — in Ordnung. Direkte `innerHTML =`-Zuweisungen prüfen und auf `.html()` umstellen.
 - **Verzeichnisname stimmt nicht.** `src/ctxcontent/services/analyzer/` läuft im **Page**-Context. Nach `src/ctxpage/messages/analyzer/` verschieben — reine Umbenennung, beseitigt aber Falle, dass jemand dort `chrome.*` verwendet.
@@ -546,7 +546,7 @@ Kleinere Punkte, keine eigene Phase nötig, aber nicht vergessen. Jeder ein eige
 - **`packaging.sh`** ist Bash + `zip` + GNU-`sed -i` und läuft auf Windows nur aus Git Bash/WSL. Nach `scripts/` als Node-Skript portieren, wie `build-unpacked.mjs` es vormacht — dann funktioniert `make build` überall gleich.
 - **16 MB HAR-Datei im Repo.** `analysis/s282-de.ogame.gameforge.com.har` ist getrackt und macht jeden Clone um 16 MB schwerer. Geprüft: Datei enthält **keine** `cookies`-Arrays, keine `set-cookie`-, `authorization`-, `PHPSESSID`-, `gf-token`- oder `prsess`-Vorkommen, also keine Sitzungsdaten — nur groß. Entweder in `.gitignore` und lokal behalten, oder als Anhang an ein Issue. Falls sie bleiben soll: kurz im Repo begründen, wozu.
 - **Überfällige Versions-Altlasten** aus Abschnitt 3.2, sobald v12-Support-Entscheidung getroffen.
-- **PTRE-Team-Key ohne Fehlermeldung** (`ogkush.js:16075`, Abschnitt 3.6): Tippfehler im Key führt heute stillschweigend dazu, dass nichts passiert.
+- **PTRE-Team-Key ohne Fehlermeldung** (`ogCore.js:16075`, Abschnitt 3.6): Tippfehler im Key führt heute stillschweigend dazu, dass nichts passiert.
 
 ---
 
@@ -555,7 +555,7 @@ Kleinere Punkte, keine eigene Phase nötig, aber nicht vergessen. Jeder ein eige
 - **Kein Framework.** Kein React, kein Vue. Extension injiziert in fremdes DOM, das Spielserver kontrolliert; virtuelle DOM-Schicht darüber kauft nichts und kostet Bundle-Größe und Review-Aufwand (`AGENTS.md` §0: Quelltext muss lesbar bleiben).
 - **Kein TypeScript-Umstieg.** Skripte sind ausdrücklich reines JavaScript. Wenn Typsicherheit gewünscht: billiger Weg ist JSDoc plus `checkJs` — inkrementell, ohne Buildschritt, ohne dass Reviewer transpilierten Code liest.
 - **Kein Umschreiben von `util/`-Modulen mit guter Abdeckung.** `harvestPlanner`, `expeditionBalancer`, `productionEngine`, `targetClaims`, `fleetCost`, `defenceCost` stehen bei 100 %. Fertig.
-- **Kein Deferred-Write für `OGIData`.** Gemessen, gebaut, zurückgenommen. Begründung in `docs/performance.md`.
+- **Kein Deferred-Write für `OGBIData`.** Gemessen, gebaut, zurückgenommen. Begründung in `docs/performance.md`.
 
 ---
 
@@ -566,7 +566,7 @@ Kleinere Punkte, keine eigene Phase nötig, aber nicht vergessen. Jeder ein eige
 | größte Datei                | 19.024 Zeilen                         | < 2.000                                         |
 | Dateien > 1.000 Zeilen      | 2                                     | 0 (außer `translate.js`)                        |
 | `npm run check`             | 0 (Phase 0)                           | 0, in CI erzwungen — erreicht                   |
-| Zeilenabdeckung             | 68 % (ohne 34 Dateien)                | > 75 %, ogkush.js dabei                         |
+| Zeilenabdeckung             | 68 % (ohne 34 Dateien)                | > 75 %, ogCore.js dabei                         |
 | Kern-Bundle (Page-Context)  | 1,13 MB                               | < 500 KB                                        |
 | Zugriffswege auf `ogk-data` | 2                                     | 1                                               |
 | Produktionsmodelle im Repo  | 3                                     | 1 (`productionEngine.js`)                       |

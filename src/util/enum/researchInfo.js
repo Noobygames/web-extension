@@ -2,7 +2,7 @@
  * Cost and research-time parameters for every technology and lifeform research,
  * keyed by the technology id OGame uses.
  *
- * Lifted verbatim out of `ogkush.js` in Phase 3 of refactoring.md. See
+ * Lifted verbatim out of `ogCore.js` in Phase 3 of refactoring.md. See
  * `util/enum/buildingInfo.js` for the same note about data versus logic.
  */
 export const RESEARCH_INFO = {

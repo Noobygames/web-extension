@@ -3,7 +3,7 @@
  *
  * These are characterisation tests: they record what the constructor reads today,
  * including the places where it throws instead of coping. Phase 3 of refactoring.md
- * moves large parts of `ogkush.js` out; this file is what says whether the move
+ * moves large parts of `ogCore.js` out; this file is what says whether the move
  * changed what the class sees.
  */
 import test from "node:test";

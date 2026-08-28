@@ -1,5 +1,5 @@
 import { createDOM } from "../../util/dom.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import { ensureLZString } from "../../util/lzstring.js";
 

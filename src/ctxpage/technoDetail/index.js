@@ -3,7 +3,7 @@ import { createDOM } from "../../util/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
 import * as wait from "../../util/wait.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import AllianceClass from "../../util/enum/allianceClass.js";
 import PlayerClass from "../../util/enum/playerClass.js";
 import shipEnum from "../../util/enum/ship.js";

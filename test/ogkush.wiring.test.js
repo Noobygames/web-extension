@@ -1,5 +1,5 @@
 /**
- * A static guard for the Phase 3 cuts: no `this.foo()` in `ogkush.js` may point at a
+ * A static guard for the Phase 3 cuts: no `this.foo()` in `ogCore.js` may point at a
  * method that no longer exists on the class.
  *
  * This is not a style check. When a method moves into a page module, every call site
@@ -20,7 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const projectRoot = path.resolve(import.meta.dirname, "..");
-const source = fs.readFileSync(path.join(projectRoot, "src", "ogkush.js"), "utf8");
+const source = fs.readFileSync(path.join(projectRoot, "src", "ogCore.js"), "utf8");
 const lines = source.split("\n");
 
 /** Every name the class defines as a method, including the private ones. */
@@ -67,13 +67,13 @@ const FROM_PAGE_CONTEXT = [
   "current",
 ];
 
-test("every this.foo() in ogkush.js resolves to something the class has", () => {
+test("every this.foo() in ogCore.js resolves to something the class has", () => {
   const known = new Set([...definedMethods(), ...assignedFields(), ...FROM_PAGE_CONTEXT]);
 
   const dangling = [];
   for (let i = 0; i < lines.length; i++) {
     for (const match of lines[i].matchAll(/\b(?:this|that)\.([A-Za-z_$][\w$]*)\(/g)) {
-      if (!known.has(match[1])) dangling.push(`${match[1]}() at ogkush.js:${i + 1}`);
+      if (!known.has(match[1])) dangling.push(`${match[1]}() at ogCore.js:${i + 1}`);
     }
   }
 

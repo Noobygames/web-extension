@@ -13,19 +13,19 @@ both Chrome and Firefox unpacked builds succeed with matching permissions, no du
 ids in any sub-table, and every file the merges touched passes eslint.
 
 Every branch: `npm test` green, `node scripts/build-unpacked.mjs chrome` produces a loadable build,
-and `src/ogkush.js` carries **no new prettier violations** (master's pre-existing 18 hunks are
+and `src/ogCore.js` carries **no new prettier violations** (master's pre-existing 18 hunks are
 unchanged — see the lint note in `CLAUDE.md`).
 
-| PR | Branch | Tests | What had to be fixed |
-|---|---|---|---|
-| #485 | `fix/pr-485-fleet-movement-timezone` | 179 | double-correction, quotes, `parseInt`, null guards |
-| #533 | `feat/pr-533-galaxy-storage` | 191 | author had fixed both review items; tests added |
-| #531 | `feat/pr-531-ptre-galaxy-events` | 191 | unhandled bridge rejection, one over-wrapped line |
-| #547 | `feat/pr-547-preselection-galaxy-template` | 183 | broken imports, dropped v12 branches, dead code, config migration |
-| #546 | `feature/pr-546-remove-historic-players` | 181 | translation id collision with #533 |
-| #519 | `feat/pr-519-ghost-spy-p16` | 179 | rebase, 2 conflicts, id collision, formatting |
-| #493 | `feature/pr-493-browser-notifications` | 179 | context violation, packaging noise, stray manifest |
-| #408 | `feat/pr-408-translations-split` | 185 | redone from scratch — the PR was unmergeable |
+| PR   | Branch                                     | Tests | What had to be fixed                                              |
+| ---- | ------------------------------------------ | ----- | ----------------------------------------------------------------- |
+| #485 | `fix/pr-485-fleet-movement-timezone`       | 179   | double-correction, quotes, `parseInt`, null guards                |
+| #533 | `feat/pr-533-galaxy-storage`               | 191   | author had fixed both review items; tests added                   |
+| #531 | `feat/pr-531-ptre-galaxy-events`           | 191   | unhandled bridge rejection, one over-wrapped line                 |
+| #547 | `feat/pr-547-preselection-galaxy-template` | 183   | broken imports, dropped v12 branches, dead code, config migration |
+| #546 | `feature/pr-546-remove-historic-players`   | 181   | translation id collision with #533                                |
+| #519 | `feat/pr-519-ghost-spy-p16`                | 179   | rebase, 2 conflicts, id collision, formatting                     |
+| #493 | `feature/pr-493-browser-notifications`     | 179   | context violation, packaging noise, stray manifest                |
+| #408 | `feat/pr-408-translations-split`           | 185   | redone from scratch — the PR was unmergeable                      |
 
 `feat/pr-531-ptre-galaxy-events` is stacked on `feat/pr-533-galaxy-storage`, the dependency the
 author flagged. Merge #533 first.
@@ -57,7 +57,7 @@ commander pass cannot override an admiral match.
 literal keeps whichever came last.
 
 **#493 repeated the context violation that blocks #531.** `ctxcontent/index.js` imported
-`util/Notifier.js`, which pulls `OGIData` — the page's `localStorage` singleton — and `Translator`
+`util/Notifier.js`, which pulls `OGBIData` — the page's `localStorage` singleton — and `Translator`
 into the content script. The sync result now returns over an `ogi-notification-sync-rep` event
 (`cloneInto`'d on Firefox), matching how `ogi-players` / `ogi-filter` already reply.
 
@@ -73,15 +73,15 @@ handles this for its `galaxyInfo` call.
 
 The reviewer was right, and here is why: `timezoneDiff` is `localOffset − serverOffset`, and
 `getFormatedDate()` renders a unix timestamp in the browser's local timezone. Every other call site
-in `ogkush.js` follows `timeZoneChange = options.timeZone ? 0 : timezoneDiff` and *subtracts*; this
+in `ogCore.js` follows `timeZoneChange = options.timeZone ? 0 : timezoneDiff` and _subtracts_; this
 PR did the inverse. Since `data-arrival-time` / `data-end-time` are unix timestamps, formatting them
 is already the whole correction — adding the diff pushes the display an hour further.
 
-The reversal-tooltip path is different and the PR was right there: those are wall-clock *components*
+The reversal-tooltip path is different and the PR was right there: those are wall-clock _components_
 in server time, read back as browser-local by `new Date(y, m, d, …)`, so they genuinely need the diff.
 
 The PR's undeclared rewrite of the return-timer loop was kept and documented. The 2× rate is not a
-bug: the tooltip states when the fleet would be home if reversed *now*, so each second outbound adds
+bug: the tooltip states when the fleet would be home if reversed _now_, so each second outbound adds
 a second of flight back. Recomputing from wall-clock instead of incrementing per tick also fixes
 drift in throttled background tabs.
 
@@ -91,7 +91,7 @@ Both review items were already resolved on the branches by the time they were fe
 fields are stripped before the blob is persisted (`_galaxyFlushTimer`, `_galaxySnapshot`,
 `_lastFlushError`, plus `galaxyStorage` itself so a manual reset is not resurrected), the flush
 reports serialize and `chrome.runtime.lastError` failures with the payload size, and
-`data-helper.js` no longer imports `OGIData` — the PTRE key is pushed in from the page over the
+`data-helper.js` no longer imports `OGBIData` — the PTRE key is pushed in from the page over the
 callback-event bridge.
 
 `test/ctxcontent/galaxy.storage.test.js` is new: the coordinate index, the 15-slot materialisation
@@ -107,7 +107,7 @@ settings section, which covers the galaxy key specifically.
 
 ### #546 — remove historic players
 
-The `OGIData` persistence concern from the analysis is not an issue: the PR already uses
+The `OGBIData` persistence concern from the analysis is not an issue: the PR already uses
 copy → `splice` → reassign, which is what the write-through setter requires. Removal commits
 immediately and undo restores at the recorded index, so navigating away mid-undo leaves the player
 removed rather than losing a pending write — documented in the code and covered by two tests,

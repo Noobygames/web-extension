@@ -1,6 +1,6 @@
 import debounce from "../../util/debounce.js";
 import { fleetState } from "./state.js";
-// Re-exported so ogkush.js keeps one import path for the whole page, and so the
+// Re-exported so ogCore.js keeps one import path for the whole page, and so the
 // split parts stay reachable from the module graph.
 export { betterFleetDispatcher } from "./betterFleetDispatcher.js";
 export { expedition } from "./expedition.js";
@@ -9,7 +9,7 @@ import { getLogger } from "../../util/logger.js";
 import { createDOM, createSVG } from "../../util/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 
 /**
  * The fleet-dispatch page: the rebuilt dispatcher UI, the expedition and collect

@@ -45,13 +45,13 @@ async function buildBundles() {
 // One build, shared by every assertion below - rollup on a 1.1 MB graph is the
 // slow part, and the bundles are read-only here.
 const { dir: bundleDir, written } = await buildBundles();
-const pageBundle = fs.readFileSync(path.join(bundleDir, "ogkush.js"), "utf8");
+const pageBundle = fs.readFileSync(path.join(bundleDir, "ogCore.js"), "utf8");
 const contentBundle = fs.readFileSync(path.join(bundleDir, "ctxcontent", "index.js"), "utf8");
 
 test("both entry points are bundled", () => {
   assert.deepEqual(
     written.map((w) => w.file),
-    ["ogkush.js", "ctxcontent/index.js"]
+    ["ogCore.js", "ctxcontent/index.js"]
   );
   // A bundle that lost most of the graph would still parse and still pass the
   // import assertions below, so pin the rough size too.
@@ -61,7 +61,7 @@ test("both entry points are bundled", () => {
 
 test("nothing is left to fetch: no static imports survive", () => {
   for (const [name, code] of [
-    ["ogkush.js", pageBundle],
+    ["ogCore.js", pageBundle],
     ["ctxcontent/index.js", contentBundle],
   ]) {
     assert.equal(/^\s*import\s.*\sfrom\s/m.test(code), false, `${name} still has a static import`);
@@ -69,7 +69,7 @@ test("nothing is left to fetch: no static imports survive", () => {
 });
 
 test("the page bundle exports only the test seam, the content bundle only main", () => {
-  // ogkush.js is injected as a script and consumed by nobody at runtime. The one
+  // ogCore.js is injected as a script and consumed by nobody at runtime. The one
   // export is the seam the calculation tests reach the class through; it must stay
   // the ONLY one, because anything else would mean a page-context module started
   // being imported rather than injected. ctxcontent's `main` is what main.js calls
@@ -88,7 +88,7 @@ test("the bundle is readable, not minified", () => {
   assert.ok(pageBundle.includes("Bundled by scripts/bundle.mjs"), "banner missing");
 
   // Minified output is essentially one line. The ceiling is generous because
-  // src/ogkush.js already carries a 6.4k-character line of its own.
+  // src/ogCore.js already carries a 6.4k-character line of its own.
   const lines = pageBundle.split("\n");
   const longestLine = Math.max(...lines.map((line) => line.length));
   assert.ok(lines.length > 20_000, `only ${lines.length} lines - that is not source layout`);
@@ -97,7 +97,7 @@ test("the bundle is readable, not minified", () => {
 
 test("no local filesystem paths leak into the shipped file", () => {
   for (const [name, code] of [
-    ["ogkush.js", pageBundle],
+    ["ogCore.js", pageBundle],
     ["ctxcontent/index.js", contentBundle],
   ]) {
     assert.equal(/[A-Za-z]:[\\/]Users[\\/]/.test(code), false, `${name} contains an absolute Windows path`);
@@ -112,7 +112,7 @@ test("the page bundle evaluates without throwing", async () => {
     // at module evaluation and throws without it.
     document.documentElement.dataset.ogiCallbackEventToken = "0123456789ab";
 
-    const url = pathToFileURL(path.join(bundleDir, "ogkush.js")).href;
+    const url = pathToFileURL(path.join(bundleDir, "ogCore.js")).href;
     await assert.doesNotReject(() => import(url), "module-level code in the bundle threw");
 
     // The start-up IIFE runs after this and fails on jsdom's empty game DOM,

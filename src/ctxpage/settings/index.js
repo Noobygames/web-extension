@@ -3,7 +3,7 @@ import { createDOM, createSVG } from "../../util/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
 import * as popupUtil from "../../util/popup.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import VERSION from "../../util/version.js";
 import { getOption, setOption } from "../conf-options.js";
@@ -17,7 +17,7 @@ import { pageContextRequest } from "../../util/service.callbackEvent.js";
  * direct-probe icons are inert.
  *
  * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. `this.json` became
- * `OGIData.json`; the two page facts the dialog reads - whether the commander is
+ * `OGBIData.json`; the two page facts the dialog reads - whether the commander is
  * active and which universe this is - arrive as an explicit `context`.
  *
  * `probingWarning()` is a compliance notice, not a setting: direct probing outside

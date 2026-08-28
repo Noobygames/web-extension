@@ -2,26 +2,34 @@ module.exports = {
   env: {
     browser: true,
     es2020: true,
+    webextensions: true, // WICHTIG: Erlaubt globale Variablen für Extensions (chrome, browser)
+    // greasemonkey: true, // Falls du das Addon erst als Userscript (Tampermonkey) schreibst, das hier einkommentieren
   },
-  // "prettier" (eslint-config-prettier) turns off every stylistic rule that
-  // Prettier already owns. Do not re-enable any of them below: indent, quotes,
-  // semi and linebreak-style used to be listed in `rules` and fought with
-  // prettier/prettier over the same code, which kept `npm run check` red on
-  // correctly formatted files and buried the real findings.
-  extends: ["eslint:recommended", "prettier"],
+  extends: [
+    "eslint:recommended",
+    "prettier", // Prettier muss immer am Ende stehen
+  ],
   plugins: ["prettier"],
   parserOptions: {
     ecmaVersion: "latest",
     sourceType: "module",
   },
+  // Falls OGame eigene globale Variablen nutzt, die du im Script abrufst (z.B. jQuery),
+  // musst du sie hier definieren, damit 'no-undef' nicht meckert:
+  globals: {
+    $: "readonly",
+    jQuery: "readonly",
+  },
   rules: {
     "prettier/prettier": ["error"],
-    "no-undef": 0,
-    "no-unused-vars": 0,
-    "no-async-promise-executor": 0,
-    "no-empty": 0,
-    "no-inner-declarations": 0,
-    "no-global-assign": 0,
-    "no-prototype-builtins": 0,
+
+    // --- Bessere Alternativen zu deinen abgeschalteten Regeln ---
+
+    // Statt 'no-unused-vars' komplett abzuschalten (0), lieber auf Warnung setzen
+    // und Variablen mit Unterstrich (z.B. _event) erlauben:
+    "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+
+    // Leere Blöcke sind oft ein Zeichen für vergessenen Code. Als Warnung behalten:
+    "no-empty": "warn",
   },
 };

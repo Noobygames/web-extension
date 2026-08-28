@@ -1,4 +1,4 @@
-import OGBIData from "./OGIData.js";
+import OGBIData from "./OGBIData.js";
 import { createDOM } from "./dom.js";
 import { toFormattedNumber } from "./numbers.js";
 import planetType from "./enum/planetType.js";
@@ -28,7 +28,7 @@ export function display() {
   });
 }
 
-// Deferred instead of registered at module evaluation: `ogkush.js` is injected at
+// Deferred instead of registered at module evaluation: `ogCore.js` is injected at
 // `document_start` so its module graph loads in parallel with the game's page parse,
 // and `#eventboxContent` does not exist yet at that point. OGIObserver silently
 // ignores a null element, so an eager call would just drop the observer.

@@ -4,7 +4,7 @@ import Translator from "./translate.js";
 import { createDOM } from "./dom.js";
 import { formatToUnits } from "./numbers.js";
 import { popup } from "./popup.js";
-import OGBIData from "./OGIData.js";
+import OGBIData from "./OGBIData.js";
 
 const universe = window.location.host.replace(/\D/g, "");
 

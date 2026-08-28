@@ -89,7 +89,7 @@ if (args["stable-id"]) {
 
 fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
-// 4. Stamp the version constant read by ogkush.js (status bar link)
+// 4. Stamp the version constant read by ogCore.js (status bar link)
 const versionJsPath = path.join(outDir, "util", "version.js");
 fs.writeFileSync(versionJsPath, fs.readFileSync(versionJsPath, "utf8").replaceAll("__VERSION__", version));
 

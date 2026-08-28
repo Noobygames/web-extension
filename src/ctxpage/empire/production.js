@@ -1,6 +1,6 @@
 import * as DOM from "../../util/dom.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import AllianceClass from "../../util/enum/allianceClass.js";
 import PlayerClass from "../../util/enum/playerClass.js";
 import {

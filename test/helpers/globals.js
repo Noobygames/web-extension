@@ -6,7 +6,7 @@
  *
  * - `LocalizationStrings` - injected by OGame, used by numbers.js / cleanValue.js
  * - `document` / `window` / `navigator` - the page
- * - `localStorage` - backing store of the OGIData singleton (page context)
+ * - `localStorage` - backing store of the OGBIData singleton (page context)
  * - `chrome` - extension APIs (content-script context only)
  *
  * These helpers install them on `globalThis` for the duration of a test and
@@ -316,10 +316,10 @@ export function setupBrowser(options = {}) {
 
 /**
  * Imports a module with a cache-busting query so module-level singletons
- * (`OGIData`, `OgamePageData`, `Translator`, ...) are re-evaluated against the
+ * (`OGBIData`, `OgamePageData`, `Translator`, ...) are re-evaluated against the
  * globals of the current test instead of leaking state between tests.
  *
- * @param {string} specifier module path relative to the repository root, e.g. "src/util/OGIData.js"
+ * @param {string} specifier module path relative to the repository root, e.g. "src/util/OGBIData.js"
  * @returns {Promise<any>}
  */
 let importCounter = 0;

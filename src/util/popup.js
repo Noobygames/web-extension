@@ -1,5 +1,5 @@
 import { createDOM } from "./dom.js";
-import OGBIData from "./OGIData.js";
+import OGBIData from "./OGBIData.js";
 import PlayerClass from "./enum/playerClass.js";
 
 let resolvedPlayerClass = null;
@@ -7,7 +7,7 @@ let resolvedPlayerClass = null;
 /**
  * Reads the player class off the character-class widget, on first use.
  *
- * Lazy on purpose: `ogkush.js` is injected at `document_start` so its module
+ * Lazy on purpose: `ogCore.js` is injected at `document_start` so its module
  * graph loads in parallel with the game's page parse, and at that point the
  * widget does not exist yet. `popup()` only ever runs on user interaction.
  *

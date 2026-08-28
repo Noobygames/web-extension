@@ -1,7 +1,7 @@
 import * as DOM from "../../util/dom.js";
 import { createDOM } from "../../util/dom.js";
 import { toFormattedNumber } from "../../util/numbers.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import * as stalkUtil from "../../util/stalk.js";
 import dataHelper from "../../util/dataHelper.js";

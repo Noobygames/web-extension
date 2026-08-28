@@ -93,7 +93,7 @@ let contentInitialized = false;
  * Mints a token for the page <-> content handshake.
  *
  * Exported so `main.js` can publish the token at `document_start` and inject
- * `ogkush.js` immediately, instead of waiting for this module to load first.
+ * `ogCore.js` immediately, instead of waiting for this module to load first.
  * `main.js` is a classic content script and cannot import, so it carries its
  * own copy of this one-liner - keep the two in step.
  *

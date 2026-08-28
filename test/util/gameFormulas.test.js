@@ -1,7 +1,7 @@
 /**
  * `util/gameFormulas.js` - the game's arithmetic.
  *
- * These began life in `test/ogkush.calculations.test.js`, pinned against
+ * These began life in `test/ogCore.calculations.test.js`, pinned against
  * `OGBeyondInfinity.prototype`. Phase 3 of refactoring.md moved the functions into this
  * module; the tests moved with them and **every expected value is unchanged**. That
  * is what verifies the move: the numbers were recorded before it and still hold
@@ -17,7 +17,7 @@ import { setupBrowser } from "../helpers/globals.js";
 
 const browser = setupBrowser();
 
-const OGIData = (await import("../../src/util/OGIData.js")).default;
+const OGBIData = (await import("../../src/util/OGBIData.js")).default;
 const {
   consumption,
   minesProduction,
@@ -74,18 +74,18 @@ function baseJson() {
 }
 
 /**
- * The formulas read their state from `OGIData`, so the store is what a test varies.
- * Assigning `OGIData.json` is a full reset and keeps the coverage report honest -
+ * The formulas read their state from `OGBIData`, so the store is what a test varies.
+ * Assigning `OGBIData.json` is a full reset and keeps the coverage report honest -
  * see the note on `importFresh()` in docs/testing.md.
  */
 function withState(overrides = {}) {
-  OGIData.json = Object.assign(baseJson(), overrides);
+  OGBIData.json = Object.assign(baseJson(), overrides);
 }
 
 /** No class, no officers - what every test uses unless it says otherwise. */
 const NOBODY = { playerClass: 0, geologist: false, allOfficers: false };
 
-/** One fully specified planet, in the shape `OGIData.empire` entries have. */
+/** One fully specified planet, in the shape `OGBIData.empire` entries have. */
 function planetRow(overrides = {}) {
   return Object.assign(
     {
@@ -105,7 +105,7 @@ function planetRow(overrides = {}) {
   );
 }
 
-/** `OGIData.empire` and `OGIData.json.empire` are one and the same array. */
+/** `OGBIData.empire` and `OGBIData.json.empire` are one and the same array. */
 function withEmpire(planets) {
   withState({ empire: planets });
 }
@@ -279,12 +279,12 @@ test("roiLfBuilding returns undefined for a building with no production boost", 
 
 test("roiAstrophysics fills in the empire averages when they are missing", () => {
   withEmpire([planetRow()]);
-  assert.equal(OGIData.json.averageMines, null);
+  assert.equal(OGBIData.json.averageMines, null);
 
   const result = roiAstrophysics(5, 6, NOBODY);
 
-  assert.deepEqual(OGIData.json.averageMines, [20, 18, 15], "computed on the way through");
-  assert.deepEqual(OGIData.json.totalProd, [10000, 5000, 2000]);
+  assert.deepEqual(OGBIData.json.averageMines, [20, 18, 15], "computed on the way through");
+  assert.deepEqual(OGBIData.json.totalProd, [10000, 5000, 2000]);
   assert.equal(Math.round(result), 1049909);
 });
 
@@ -305,16 +305,16 @@ test("getBestRoi enumerates one candidate per mine level and per research step",
 });
 
 test("getBestRoi averages the mine levels over the planets it summed", () => {
-  // This used to be a KNOWN BUG: the sum ran over `OGIData.empire` while the divisor
+  // This used to be a KNOWN BUG: the sum ran over `OGBIData.empire` while the divisor
   // came from `this.json.empire.length`, two reads that only happened to agree. The
-  // move to this module collapsed both onto `OGIData.json.empire`, so they can no
+  // move to this module collapsed both onto `OGBIData.json.empire`, so they can no
   // longer drift - and with them went the degenerate case where an empty list made
   // `averageMines` Infinity and `roiAstrophysics()` looped to it.
   withEmpire([planetRow(), planetRow({ id: 2, 1: 40, 2: 36, 3: 30 })]);
 
   getBestRoi(NOBODY);
 
-  assert.deepEqual(OGIData.json.averageMines, [30, 27, 22.5]);
+  assert.deepEqual(OGBIData.json.averageMines, [30, 27, 22.5]);
 });
 
 test("KNOWN BUG: roiMine charges the target level once per level instead of summing the levels", () => {
@@ -335,7 +335,7 @@ test("KNOWN BUG: roiMine charges the target level once per level instead of summ
   // The tell: the five-level result is exactly 5 x cost(level 25) over the same
   // production difference, which no correct summation could produce.
   const costOf25 = building(1, 25, planet).cost;
-  const rate = OGIData.json.options.tradeRate;
+  const rate = OGBIData.json.options.tradeRate;
   const mse = (cost) => cost.map((x, n) => (x * rate[0]) / rate[n]).reduce((sum, cur) => sum + cur, 0);
   const prodDiffMSE = (5 * mse(costOf25) * 3600) / fiveLevels;
   const impliedSingle = (mse(costOf25) * 3600) / prodDiffMSE;

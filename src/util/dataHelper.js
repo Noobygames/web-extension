@@ -8,7 +8,7 @@ import { pageContextRequest } from "./service.callbackEvent.js";
  * use the typed bridge instead); `getExpeditionType` already goes through
  * `pageContextRequest`.
  *
- * Lifted out of `ogkush.js` in Phase 3 of refactoring.md, unchanged. It was a
+ * Lifted out of `ogCore.js` in Phase 3 of refactoring.md, unchanged. It was a
  * file-local `var`, which meant every page module that needed a player record had to
  * be inside the monolith to reach it.
  */

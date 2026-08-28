@@ -1,6 +1,6 @@
 import { getLogger } from "../../../util/logger.js";
 import { messagesTabs } from "../../../ctxpage/messages/index.js";
-import OGBIData from "../../../util/OGIData.js";
+import OGBIData from "../../../util/OGBIData.js";
 import PlanetType from "../../../util/enum/planetType.js";
 import ship from "../../../util/enum/ship.js";
 import * as standardUnit from "../../../util/standardUnit.js";

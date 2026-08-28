@@ -2,7 +2,7 @@
  * Whether a coordinate belongs to one of the player's own planets.
  *
  * Reads the planet bar rather than the store, so it is correct even before the empire
- * snapshot has been refreshed. Lifted out of `ogkush.js` in Phase 3 of refactoring.md,
+ * snapshot has been refreshed. Lifted out of `ogCore.js` in Phase 3 of refactoring.md,
  * unchanged.
  */
 const isOwnPlanet = (coords) => {

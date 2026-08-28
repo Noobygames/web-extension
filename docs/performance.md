@@ -16,7 +16,7 @@ jsdom's, and real `localStorage` is slower than an in-memory map. Treat these as
 
 `JSON.parse(localStorage["ogk-data"])` on entry, on a function `SpyReport` calls **four times per
 report**. Rendering a 50-report spy table therefore spent roughly **400 ms** doing nothing but
-re-parsing data `OGIData` already held parsed in memory.
+re-parsing data `OGBIData` already held parsed in memory.
 
 |                                   |    per call |
 | :-------------------------------- | ----------: |
@@ -57,7 +57,7 @@ Both fixed in `perf(page): replace a permanent 100ms DOM poll and stop redundant
 ### 4. The whole extension waited for `DOMContentLoaded` before it started loading
 
 `main.js` registered a `DOMContentLoaded` listener and did nothing until it fired. Only then did it
-dynamically import the content module, and only then did that module inject `ogkush.js`. So the
+dynamically import the content module, and only then did that module inject `ogCore.js`. So the
 browser began fetching, parsing and compiling **69 module files, 1.15 MB** at the moment the game
 page was already finished — all of it serial, in front of the first OGI pixel. That is the "vanilla
 UI is done, then a second or two of nothing, then the extension appears" the users describe.
@@ -69,16 +69,16 @@ Now `main.js` runs its work at `document_start`:
 | wide-layout classes       | in `start()`, after module load | `document_start`, from the `ogi-layout` mirror |
 | `lz-string` + `DOMPurify` | after DOMContentLoaded          | `document_start`                               |
 | content module import     | after DOMContentLoaded          | `document_start`                               |
-| `ogkush.js` + 69 modules  | after DOMContentLoaded          | one module round trip after `document_start`   |
+| `ogCore.js` + 69 modules  | after DOMContentLoaded          | one module round trip after `document_start`   |
 
-`ogkush.js` is a dynamically inserted script, so it is _async_, not deferred: it now loads in
+`ogCore.js` is a dynamically inserted script, so it is _async_, not deferred: it now loads in
 parallel with the game's own page load and waits for `DOMContentLoaded` itself before it touches
 anything (`domReady()` in the bottom IIFE). That in turn required every page-context module to stop
 reading the DOM at module-evaluation time — `<head>` is still empty at `document_start`. Made lazy:
 `OgamePageData` (all getters), `translate.js#currentLanguage()`, `popup.js#getPlayerClass()`,
 `flying.js#hasLifeforms()`; `needs.js` defers its observer registration.
 
-`ogkush.js` deliberately stays **last** in the injection order: `pageContextInit()` throws unless
+`ogCore.js` deliberately stays **last** in the injection order: `pageContextInit()` throws unless
 `contentContextInit()` has already published its callback token on `<html>`.
 
 `domReady()` resumes via `setTimeout(..., 0)` rather than straight out of the DOMContentLoaded
@@ -109,7 +109,7 @@ context:
 
 | loaded on boot                     | before              | after               |
 | :--------------------------------- | :------------------ | :------------------ |
-| page context (`ogkush.js` + graph) | 69 requests, 7 deep | 1 request, 1.13 MB  |
+| page context (`ogCore.js` + graph) | 69 requests, 7 deep | 1 request, 1.13 MB  |
 | content context (`ctxcontent/`)    | 18 requests         | 1 request, 61 KB    |
 | vendored libs                      | 2, in parallel      | 1, in parallel (§8) |
 | content script (`main.js`)         | 1                   | 1                   |
@@ -132,7 +132,7 @@ it just evaluates in a different order, or a name collides, or an import cycle
 that native ESM resolved with live bindings becomes a temporal dead zone. The
 unit suite imports `src/` directly and would never see it.
 
-### 7. `ogkush.js` was injected one round trip behind the content module
+### 7. `ogCore.js` was injected one round trip behind the content module
 
 `pageContextInit()` throws unless the content script has published a handshake
 token on `<html>`, so the 1.1 MB page bundle could not even start downloading
@@ -154,7 +154,7 @@ That leaves the boot path at four requests, two of which are ours:
 | :-------------------- | :------ | :----------------------- |
 | `main.js`             | content | manifest, document_start |
 | `ctxcontent/index.js` | content | bundle, document_start   |
-| `ogkush.js`           | page    | bundle, document_start   |
+| `ogCore.js`           | page    | bundle, document_start   |
 | `libs/purify.min.js`  | page    | document_start           |
 
 `purify.min.js` is 22 KB of vendored, already-minified third party. Folding it
@@ -232,7 +232,7 @@ would drop moon data for a page load after a moon is built.
 
 After this, the boot path is: one classic content script, two bundles and two
 small vendored libraries, all requested in the same tick at `document_start`.
-The remaining cost is `src/ogkush.js` itself - 740 KB of the 1.13 MB bundle,
+The remaining cost is `src/ogCore.js` itself - 740 KB of the 1.13 MB bundle,
 65% of it - plus whatever `start()` does synchronously once the DOM is ready.
 Cutting that further means splitting the monolith so page-specific code is
 `import()`ed only on the pages that need it. That is a refactor, not a
@@ -242,7 +242,7 @@ performance tweak, and it wants the profiler numbers below first.
 
 `src/util/perf.js` is a profiler that costs one `localStorage.getItem` when off. Turn it on with
 `localStorage.setItem("ogi-perf", "1")` (sticky) or `&ogi-perf=1` on the game URL (one load), then
-reload. `ogkush.js` prints:
+reload. `ogCore.js` prints:
 
 - a timeline: module evaluation, DOM ready, `init()`, `start()`, the DOMPurify wait;
 - one row per `start()` step that took more than 0.5 ms (`perf.instrumentMethods`);
@@ -258,7 +258,7 @@ estimates.
 
 ### Coalescing the store writes — reverted, it breaks a real contract
 
-Every `OGIData` setter serialises the **whole** blob, and `ogkush.js` calls `saveData()` **82
+Every `OGBIData` setter serialises the **whole** blob, and `ogCore.js` calls `saveData()` **82
 times**. At ~3 ms per serialisation of a 428 KB blob that is up to **250 ms of pure overhead per
 page load** — on paper the single biggest win available.
 
@@ -266,12 +266,12 @@ Deferring the write to a microtask was implemented and then **reverted**. It cha
 codebase documents and tests explicitly:
 
 ```js
-OGIData.sideStalk = [101, 202, 303]; // queues a write
-OGIData.sideStalk.splice(1, 1); // in-place mutation - must NOT persist
+OGBIData.sideStalk = [101, 202, 303]; // queues a write
+OGBIData.sideStalk.splice(1, 1); // in-place mutation - must NOT persist
 ```
 
 With synchronous write-through the mutation is not persisted, which is the documented contract
-(`CLAUDE.md`, and the `TRAP:` tests in `test/util/OGIData.test.js`). With a deferred flush the
+(`CLAUDE.md`, and the `TRAP:` tests in `test/util/OGBIData.test.js`). With a deferred flush the
 pending write picks up the mutation and persists it — so whether an in-place mutation sticks starts
 depending on flush timing. That is a subtle, silent source of half-written state, and it is not
 worth 250 ms.
@@ -284,7 +284,7 @@ review; neither is a mechanical edit.
 
 - `FightMessagesAnalyzer` deep-copies `combatsSums` via `JSON.parse(JSON.stringify(...))`, but that
   object is small (per-date sums) and the copy is deliberate — it mutates the copy before storing.
-- `OGIData.empire.find(...)` appears in ~26 places. The empire is a dozen entries, so a linear scan
+- `OGBIData.empire.find(...)` appears in ~26 places. The empire is a dozen entries, so a linear scan
   is not worth indexing.
 - The roadmap modules (`fleetFlight`, `farmEvaluator`, `targetClaims`, `harvestPlanner`) all measure
   in the sub-microsecond to tens-of-microseconds range for realistic inputs. Nothing to do.
@@ -293,7 +293,7 @@ review; neither is a mechanical edit.
 
 ## Not a performance issue, but found while measuring: a rules violation
 
-`src/ogkush.js` runs a **2-second `setInterval` on the overview page that calls
+`src/ogCore.js` runs a **2-second `setInterval` on the overview page that calls
 `location.reload()`** when a resource store fills up.
 
 That is a timer-driven page refresh. `AGENTS.md` §1.3 forbids it outright:

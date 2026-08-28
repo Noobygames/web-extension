@@ -2,7 +2,7 @@
  * Cost, build-time and energy-consumption parameters for every building and every
  * lifeform building, keyed by the technology id OGame uses.
  *
- * Lifted verbatim out of `ogkush.js` in Phase 3 of refactoring.md. It is data, not
+ * Lifted verbatim out of `ogCore.js` in Phase 3 of refactoring.md. It is data, not
  * logic: the formulas that read it live in `util/gameFormulas.js`, and the misspelt
  * name is kept because it appears in saved player data and in every call site.
  */

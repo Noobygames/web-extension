@@ -61,7 +61,7 @@ import OGBIObserver from "./util/observer.js";
 import Messages from "./ctxpage/messages/index.js";
 import * as popupUtil from "./util/popup.js";
 import OgamePageData from "./util/OgamePageData.js";
-import OGBIData from "./util/OGIData.js";
+import OGBIData from "./util/OGBIData.js";
 import { tooltip } from "./util/tooltip.js";
 import * as needsUtil from "./util/needs.js";
 import Translator from "./util/translate.js";
@@ -78,7 +78,7 @@ import { isAbortError, suppressAbortRejections } from "./util/abort.js";
 
 //const VERSION = "__VERSION__";
 const logger = getLogger();
-perf.mark("ogkush.js module evaluation");
+perf.mark("ogCore.js module evaluation");
 // OGame navigates on every view change, which aborts whatever the extension had
 // in flight - the empire refresh above all. See util/abort.js.
 suppressAbortRejections();
@@ -89,12 +89,6 @@ if (redirect && redirect.indexOf("https") > -1) {
   localStorage.setItem("ogl-redirect", false);
   window.location.href = redirect;
 }
-
-/**
- * @deprecated Use {@link Numbers.toFormattedNumber}
- * @type {Numbers.toFormattedNumber}
- */
-const toFormatedNumber = Numbers.toFormattedNumber;
 
 const UNIVERSVIEW_LANGS = [
   "en",
@@ -128,7 +122,7 @@ const PLAYER_CLASS_NONE = 0;
 /**
  * Exported for tests only.
  *
- * `test/ogkush.calculations.test.js` calls the pure calculation methods through
+ * `test/ogCore.calculations.test.js` calls the pure calculation methods through
  * this prototype with a hand-made `this`, which is the only way to characterise
  * them where they actually live - the class is otherwise unreachable from outside
  * the module, and moving the methods out first would mean the tests verify the
@@ -277,7 +271,7 @@ class OGBeyondInfinity {
     this.autoQueue = new AutoQueue();
 
     // The content script needs the PTRE team key to decide whether to build galaxyStorage,
-    // but it must never read it from OGIData - that singleton belongs to the page context.
+    // but it must never read it from OGBIData - that singleton belongs to the page context.
     // pageContextRequest rejects on a failed bridge call, so the rejection is handled here.
     pageContextRequest("ptre", "setTeamKey", this.json.options.ptreTK || "").catch((err) =>
       console.warn("[OGI][PTRE] setTeamKey failed", err)
@@ -444,7 +438,7 @@ class OGBeyondInfinity {
    *    behind `spyTable()`, `betterHighscore()`, `technoDetail()` and two dozen
    *    other page-specific steps. It now runs first and paints on its own.
    *
-   * Everything in here has to stay renderable from the cached `OGIData.empire`
+   * Everything in here has to stay renderable from the cached `OGBIData.empire`
    * alone: the refresh that replaces it is still in flight at this point, and
    * `updateresourceDetail()` redraws the numbers when it lands.
    */
@@ -467,7 +461,7 @@ class OGBeyondInfinity {
    */
   observePlanetBar() {
     const rightObserver = new OGBIObserver();
-    const ogkush = this;
+    const ogCore = this;
 
     const rightId = "planetbarcomponent";
     // subtree is off on purpose: the callback only ever acted on mutations whose target IS this
@@ -481,8 +475,8 @@ class OGBeyondInfinity {
       (mutations) => {
         if (!mutations.some((mutation) => mutation.target.id === rightId)) return;
 
-        ogkush.planetList = document.querySelectorAll(".smallplanet");
-        ogkush.current.planet = (
+        ogCore.planetList = document.querySelectorAll(".smallplanet");
+        ogCore.current.planet = (
           document.querySelector("#planetList .active") ?? document.querySelector("#planetList .planetlink")
         ).parentNode;
         document
@@ -496,10 +490,10 @@ class OGBeyondInfinity {
           elem.classList.add("tooltipLeft");
           elem.classList.remove("tooltipRight");
         });
-        ogkush.renderPlanetBar();
-        ogkush.updateFlyings();
-        ogkush.updatePlanets_IncomingHostileFleet();
-        ogkush.updatePlanets_FleetActivity();
+        ogCore.renderPlanetBar();
+        ogCore.updateFlyings();
+        ogCore.updatePlanets_IncomingHostileFleet();
+        ogCore.updatePlanets_FleetActivity();
       },
       { subtree: false, childList: true }
     );
@@ -1386,7 +1380,7 @@ class OGBeyondInfinity {
         if (!value) return;
         const line = DOM.createDOM("div", { class: "ogl-production-row" });
         line.appendChild(DOM.createDOM("span", {}, label));
-        line.appendChild(DOM.createDOM("span", {}, toFormatedNumber(value, null, true)));
+        line.appendChild(DOM.createDOM("span", {}, Numbers.toFormattedNumber(value, null, true)));
         detail.appendChild(line);
       };
 
@@ -1398,7 +1392,7 @@ class OGBeyondInfinity {
 
       const total = DOM.createDOM("div", { class: "ogl-production-row ogl-production-total" });
       total.appendChild(DOM.createDOM("span", {}, "Σ"));
-      total.appendChild(DOM.createDOM("span", {}, toFormatedNumber(parts.total, null, true)));
+      total.appendChild(DOM.createDOM("span", {}, Numbers.toFormattedNumber(parts.total, null, true)));
       detail.appendChild(total);
 
       element.classList.add("ogl-production-hint");
@@ -1444,11 +1438,11 @@ class OGBeyondInfinity {
         DOM.createDOMSanitized(
           "td",
           { class: "data" },
-          `<span class="${metalProduction > 0 ? "undermark" : "overmark"}">(+${toFormatedNumber(
+          `<span class="${metalProduction > 0 ? "undermark" : "overmark"}">(+${Numbers.toFormattedNumber(
             metalProduction
           )})</span><span class="${
             metalResources >= metalStorage ? " overmark" : ""
-          }" id="metal-storage"> ${toFormatedNumber(Math.floor(metalResources))} / ${toFormatedNumber(
+          }" id="metal-storage"> ${Numbers.toFormattedNumber(Math.floor(metalResources))} / ${Numbers.toFormattedNumber(
             metalStorage,
             null,
             true
@@ -1474,15 +1468,13 @@ class OGBeyondInfinity {
         DOM.createDOMSanitized(
           "td",
           { class: "data" },
-          `<span class="${crystalProduction > 0 ? "undermark" : "overmark"}"> (+${toFormatedNumber(
+          `<span class="${crystalProduction > 0 ? "undermark" : "overmark"}"> (+${Numbers.toFormattedNumber(
             crystalProduction
           )})</span><span class="${
             crystalResources >= crystalStorage ? " overmark" : ""
-          }" id="crystal-storage"> ${toFormatedNumber(Math.floor(crystalResources))} / ${toFormatedNumber(
-            crystalStorage,
-            null,
-            true
-          )}</span>`
+          }" id="crystal-storage"> ${Numbers.toFormattedNumber(
+            Math.floor(crystalResources)
+          )} / ${Numbers.toFormattedNumber(crystalStorage, null, true)}</span>`
         )
       );
       let crystal_2 = table.insertBefore(DOM.createDOM("tr"), table.children[3]);
@@ -1504,15 +1496,13 @@ class OGBeyondInfinity {
         DOM.createDOMSanitized(
           "td",
           { class: "data" },
-          `<span class="${deuteriumProduction > 0 ? "undermark" : "overmark"}"> (+${toFormatedNumber(
+          `<span class="${deuteriumProduction > 0 ? "undermark" : "overmark"}"> (+${Numbers.toFormattedNumber(
             deuteriumProduction
           )})</span><span class="${
             deuteriumResources >= deuteriumStorage ? " overmark" : ""
-          }" id = "deuterium-storage" > ${toFormatedNumber(Math.floor(deuteriumResources))} / ${toFormatedNumber(
-            deuteriumStorage,
-            null,
-            true
-          )}</span>`
+          }" id = "deuterium-storage" > ${Numbers.toFormattedNumber(
+            Math.floor(deuteriumResources)
+          )} / ${Numbers.toFormattedNumber(deuteriumStorage, null, true)}</span>`
         )
       );
       let deuterium_2 = table.insertBefore(DOM.createDOM("tr"), table.children[5]);
@@ -1539,15 +1529,15 @@ class OGBeyondInfinity {
           location.reload();
         }
         if (metalProduction + crystalProduction + deuteriumProduction > 0) {
-          document.querySelector("#metal-storage").textContent = ` ${toFormatedNumber(
+          document.querySelector("#metal-storage").textContent = ` ${Numbers.toFormattedNumber(
             Math.floor(resourcesBar.resources.metal.amount)
-          )} / ${toFormatedNumber(metalStorage, null, true)}`;
-          document.querySelector("#crystal-storage").textContent = ` ${toFormatedNumber(
+          )} / ${Numbers.toFormattedNumber(metalStorage, null, true)}`;
+          document.querySelector("#crystal-storage").textContent = ` ${Numbers.toFormattedNumber(
             Math.floor(resourcesBar.resources.crystal.amount)
-          )} / ${toFormatedNumber(crystalStorage, null, true)}`;
-          document.querySelector("#deuterium-storage").textContent = ` ${toFormatedNumber(
+          )} / ${Numbers.toFormattedNumber(crystalStorage, null, true)}`;
+          document.querySelector("#deuterium-storage").textContent = ` ${Numbers.toFormattedNumber(
             Math.floor(resourcesBar.resources.deuterium.amount)
-          )} / ${toFormatedNumber(deuteriumStorage, null, true)}`;
+          )} / ${Numbers.toFormattedNumber(deuteriumStorage, null, true)}`;
         } else {
           clearInterval(updater);
         }
@@ -1643,7 +1633,7 @@ function versionInStatusBar() {
 /**
  * Resolves once the game's DOM is parsed.
  *
- * `ogkush.js` is injected at `document_start` so the browser can fetch, parse
+ * `ogCore.js` is injected at `document_start` so the browser can fetch, parse
  * and compile the ~70 module files in parallel with the game's own page load
  * instead of starting all of that after DOMContentLoaded. Nothing below may
  * touch the DOM before this resolves.
@@ -1727,8 +1717,8 @@ function nextPaint() {
       });
     }
 
-    const ogKush = perf.time("new OGBeyondInfinity()", () => new OGBeyondInfinity());
-    perf.time("OGBeyondInfinity.init()", () => ogKush.init());
+    const ogCore = perf.time("new OGBeyondInfinity()", () => new OGBeyondInfinity());
+    perf.time("OGBeyondInfinity.init()", () => ogCore.init());
     perf.time("versionInStatusBar()", () => versionInStatusBar());
 
     perf.time("new Messages()", () => new Messages());
@@ -1741,10 +1731,10 @@ function nextPaint() {
     };
 
     // No-op unless profiling is on (localStorage["ogi-perf"] = "1").
-    perf.instrumentMethods(ogKush, "start > ");
+    perf.instrumentMethods(ogCore, "start > ");
     // start() yields once, after the planet bar is drawn, so it has to be awaited
     // for perf.report() to see the steps that run after that yield.
-    await perf.timeAsync("OGBeyondInfinity.start()", () => ogKush.start());
+    await perf.timeAsync("OGBeyondInfinity.start()", () => ogCore.start());
     perf.report();
   } catch (ex) {
     logger.error(ex);

@@ -4,7 +4,7 @@ import planetType from "./enum/planetType.js";
  * Singleton view over the `<meta name="ogame-*">` tags the game puts in `<head>`.
  *
  * The fields are read lazily, on first access, instead of in the constructor.
- * That is what lets `ogkush.js` be injected at `document_start` and load,
+ * That is what lets `ogCore.js` be injected at `document_start` and load,
  * parse and evaluate its module graph in parallel with the game's own page
  * parse: at that point `<head>` is still empty, and an eager read here would
  * see no meta tags at all (or throw on the language one). Every consumer runs

@@ -2,7 +2,7 @@
  * Classic trailing-edge debounce.
  *
  * Used where OGame fires an event far more often than the extension needs to react -
- * the fleet dispatcher's mission updates, most of all. Lifted out of `ogkush.js` in
+ * the fleet dispatcher's mission updates, most of all. Lifted out of `ogCore.js` in
  * Phase 3 of refactoring.md, unchanged, including the `var context = this` that makes
  * it usable as a method.
  *

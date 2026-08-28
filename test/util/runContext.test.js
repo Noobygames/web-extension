@@ -1,5 +1,5 @@
 /**
- * Context detection and script injection - the mechanism that gets ogkush.js
+ * Context detection and script injection - the mechanism that gets ogCore.js
  * from the content script into the page.
  */
 import test from "node:test";
@@ -66,7 +66,7 @@ test("injectScript appends a script tag pointing at the packaged resource", asyn
 
 test("injectScript marks module scripts as modules", async () => {
   await withContext({ userAgent: CHROME_UA, chrome: true }, ({ injectScript }, browser) => {
-    injectScript("ogkush.js", null, true);
+    injectScript("ogCore.js", null, true);
     assert.equal(browser.document.querySelector("script").type, "module");
   });
 });
@@ -95,7 +95,7 @@ test("injectScript tolerates a missing callback", async () => {
 
 test("injectScript refuses to run from the page context", async () => {
   await withContext({ userAgent: CHROME_UA, chrome: false }, ({ injectScript }, browser) => {
-    assert.throws(() => injectScript("ogkush.js"), /Invalid execution context/);
+    assert.throws(() => injectScript("ogCore.js"), /Invalid execution context/);
     assert.equal(browser.document.querySelector("script"), null);
   });
 });
@@ -110,6 +110,6 @@ test("KNOWN BUG: an unrecognised browser throws instead of reporting a context",
 
   await withContext({ userAgent: safariUA, chrome: true }, ({ isPluginContext, injectScript }) => {
     assert.throws(() => isPluginContext(), /not possible to identify the execution context/);
-    assert.throws(() => injectScript("ogkush.js"), /not possible to identify the execution context/);
+    assert.throws(() => injectScript("ogCore.js"), /not possible to identify the execution context/);
   });
 });

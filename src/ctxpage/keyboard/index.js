@@ -1,5 +1,5 @@
 import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import ogiMode from "../../util/enum/ogiMode.js";
 import debounce from "../../util/debounce.js";
 

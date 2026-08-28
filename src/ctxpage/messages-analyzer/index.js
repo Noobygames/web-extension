@@ -16,8 +16,8 @@
  *   thing: the timezone rewrite of `.msg_date` (`updateTimeZone()` below).
  *   `msg_date` and `timezoneDiff` appear in no analyzer class. That is the one
  *   piece that has to be carried over before this file can be removed.
- * - Both paths accumulate into the SAME store keys, `OGIData.expeditionSums` and
- *   `OGIData.combats`, and they disagree on the shape: `HarvestMessagesAnalyzer`
+ * - Both paths accumulate into the SAME store keys, `OGBIData.expeditionSums` and
+ *   `OGBIData.combats`, and they disagree on the shape: `HarvestMessagesAnalyzer`
  *   creates `harvest: [0, 0, 0]` (metal, crystal, deuterium) while this file
  *   creates `harvest: [0, 0]` and only ever adds to slots 0 and 1. Whichever path
  *   sees a date first decides the shape. The deuterium column is therefore the

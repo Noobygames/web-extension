@@ -4,7 +4,7 @@ import { toFormattedNumber } from "../../util/numbers.js";
 import * as Numbers from "../../util/numbers.js";
 import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import shipEnum from "../../util/enum/ship.js";
 import { CARGO_SHIP_IDS } from "../../util/harvestPlanner.js";
 import RecyclingYieldCalculator from "../../util/recyclingYieldCalculator.js";

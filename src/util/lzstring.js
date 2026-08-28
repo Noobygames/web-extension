@@ -6,7 +6,7 @@ import * as wait from "./wait.js";
  * The library is deliberately NOT on the boot path: it is only needed by the Pantry
  * sync and the import/export of the local store, so it is injected on demand over the
  * `ogi-lzstring` event instead of costing every page load. Lifted out of
- * `ogkush.js` in Phase 3 of refactoring.md.
+ * `ogCore.js` in Phase 3 of refactoring.md.
  */
 export function ensureLZString() {
   if (typeof LZString === "undefined") {

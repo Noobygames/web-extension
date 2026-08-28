@@ -2,7 +2,7 @@
  * calcNeededShips: how many cargos are needed to move a pile of resources.
  *
  * Written to pin the existing behaviour before optimising the function, so the rewrite is
- * provably equivalent. It runs in the page context (it reads OGIData and the resource bar),
+ * provably equivalent. It runs in the page context (it reads OGBIData and the resource bar),
  * so the browser harness gets no `chrome`.
  */
 import test from "node:test";
@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import { setupBrowser, importFresh, LOCALIZATION_EN } from "../helpers/globals.js";
 
 // The import lives inside withPage() because OgamePageData reads <meta> at import time. The
-// stored data is then seeded through the OGIData singleton rather than into localStorage
+// stored data is then seeded through the OGBIData singleton rather than into localStorage
 // directly: the singleton snapshots localStorage once when it is constructed, and production
 // code likewise always goes through it.
 
@@ -40,8 +40,8 @@ async function withPage({ json = {}, onPage = [0, 0, 0] }, run) {
 
   try {
     const { calcNeededShips } = await importFresh("src/util/calcNeededShips.js");
-    const OGIData = (await import("../../src/util/OGIData.js")).default;
-    OGIData.json = stored;
+    const OGBIData = (await import("../../src/util/OGBIData.js")).default;
+    OGBIData.json = stored;
 
     await run(calcNeededShips);
   } finally {

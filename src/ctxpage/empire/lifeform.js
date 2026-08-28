@@ -1,6 +1,6 @@
 import { fromFormattedNumber } from "../../util/numbers.js";
 import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGIData.js";
+import OGBIData from "../../util/OGBIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import { pageSignal } from "../../util/abort.js";
 
