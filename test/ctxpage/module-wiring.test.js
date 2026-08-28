@@ -174,6 +174,12 @@ test("the only `this` left in an extracted module belongs to an OGame object", (
       for (const match of lines[i].matchAll(/\b(?:this|that)\.([A-Za-z_$][\w$]*)/g)) {
         if (!allowed.has(match[1])) unexpected.push(`${file}:${i + 1} ${match[0]}`);
       }
+      // Computed access hides the same coupling from the dotted scan above: `FPSLoop`
+      // survived the cut as `this[callbackAsString](params)` and threw
+      // "Cannot read properties of undefined (reading 'checkDebris')" on every galaxy view.
+      for (const match of lines[i].matchAll(/\b(?:this|that)\s*\[/g)) {
+        unexpected.push(`${file}:${i + 1} ${match[0].trim()}`);
+      }
     }
   }
 

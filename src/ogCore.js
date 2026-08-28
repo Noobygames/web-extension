@@ -51,6 +51,7 @@ import { statistics } from "./ctxpage/stats/index.js";
 import ctxMessageAnalyzer from "./ctxpage/messages-analyzer/index.js";
 import * as DOM from "./util/dom.js";
 import { getLogger } from "./util/logger.js";
+import { getShipsData } from "./util/shipsData.js";
 import * as Numbers from "./util/numbers.js";
 import { pageContextInit, pageContextRequest } from "./util/service.callbackEvent.js";
 import * as ptreService from "./util/service.ptre.js";
@@ -306,17 +307,29 @@ class OGBeyondInfinity {
     } catch (e) {}
 
     if (this.page == "fleetdispatch") {
-      this.json.shipNames = {};
-      for (let id in fleetDispatcher.fleetHelper.shipsData) {
-        this.json.shipNames[fleetDispatcher.fleetHelper.shipsData[id].name] = id;
-        this.json.ships[id] = {
-          name: fleetDispatcher.fleetHelper.shipsData[id].name,
-          cargoCapacity: fleetDispatcher.fleetHelper.shipsData[id].baseCargoCapacity,
-          speed: fleetDispatcher.fleetHelper.shipsData[id].speed,
-          fuelConsumption: fleetDispatcher.fleetHelper.shipsData[id].fuelConsumption,
-        };
+      // OGame's own ship table, read off the dispatcher instance the game builds.
+      // Guarded on purpose: this used to be an unguarded chain, so a page where
+      // `fleetDispatcher` (or its `fleetHelper`) is not there yet threw straight out
+      // of start() and took every later step with it - the rebuilt dispatch UI
+      // included, which is why the whole page looked dead for one missing global.
+      const shipsData = getShipsData();
+      if (shipsData) {
+        this.json.shipNames = {};
+        for (let id in shipsData) {
+          this.json.shipNames[shipsData[id].name] = id;
+          this.json.ships[id] = {
+            name: shipsData[id].name,
+            cargoCapacity: shipsData[id].baseCargoCapacity,
+            speed: shipsData[id].speed,
+            fuelConsumption: shipsData[id].fuelConsumption,
+          };
+        }
+      } else {
+        // Keep the cached names/ships from the last visit rather than wiping them.
+        logger.warn("fleetDispatcher.fleetHelper.shipsData missing - keeping cached ship data");
       }
-      fleetDispatcher.apiTechData.forEach((tech) => {
+      const apiTechData = typeof fleetDispatcher !== "undefined" ? fleetDispatcher?.apiTechData : undefined;
+      apiTechData?.forEach((tech) => {
         this.json.technology[tech[0]] = tech[1];
       });
     }

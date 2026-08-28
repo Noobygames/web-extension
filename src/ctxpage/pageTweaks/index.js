@@ -12,6 +12,7 @@ import { openPlanetList } from "../fleetdispatch/index.js";
 import { tooltip } from "../../util/tooltip.js";
 import * as needsUtil from "../../util/needs.js";
 import Notifier from "../../util/Notifier.js";
+import { getShipsData } from "../../util/shipsData.js";
 
 /**
  * The small changes OGI makes to pages it does not otherwise own: the extra top-bar
@@ -232,7 +233,9 @@ function checkDebris(context) {
     return;
   }
 
-  FPSLoop("checkDebris");
+  // Re-arm the poll with a real callback: after the ogCore.js extraction this module has no
+  // `this`, so the old FPSLoop("checkDebris") string dispatch threw a TypeError.
+  FPSLoop(() => checkDebris(context));
   document.querySelectorAll(".cellDebris").forEach((element) => {
     let debris = element.querySelector(".ListLinks");
     if (!debris || !debris.classList.contains("ogl-debrisReady")) {
@@ -281,9 +284,9 @@ function checkDebris(context) {
   }
 }
 
-function FPSLoop(callbackAsString, params) {
+function FPSLoop(callback) {
   setTimeout(() => {
-    requestAnimationFrame(() => this[callbackAsString](params));
+    requestAnimationFrame(callback);
   }, 1e3 / 20);
 }
 
@@ -351,7 +354,7 @@ function utilities(context) {
       fleetDispatcher.refresh();
     });
 
-    const data = fleetDispatcher.fleetHelper.shipsData;
+    const data = getShipsData() ?? {};
     for (const id in data) {
       const tooltipDiv = DOM.createDOM("div", { class: "ogl-fleetInfo" }, data[id].name);
       tooltipDiv.append(

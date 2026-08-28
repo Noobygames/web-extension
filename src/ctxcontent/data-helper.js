@@ -35,7 +35,9 @@ export class DataHelper {
   }
 
   init() {
-    return new Promise(async (resolve, reject) => {
+    // Not an async executor: nothing in here awaits, and an async executor swallows a
+    // throw instead of rejecting the promise.
+    return new Promise((resolve) => {
       chrome.storage.local.get(["ogi-scanned-" + this.universe, "ogi-galaxy-" + this.universe], (result) => {
         let scannedJson;
         try {

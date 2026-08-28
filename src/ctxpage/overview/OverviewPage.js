@@ -10,7 +10,11 @@ class OverviewPage {
     this.logger = getLogger("OverviewPage");
   }
 
-  #updatePlanetOverviewDisplay(toggle) {
+  // `planet` is the caller's element and has to be handed in: it used to be read off
+  // the enclosing scope, where it does not exist, so every call threw a ReferenceError
+  // - swallowed by MakePrettierOverview's catch on the initial call, uncaught on the
+  // toggle click.
+  #updatePlanetOverviewDisplay(planet, toggle) {
     const optionName = `overview_display_planet_details`;
     const attributeName = `details-active`;
 
@@ -42,14 +46,14 @@ class OverviewPage {
       // create the toggle planet details button
       const togglePlanetDataButton = createDOM("div", { class: "togglePlanetDetails" });
       togglePlanetDataButton.addEventListener("click", () => {
-        this.#updatePlanetOverviewDisplay(true);
+        this.#updatePlanetOverviewDisplay(planet, true);
       });
 
       // add the toggle planet details button to the header
       detailWrapper.querySelector("#header_text").appendChild(togglePlanetDataButton);
 
       // init the display of the planet details
-      this.#updatePlanetOverviewDisplay(false);
+      this.#updatePlanetOverviewDisplay(planet, false);
 
       const planetOptions = detailWrapper.querySelector("#planetOptions");
       if (planetOptions) detailWrapper.appendChild(planetOptions);

@@ -6,6 +6,7 @@ export { betterFleetDispatcher } from "./betterFleetDispatcher.js";
 export { expedition } from "./expedition.js";
 export { collect, customMissions } from "./customMissions.js";
 import { getLogger } from "../../util/logger.js";
+import { getShipsData } from "../../util/shipsData.js";
 import { createDOM, createSVG } from "../../util/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
 import Translator from "../../util/translate.js";
@@ -310,11 +311,7 @@ function initFleetDispatcher(context) {
         elem.classList.add("ogi-transparent");
         let id = elem.getAttribute("data-technology");
         elem.appendChild(
-          createDOM(
-            "span",
-            { class: "ogi-speed" },
-            toFormattedNumber(fleetDispatcher.fleetHelper.shipsData[id].speed, 0)
-          )
+          createDOM("span", { class: "ogi-speed" }, toFormattedNumber(getShipsData()?.[id]?.speed ?? 0, 0))
         );
       });
     });
@@ -598,7 +595,7 @@ function selectBestCargoShip(context, preferredShipId = null) {
             cargoShipsOnPlanet[ship]
           );
           selectShips(context, ship, numShips);
-          resources -= fleetDispatcher.fleetHelper.shipsData[ship].baseCargoCapacity * numShips;
+          resources -= (getShipsData()?.[ship]?.baseCargoCapacity ?? 0) * numShips;
           if (resources <= 0) {
             enoughCargo = true;
             return;

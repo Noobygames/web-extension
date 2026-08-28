@@ -14,7 +14,7 @@ export function getLocalStorageSize() {
   var ogi = 0;
   for (var x in localStorage) {
     var amount = localStorage[x].length / 1024 / 1024;
-    if (!isNaN(amount) && localStorage.hasOwnProperty(x)) {
+    if (!isNaN(amount) && Object.hasOwn(localStorage, x)) {
       if (x == "ogk-data") {
         ogi += amount;
       } else {

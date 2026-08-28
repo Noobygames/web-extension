@@ -8,8 +8,8 @@
     "test:watch": "node --experimental-test-module-mocks --test --watch \"test/**/*.test.js\"",
     "coverage": "node --experimental-test-module-mocks --test --experimental-test-coverage --test-coverage-exclude=\"test/**\" --test-coverage-exclude=\"scripts/**\" \"test/**/*.test.js\"",
     "bench": "node scripts/bench.mjs",
-    "format": "prettier --write \"src/**/*.js\" \"test/**/*.js\" \"scripts/*.mjs\"",
-    "check": "eslint \"src/**/*.js\" \"test/**/*.js\" \"scripts/*.mjs\""
+    "format": "prettier --write \"src/**/*.js\" \"test/**/*.js\" \"scripts/*.mjs\" \"config/*.cjs\" \".eslintrc.cjs\"",
+    "check": "eslint \"src/**/*.js\" \"test/**/*.js\" \"scripts/*.mjs\" \"config/*.cjs\" \".eslintrc.cjs\""
   },
   "repository": {
     "type": "git",

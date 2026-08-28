@@ -195,8 +195,7 @@ function addGalaxyMarkers(context) {
       let id =
         (playerDiv && playerDiv.getAttribute("rel") && playerDiv.getAttribute("rel").replace("player", "")) || 99999;
       let coords = galaxy + ":" + system + ":" + Number(index + 1);
-      // const colors = DOM.createDOM("div", { class: "ogl-colors", "data-coords": coords, "data-context": "galaxy" });
-      console.log("Coord: " + coords + " parent:" + colors + " Id:" + id + " Moon:" + moon);
+      const colors = DOM.createDOM("div", { class: "ogl-colors", "data-coords": coords, "data-context": "galaxy" });
       element.insertBefore(colors, element.firstChild);
       addMarkerUI(context, coords, colors, id, moon);
     });

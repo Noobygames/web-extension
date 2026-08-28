@@ -15,6 +15,7 @@ console.log(`Ogame Beyond Infinity - make targets
   make install        Install dev dependencies (prettier, eslint, rollup, terser, clean-css)
   make format         Format all sources with prettier (run before every commit)
   make check          Run eslint
+  make globals        List the OGame page globals src/ reads (docs/ogame-globals.md)
   make test           Run the unit test suite (node:test + jsdom)
   make test-watch     Re-run the suite on every change
   make coverage       Run the suite and print a coverage report

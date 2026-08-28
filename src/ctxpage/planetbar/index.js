@@ -212,6 +212,11 @@ function harvest(context) {
   context.planetList.forEach((planet) => {
     let coords = planet.querySelector(".planet-koords").textContent.split(":");
     if (context.current.coords != coords.join(":") || context.current.isMoon) {
+      // The icon is absent on some planet rows, and an unguarded call here throws inside
+      // renderPlanetBar(), which aborts start() before any page-specific work runs.
+      planet
+        .querySelector(".planetlink .icon-planet")
+        ?.addEventListener("click", (event) => btnAction(event, coords, 3));
     }
     let moon = planet.querySelector(".moonlink");
     if (moon) {

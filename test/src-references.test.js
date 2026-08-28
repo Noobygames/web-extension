@@ -17,15 +17,20 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { parse } from "acorn";
+import { createRequire } from "node:module";
+
+// The OGame half of the list is shared with .eslintrc.cjs so the two checks can never
+// drift apart. See config/ogame-globals.cjs for what is in it and how it was verified.
+const ogameGlobals = createRequire(import.meta.url)("../config/ogame-globals.cjs");
 
 const projectRoot = path.resolve(import.meta.dirname, "..");
 
 /**
  * What the browser and the OGame page provide.
  *
- * The second half is the interesting one: OGame's own page scripts define these, and
- * the extension reads them off the global scope on purpose. Adding a name here is a
- * claim that the game provides it — check before you do.
+ * Only the language and browser half lives here. The OGame page globals come from
+ * config/ogame-globals.cjs, which ESLint's `no-undef` reads too - one list, one place
+ * to justify a new name.
  */
 const PROVIDED = new Set([
   // language and browser
@@ -121,69 +126,7 @@ const PROVIDED = new Set([
   "scrollTo",
   "chrome",
   "browser",
-  "cloneInto",
-  // OGame page globals
-  "$",
-  "jQuery",
-  "fleetDispatcher",
-  "FleetDispatcher",
-  "technologyDetails",
-  "playerId",
-  "fadeBox",
-  "getFormatedDate",
-  "getFormatedTime",
-  "formatTimeWrapper",
-  "formatTime",
-  "clampInt",
-  "LocalizationStrings",
-  "DOMPurify",
-  "Chart",
-  "LZString",
-  "Tipped",
-  "token",
-  "errorBoxDecision",
-  "errorBoxAsArray",
-  "showNotification",
-  "setNewTokenData",
-  "openJumpgate",
-  "jumpgateDone",
-  "removeTooltip",
-  "getTooltipSelector",
-  "initTooltips",
-  "loadTimers",
-  "localTime",
-  "serverTime",
-  "timeDiff",
-  "timeZoneDiffSeconds",
-  "miniFleetToken",
-  "ogame",
-  "resourcesBar",
-  "premium",
-  "toggleShipDetails",
-  "sendShipsWithPopup",
-  "submitForm",
-  "doExpedition",
-  "displayContentGalaxy",
-  "renderContentGalaxy",
-  "ajaxCall",
-  "highscoreContentUrl",
-  "currentCategory",
-  "currentType",
-  "initHighscoreContent",
-  "userWantsFocus",
-  "searchPosition",
-  "initBuddyRequestForm",
-  "galaxy",
-  "system",
-  "ajaxEventboxURI",
-  "toggleEvents",
-  "unions",
-  "expeditionFleetTemplates",
-  "standardFleetTemplates",
-  "shipsOnPlanet",
-  "spionageAmount",
-  "playerName",
-  "honorScore",
+  ...ogameGlobals.all,
 ]);
 
 function sourceFiles() {

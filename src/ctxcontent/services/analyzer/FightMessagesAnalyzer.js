@@ -240,7 +240,7 @@ class FightMessagesAnalyzer {
           return;
 
         side.technologies.forEach((ship) => {
-          if (!ship.hasOwnProperty("destroyedTotal") || ship.destroyedTotal === 0) return;
+          if (!Object.hasOwn(ship, "destroyedTotal") || ship.destroyedTotal === 0) return;
 
           if (!losses[ship.technologyId]) losses[ship.technologyId] = 0;
           losses[ship.technologyId] += ship.destroyedTotal;

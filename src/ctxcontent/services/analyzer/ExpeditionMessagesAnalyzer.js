@@ -73,11 +73,11 @@ class ExpeditionMessagesAnalyzer {
 
         if (
           !sizeBlacklist.includes(expeditions[msgId].result?.toLowerCase()) &&
-          expeditions[msgId].hasOwnProperty("size") &&
+          Object.hasOwn(expeditions[msgId], "size") &&
           expeditions[msgId].size
         ) {
           let amountDisplay = "";
-          if (expeditions[msgId].hasOwnProperty("amount") && !!expeditions[msgId].amount) {
+          if (Object.hasOwn(expeditions[msgId], "amount") && !!expeditions[msgId].amount) {
             if (expeditions[msgId].result.toLowerCase() === "merchant") {
               amountDisplay = `${expeditions[msgId].amount[0]} / ${expeditions[msgId].amount[1]} / ${expeditions[msgId].amount[2]}`;
             } else if (!expeditions[msgId].amount[3]) {
