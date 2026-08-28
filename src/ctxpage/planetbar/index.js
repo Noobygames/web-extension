@@ -104,7 +104,6 @@ function jumpGate(context) {
     if (data.success) {
       planet = data["targetMoon"];
       /* ogi code */
-      const dest = data["targetMoon"];
       const origin = new URL(context.current.planet.querySelector(".moonlink").href).searchParams.get("cp");
       const time = new Date();
       OGBIData.json.jumpGate[planet] = time;
@@ -161,8 +160,7 @@ function jumpGate(context) {
   }
 }
 
-function flyingFleet(context) {
-  let total = 0;
+function flyingFleet() {
   let flyingCount = 0;
   const flying = OGBIData.json.flying.fleet;
   for (let id in flying) flyingCount += flying[id];
@@ -214,9 +212,6 @@ function harvest(context) {
   context.planetList.forEach((planet) => {
     let coords = planet.querySelector(".planet-koords").textContent.split(":");
     if (context.current.coords != coords.join(":") || context.current.isMoon) {
-      let btn = planet
-        .querySelector(".planetlink .planetPic")
-        .addEventListener("click", (event) => btnAction(event, coords, 1));
     }
     let moon = planet.querySelector(".moonlink");
     if (moon) {
@@ -291,7 +286,7 @@ function updateTimer(context, element, increment) {
   }
 }
 
-function updateFlyings(context) {
+function updateFlyings() {
   const FLYING_PER_PLANETS = {};
   const INCOMING_HOSTILE_FLEETS_PER_PLANETS = {};
   const eventTable = document.getElementById("eventContent");
@@ -304,7 +299,6 @@ function updateFlyings(context) {
       .split("unionunion")[1];
     unionTable.push([union, acsRow.querySelectorAll("td")[1].textContent]);
   });
-  const unionArrivalTime = Object.fromEntries(unionTable);
   const rows = eventTable.querySelectorAll("#eventContent tr");
   rows.forEach((row) => {
     const fleetMissionType = row.getAttribute("data-mission-type");
@@ -374,7 +368,7 @@ function updateFlyings(context) {
   incomingHostileFleetPerPlanets = INCOMING_HOSTILE_FLEETS_PER_PLANETS;
 }
 
-function updatePlanets_IncomingHostileFleet(context) {
+function updatePlanets_IncomingHostileFleet() {
   if (incomingHostileFleetPerPlanets) {
     const planetList = document.getElementById("planetList");
 
@@ -429,7 +423,7 @@ function updatePlanets_IncomingHostileFleet(context) {
   }
 }
 
-function updatePlanets_FleetActivity(context) {
+function updatePlanets_FleetActivity() {
   if (flyingFleetPerPlanets && OGBIData.json.options.fleetActivity) {
     const planetList = document.getElementById("planetList").children;
     Array.from(planetList).forEach((planet) => {
@@ -569,7 +563,6 @@ function updateSpaceShipsPresence(context) {
   const ownFleetYieldIconsDisplayMode = getOption("ownFleetYieldIconsDisplayMode");
   if (!iconVisibility.shouldDisplayIcon(ownFleetYieldIconsDisplayMode)) return;
 
-  let now = new Date();
   document.querySelectorAll(".planet-koords").forEach((planet) => {
     const smallplanet = planet.parentElement.parentElement;
     const planetId = planet.parentElement.href.match(/=(\d+)/)[1];

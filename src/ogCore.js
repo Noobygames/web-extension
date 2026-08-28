@@ -491,9 +491,9 @@ class OGBeyondInfinity {
           elem.classList.remove("tooltipRight");
         });
         ogCore.renderPlanetBar();
-        ogCore.updateFlyings();
-        ogCore.updatePlanets_IncomingHostileFleet();
-        ogCore.updatePlanets_FleetActivity();
+        updateFlyings();
+        updatePlanets_IncomingHostileFleet();
+        updatePlanets_FleetActivity();
       },
       { subtree: false, childList: true }
     );

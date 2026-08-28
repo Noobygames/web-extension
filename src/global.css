@@ -9868,13 +9868,18 @@ body.no-commander .contentBoxBody {
 
 /* Floated and cleared, so the button sits under the report control instead of
    in the sender line - inline it pushed the title and date apart. */
+.chat_msg {
+  position: relative; /* Wichtig als Anker für den absoluten Button */
+}
+
 .chat_msg .ogl-chat-pm {
-  clear: right;
-  float: right;
+  position: absolute;
+  top: 18px;
+  right: 6px;
   height: 12px;
-  margin: 2px 0 2px 6px;
-  opacity: 0.55;
   width: 12px;
+  cursor: ponter;
+  z-index: 10; /* Stellt sicher, dass er klickbar bleibt */
 }
 
 .chat_msg .ogl-chat-pm:hover {

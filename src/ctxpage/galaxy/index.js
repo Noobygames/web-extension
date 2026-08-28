@@ -65,7 +65,6 @@ function onGalaxyUpdate(context) {
   if (context.page != "galaxy") return;
 
   let timeout;
-  let previousSystem = null;
   doExpedition = () => {
     const url = new URLSearchParams({
       page: "ingame",
@@ -106,7 +105,6 @@ function onGalaxyUpdate(context) {
   let dc = displayContentGalaxy;
   displayContentGalaxy = (b) => {
     dc(b);
-    var json = $.parseJSON(b);
     if (!OGBIData.keepTooltip) {
       document.querySelector(".ogl-tooltip") && document.querySelector(".ogl-tooltip").classList.remove("ogl-active");
       if (timeout) clearTimeout(timeout);
@@ -313,7 +311,6 @@ function refreshStalk(context, stalk) {
       //console.log(player.planets);
       let olds = stalk.querySelectorAll("a");
       let max;
-      let maxCoords;
       let found = false;
       let coords;
       olds.forEach((elem) => {
@@ -794,10 +791,9 @@ function highlightTarget(context) {
 
 function getMarkedPlayers(context, markerList) {
   let playerList = [];
-  let markerListLength = Object.keys(markerList).length;
 
   if (markerList) {
-    Object.keys(markerList).forEach(function (key, index) {
+    Object.keys(markerList).forEach(function (key) {
       const id = parseInt(markerList[key].id);
       if (playerList.indexOf(id) == -1) {
         playerList.push(id);
