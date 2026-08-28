@@ -39,6 +39,7 @@ import {
 } from "./ctxpage/planetbar/index.js";
 import {
   betterFleetDispatcher,
+  cacheShipData,
   collect,
   customMissions,
   expedition,
@@ -51,7 +52,6 @@ import { statistics } from "./ctxpage/stats/index.js";
 import ctxMessageAnalyzer from "./ctxpage/messages-analyzer/index.js";
 import * as DOM from "./util/dom.js";
 import { getLogger } from "./util/logger.js";
-import { getShipsData } from "./util/shipsData.js";
 import * as Numbers from "./util/numbers.js";
 import { pageContextInit, pageContextRequest } from "./util/service.callbackEvent.js";
 import * as ptreService from "./util/service.ptre.js";
@@ -317,31 +317,13 @@ class OGBeyondInfinity {
     } catch (e) {}
 
     if (this.page == "fleetdispatch") {
-      // OGame's own ship table, read off the dispatcher instance the game builds.
-      // Guarded on purpose: this used to be an unguarded chain, so a page where
-      // `fleetDispatcher` (or its `fleetHelper`) is not there yet threw straight out
-      // of start() and took every later step with it - the rebuilt dispatch UI
-      // included, which is why the whole page looked dead for one missing global.
-      const shipsData = getShipsData();
-      if (shipsData) {
-        OGBIData.json.shipNames = {};
-        for (let id in shipsData) {
-          OGBIData.json.shipNames[shipsData[id].name] = id;
-          OGBIData.json.ships[id] = {
-            name: shipsData[id].name,
-            cargoCapacity: shipsData[id].baseCargoCapacity,
-            speed: shipsData[id].speed,
-            fuelConsumption: shipsData[id].fuelConsumption,
-          };
-        }
-      } else {
-        // Keep the cached names/ships from the last visit rather than wiping them.
-        logger.warn("fleetDispatcher.fleetHelper.shipsData missing - keeping cached ship data");
-      }
-      const apiTechData = typeof fleetDispatcher !== "undefined" ? fleetDispatcher?.apiTechData : undefined;
-      apiTechData?.forEach((tech) => {
-        OGBIData.json.technology[tech[0]] = tech[1];
-      });
+      // OGame's ship table and technology list, taken off the dispatcher the game
+      // builds. Deliberately not awaited: `fleetHelper` is put on `fleetDispatcher`
+      // after this point in the page's own start-up, so reading it here found nothing
+      // and warned on every load. `cacheShipData()` takes the table the moment it
+      // exists - synchronously when it already does - and keeps the previous visit's
+      // copy until then. See ctxpage/fleetdispatch/shipData.js.
+      cacheShipData();
     }
     document.querySelectorAll(".moonlink").forEach((elem) => {
       elem.classList.add("tooltipRight");

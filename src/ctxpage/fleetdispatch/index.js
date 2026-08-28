@@ -5,6 +5,7 @@ import { fleetState } from "./state.js";
 export { betterFleetDispatcher } from "./betterFleetDispatcher.js";
 export { expedition } from "./expedition.js";
 export { collect, customMissions } from "./customMissions.js";
+export { cacheShipData } from "./shipData.js";
 import { getLogger } from "../../util/logger.js";
 import { getShipsData } from "../../util/shipsData.js";
 import { createDOM, createSVG } from "../../util/dom.js";

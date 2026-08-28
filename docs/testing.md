@@ -75,7 +75,7 @@ Where singleton can reset through own API, prefer that — `OGBIData.json = {…
 
 ## What is covered
 
-`make coverage` print current table. As of writing: **516 tests**. Headline percentage not meaningful alone — the extracted page modules are in the denominator and almost none of them has behavioural coverage.
+`make coverage` print current table. As of writing: **524 tests**. Headline percentage not meaningful alone — the extracted page modules are in the denominator and almost none of them has behavioural coverage.
 
 | Area              | Module                                                                                 | Notes                                                                                                 |
 | ----------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
@@ -98,6 +98,7 @@ Where singleton can reset through own API, prefer that — `OGBIData.json = {…
 | Message analyzers | `ctxcontent/services/analyzer/*` | Tab dispatch for all five; parsing paths for harvest, trade, expedition fights. |
 | Pantry backup | `ctxpage/pantry/index.js` | What the `post` upload actually puts in the basket, plus the timestamp it records. |
 | Bridge token | `main.js` vs `util/service.callbackEvent.js` | The two hand-copied `createCallbackToken()` bodies compared as source. |
+| Ship table | `ctxpage/fleetdispatch/shipData.js` | Table already there / arrives late / empty / never arrives, plus the one-write rule. |
 
 **Fixtures** live in `test/fixtures/`. `ogamePage.js` build OGame 13 page fragments
 (planet bar, officer bar, meta tags) out of named pieces, not saved dump: real
