@@ -94,7 +94,7 @@ function displayPlayer(parent, id) {
   }
 }
 
-function add(coords, parent, id) {
+function add(_context, coords, parent, id, _moon) {
   const div = createDOM("div", { class: "ogl-colorChoice" });
   const markers = OGBIData.markers;
 

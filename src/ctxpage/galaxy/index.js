@@ -52,12 +52,12 @@ function addGalaxyTooltips(context) {
         )
       );
       sender.classList.add("ogl-tooltipReady");
-      stalk(context, sender, id);
+      stalk(sender, id);
     }
   });
 }
 
-function fixRedirectGalaxy(context) {
+function fixRedirectGalaxy() {
   history.pushState({}, null, `/game/index.php?page=ingame&component=galaxy&galaxy=${galaxy}&system=${system}`);
 }
 
@@ -195,8 +195,8 @@ function addGalaxyMarkers(context) {
       let id =
         (playerDiv && playerDiv.getAttribute("rel") && playerDiv.getAttribute("rel").replace("player", "")) || 99999;
       let coords = galaxy + ":" + system + ":" + Number(index + 1);
-      const colors = DOM.createDOM("div", { class: "ogl-colors", "data-coords": coords, "data-context": "galaxy" });
-      //console.log('Coord: ' + coords + ' parent:' + colors + ' Id:' + id + ' Moon:' + moon);
+      // const colors = DOM.createDOM("div", { class: "ogl-colors", "data-coords": coords, "data-context": "galaxy" });
+      console.log("Coord: " + coords + " parent:" + colors + " Id:" + id + " Moon:" + moon);
       element.insertBefore(colors, element.firstChild);
       addMarkerUI(context, coords, colors, id, moon);
     });
@@ -764,12 +764,12 @@ function targetList(context, show) {
   }
 }
 
-function addMarkerUI(context, coords, parent, id) {
-  markerui.add(coords, parent, id);
+function addMarkerUI(_context, coords, parent, id, _moon) {
+  markerui.add(_context, coords, parent, id, _moon);
 }
 
-function stalk(context, sender, player, delay) {
-  stalkUtil.stalk(context, sender, player, delay);
+function stalk(sender, player, delay) {
+  stalkUtil.stalk(sender, player, delay);
 }
 
 function highlightTarget(context) {

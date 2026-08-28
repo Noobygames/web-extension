@@ -228,56 +228,60 @@ function quickPlanetList(context) {
 
 function checkDebris(context) {
   // TODO: reuse code?, hide debris image with css?, complete align style with regular debris?
-  if (context.page === "galaxy") {
-    FPSLoop(context, "checkDebris");
-    document.querySelectorAll(".cellDebris").forEach((element) => {
-      let debris = element.querySelector(".ListLinks");
-      if (!debris || !debris.classList.contains("ogl-debrisReady")) {
-        element.classList.remove("ogl-active");
-      }
-      if (debris && !debris.classList.contains("ogl-debrisReady")) {
-        debris.classList.add("ogl-debrisReady");
-        let total = 0;
-        const frag = document.createDocumentFragment();
-        let i = 0;
-        debris.querySelectorAll(".debris-content").forEach((resources) => {
-          const value = Numbers.fromFormattedNumber(resources.textContent.replace(/(\D*)/, ""));
-          total += value;
+  if (context.page != "galaxy") {
+    return;
+  }
 
-          let classResources = ["ogl-metal", "ogl-crystal", "ogl-deut"];
-          frag.appendChild(
-            DOM.createDOM("div", { class: classResources[i++] }, Numbers.toFormattedNumber(value, null, true))
-          );
-        });
-        element.querySelector(".microdebris").appendChild(frag);
-        if (total > OGBIData.json.options.rvalLimit) {
-          element.classList.add("ogl-active");
-        }
-      }
-    });
-    const debris16 = document.querySelector(".expeditionDebrisSlotBox #expeditionDebris");
-    if (debris16 && !debris16.classList.contains("ogl-done")) {
-      debris16.classList.add("ogl-done");
-      const div = DOM.createDOM("div", { class: "cellDebris microdebris debris_1" });
+  FPSLoop("checkDebris");
+  document.querySelectorAll(".cellDebris").forEach((element) => {
+    let debris = element.querySelector(".ListLinks");
+    if (!debris || !debris.classList.contains("ogl-debrisReady")) {
+      element.classList.remove("ogl-active");
+    }
+    if (debris && !debris.classList.contains("ogl-debrisReady")) {
+      debris.classList.add("ogl-debrisReady");
       let total = 0;
+      const frag = document.createDocumentFragment();
       let i = 0;
-      let classResources = ["ogl-metal", "ogl-crystal", "ogl-deut"];
-      debris16.querySelectorAll(".ListLinks li.debris-content").forEach((element) => {
-        const value = Numbers.fromFormattedNumber(element.textContent.replace(/(\D*)/, ""));
+      debris.querySelectorAll(".debris-content").forEach((resources) => {
+        const value = Numbers.fromFormattedNumber(resources.textContent.replace(/(\D*)/, ""));
         total += value;
-        div.appendChild(
+
+        let classResources = ["ogl-metal", "ogl-crystal", "ogl-deut"];
+        frag.appendChild(
           DOM.createDOM("div", { class: classResources[i++] }, Numbers.toFormattedNumber(value, null, true))
         );
       });
-      debris16.replaceChildren(div);
+      element.querySelector(".microdebris").appendChild(frag);
       if (total > OGBIData.json.options.rvalLimit) {
-        debris16.classList.add("ogl-active");
+        element.classList.add("ogl-active");
       }
     }
+  });
+
+  const debris16 = document.querySelector(".expeditionDebrisSlotBox #expeditionDebris");
+  if (!debris16 || debris16.classList.contains("ogl-done")) {
+    return;
+  }
+
+  debris16.classList.add("ogl-done");
+  const div = DOM.createDOM("div", { class: "cellDebris microdebris debris_1" });
+  let total = 0;
+  let i = 0;
+  let classResources = ["ogl-metal", "ogl-crystal", "ogl-deut"];
+  debris16.querySelectorAll(".ListLinks li.debris-content").forEach((element) => {
+    const value = Numbers.fromFormattedNumber(element.textContent.replace(/(\D*)/, ""));
+    total += value;
+    div.appendChild(DOM.createDOM("div", { class: classResources[i++] }, Numbers.toFormattedNumber(value, null, true)));
+  });
+
+  debris16.replaceChildren(div);
+  if (total > OGBIData.json.options.rvalLimit) {
+    debris16.classList.add("ogl-active");
   }
 }
 
-function FPSLoop(context, callbackAsString, params) {
+function FPSLoop(callbackAsString, params) {
   setTimeout(() => {
     requestAnimationFrame(() => this[callbackAsString](params));
   }, 1e3 / 20);

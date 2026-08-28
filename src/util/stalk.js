@@ -300,7 +300,7 @@ function renderHistoricList(sideStalk, undoRow = null) {
   return list;
 }
 
-export function stalk(_context, sender, player, delay = undefined) {
+export function stalk(sender, player, delay = undefined) {
   let finalPlayer;
   const render = (p) => {
     finalPlayer = p;
