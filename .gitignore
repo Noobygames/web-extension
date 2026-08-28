@@ -7,3 +7,7 @@ node_modules/
 /local-extension
 /.local-extension-key.pem
 /.local-extension-installed
+
+# Old stamped install snapshot, was tracked by mistake (123 files, ~33.5k JS lines
+# duplicating src/). It is a build output, not a backup - the history is in git.
+/local-extension-backup

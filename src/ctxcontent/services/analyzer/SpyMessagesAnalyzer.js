@@ -4,6 +4,7 @@ import { createDOM } from "../../../util/dom.js";
 import { SpyReport } from "./Object/SpyReport.js";
 import ship from "../../../util/enum/ship.js";
 import { tooltip } from "../../../util/tooltip.js";
+import { popup } from "../../../util/popup.js";
 import DateTime from "../../../util/dateTime.js";
 import { toFormattedNumber } from "../../../util/numbers.js";
 import { calcNeededShips } from "../../../util/calcNeededShips.js";
@@ -657,7 +658,7 @@ class SpyMessagesAnalyzer {
 
       optColSimButton.addEventListener("click", () => {
         if (!OGIData.options.simulator) {
-          this.popup(
+          popup(
             null,
             createDOM("div", { class: "ogl-warning-dialog overmark" }, "External tool not configured in 'Settings'")
           );

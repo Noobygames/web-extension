@@ -15,8 +15,8 @@ Alle Zahlen aus dem aktuellen `master` gemessen, nicht geschätzt.
 
 | Messung                                | Wert                                                               |
 | :------------------------------------- | :----------------------------------------------------------------- |
-| `src/**` ohne `libs/`                  | 33.859 Zeilen                                                      |
-| davon `src/ogkush.js`                  | **19.024 Zeilen (56 %)**, eine Klasse mit **160 Methoden**         |
+| `src/**` ohne `libs/`                  | ~~33.859~~ **33.580** Zeilen (Phase 1)                             |
+| davon `src/ogkush.js`                  | ~~19.024~~ **18.654 Zeilen (55 %)**, **151 Methoden** (Phase 1)    |
 | Testabdeckung gesamt                   | 68,1 % Zeilen — aber `ogkush.js` ist **nicht dabei**               |
 | Dateien ohne jede Abdeckung            | 34, darunter `ogkush.js`, `background.js`, alle 5 Message-Analyzer |
 | `npm run check`                        | ~~404 Fehler~~ **0** — Phase 0 erledigt, gatet in CI               |
@@ -65,7 +65,7 @@ Schnitte.**
 
 ```
 Phase 0  Werkzeug reparieren        [ERLEDIGT]  -> Lint ist grün und gatet in CI
-Phase 1  Toter Code + Delegaten     (Tage)      -> ~500 Zeilen weg, ohne Verhalten zu ändern
+Phase 1  Toter Code + Delegaten     [ERLEDIGT]  -> 370 Zeilen weg, 123 Dateien untracked
 Phase 2  Charakterisierungstests    (1-2 Wochen)-> Netz für alles Folgende
 Phase 3  ogkush.js aufteilen        (Wochen)    -> der eigentliche Schnitt
 Phase 4  Store-Zugriff vereinheitl. (1 Woche)   -> this.json -> OGIData
@@ -320,74 +320,114 @@ Lint sofort wieder rot, und der ganze Zweck dieser Phase ist wieder weg.
 
 ---
 
-## Phase 1 — Toter Code und Schein-Delegaten
+## Phase 1 — Toter Code und Schein-Delegaten — **ERLEDIGT**
 
-**Problem A: 10 Methoden in `ogkush.js` haben genau eine Erwähnung — ihre eigene Definition.**
+`src/ogkush.js`: 19.024 → **18.654 Zeilen** (−370). Getrackte Dateien: 315 → **192** (−123).
+Tests 391 → **395**, alle grün. Lint 0. Build läuft (`ogkush.js`-Bundle 1128 KB).
 
-`calcAvailableFret`, `cleanValue`, `convertDuration`, `fetchAndConvertRC`, `generateGalaxyLink`,
-`getJSON`, `hasActivityChanged`, `recordActivityChange`, `recordLostConnectivity`, `resetStalk`.
-Zusammen rund 250 Zeilen. `cleanValue` existiert zusätzlich als getestetes
-`src/util/cleanValue.js` (100 % Abdeckung) — die Kopie in der Klasse ist die tote.
+### Problem A — Methoden ohne Aufrufer
 
-**Problem B: Methoden, die nur an ein `util/`-Modul weiterreichen.**
+Neun der zehn geplanten waren wirklich tot und sind weg: `calcAvailableFret`, `cleanValue`,
+`convertDuration`, `generateGalaxyLink`, `getJSON`, `hasActivityChanged`, `recordActivityChange`,
+`recordLostConnectivity`, `resetStalk` (148 Zeilen).
 
-```js
-tooltip(sender, content, autoHide, side, timer) { utilTooltip.tooltip(...); }   // 4 Aufrufe
-popup(header, content) { popupUtil.popup(header, content); }                    // 16 Aufrufe
-formatToUnits(value) { return Numbers.formatToUnits(value); }                   // 1 Aufruf
-```
+**Der zehnte war nicht tot.** `fetchAndConvertRC` (96 Zeilen) wird aus
+`ctxpage/messages-analyzer/index.js:385` gerufen, und diese Datei ist live — genau der Punkt, den
+Schritt 5 unten offen hält. Der ursprüngliche Plan hatte den Aufruf übersehen, weil er über `this`
+aus einem `.call(this)` läuft und in keiner Suche nach `ogKush.fetchAndConvertRC` auftaucht. Er
+bleibt, bis die Entscheidung über den Alt-Analyzer gefallen ist. Das erklärt zugleich, warum das
+Zeilenziel knapp verfehlt wurde: diese eine Methode ist mehr als die Hälfte der Lücke.
 
-Sie kosten nichts außer einer zweiten Wahrheit über die Herkunft dieser Funktionen.
+### Problem D — die abgeschaltete Tooltip-Kette
 
-**Problem C: `this.createDOM()` ist eine leicht abweichende Kopie von `util/dom.js#createDOM`.**
-52 Aufrufstellen. Der Unterschied ist real und darf nicht wegrefactort werden: die Klassenversion
-setzt Inhalt über `e.html(content)` (also durch DOMPurify), die Util-Version setzt `textContent`.
-Ein blindes Ersetzen bricht jede Stelle, die HTML übergibt.
+Gelöscht: der `goodbyeTipped`-Kommentarblock (33 Zeilen), `betterTooltip()` samt Aufruf in
+`start()`, `showTooltip()`, `betterAPITooltip()` — und im Nachlauf `trashsimTooltip()`,
+`this.eventAction` und der dadurch unbenutzte `json.js`-Import. Zusammen 174 Zeilen.
 
-**Problem D: die abgeschaltete Tooltip-Kette.** Drei zusammenhängende Stellen:
+Die Frage „Übergang tipped → tippy passiert oder aufgegeben?" ist entschieden: **passiert.** Beleg
+im Code selbst — `ogkush.js` ruft an anderer Stelle `ship._tippy.disable()`. Das Spiel benutzt
+tippy, der Workaround wartete auf ein Ereignis, das längst eingetreten war.
 
-- `ogkush.js:106` — die IIFE `goodbyeTipped()` (~30 Zeilen) steht komplett in einem Blockkommentar,
-  „temporary workaround until a transition in OGI from tipped to tippy is done".
-- `ogkush.js:14935` — `betterTooltip()` ist dadurch ein **leerer Methodenrumpf**, wird aber in
-  `start()` (Zeile 1763) weiterhin aufgerufen.
-- Damit sind `showTooltip()` (~55 Zeilen) und `betterAPITooltip()` (~32 Zeilen) unerreichbar: die
-  einzige Referenz auf `showTooltip` steht im auskommentierten Block, und `betterAPITooltip` wird
-  nur aus `showTooltip` gerufen.
+**Eine Löschung entfernt ein echtes Feature:** `trashsimTooltip()` baute den Trashsim-Prefill-Button
+in Flotten-Tooltips. Er war seit der Abschaltung nicht erreichbar, hing aber nur an `showTooltip()`.
+Halb löschen wäre der dritte Zustand, den der Plan verbietet — also ganz weg. Die Historie hat ihn;
+wer ihn zurückwill, hängt ihn an den tippy-Pfad, nicht an `Tipped.show`.
 
-Zusammen ~120 tote Zeilen plus ein wirkungsloser Aufruf im Startpfad. Die Umstellung tipped → tippy
-ist entweder passiert oder aufgegeben — beides muss zu einem Löschen führen, kein dritter Zustand.
+Ebenfalls weg: **`showTabTimer()`** (22 Zeilen), dessen Aufruf in `start()` auskommentiert war. Die
+Entwurfsnotizen aus dem Kopf der Methode sind nicht verloren, sondern nach Phase 6 gewandert.
 
-**Problem E: ein vollständiger Zweitbaum liegt im Repo.** `local-extension-backup/` ist **getrackt**
-(123 Dateien, 33.535 JS-Zeilen — praktisch so groß wie `src/`) und enthält einen alten,
-unbundleten Stand inklusive eigener `ogkush.js`. Er wurde zuletzt in `e6849bc` mitverändert, wird
-aber nirgends gebaut, getestet oder gelintet. Nebenwirkung: jedes `grep` über das Repo liefert jeden
-Treffer doppelt bis dreifach, was Werkzeuge und Menschen gleichermaßen in die Irre führt.
-(`local-extension/` daneben ist die Ausgabe von `make install-brave` und korrekt via `.gitignore`
-ausgeschlossen — nur die `-backup`-Variante ist das Problem.)
+### Problem B — Schein-Delegaten
 
-**Schritte.**
+`tooltip()` (3 Aufrufe), `popup()` (15), `formatToUnits()` (1) aufgelöst, Aufrufstellen auf
+`utilTooltip.tooltip` / `popupUtil.popup` / `Numbers.formatToUnits` umgestellt.
 
-1. Die 13 toten Methoden löschen (10 aus A, dazu `showTooltip`, `betterAPITooltip` und der
-   `goodbyeTipped`-Kommentarblock aus D), ein Commit, Begründung in der Message. `betterTooltip()`
-   und sein Aufruf in `start()` mit weg.
-2. Delegaten B auflösen: Aufrufstellen auf den direkten Import umstellen, Methoden löschen.
-3. Für C **nicht** ersetzen, sondern trennen: `createDOMSanitized()` nach `util/dom.js` ziehen, die
-   52 Stellen darauf umbiegen, Klassenmethode löschen. Erst danach kann man einzeln entscheiden,
-   welche Stelle eigentlich `textContent` will.
-4. `local-extension-backup/` aus der Versionierung entfernen (`git rm -r --cached`) und in
-   `.gitignore` aufnehmen — oder ersatzlos löschen. Die Historie liegt in Git; ein zweiter Baum im
-   Arbeitsverzeichnis ist kein Backup, sondern eine zweite Wahrheit.
-5. `src/ctxpage/messages-analyzer/index.js` (678 Zeilen) klären. Er ist **live** — `analyzer()`
-   steigt mit `if (this.page !== "messages") return;` aus und wird über
-   `ctxMessageAnalyzer.call(this)` gerufen — läuft aber parallel zum neueren
-   `src/ctxpage/messages/index.js`. Entscheidung dokumentieren: entweder migrieren und löschen, oder
-   im Kopf der Datei begründen, warum beide bleiben. Der auskommentierte Deuterium-Parser dort
-   (`:513`) verschwindet mit der Entscheidung, so oder so.
+**Dabei ist ein echter Bug aufgefallen.** `SpyMessagesAnalyzer.js:660` rief `this.popup(…)` — aber
+`SpyMessagesAnalyzer` hat keine `popup`-Methode, erbt von nichts und ist nicht die
+`OGInfinity`-Klasse. Der Aufruf warf also `TypeError: this.popup is not a function`, und zwar genau
+in dem Zweig, der dem Benutzer sagen soll, dass kein externer Simulator konfiguriert ist. Jetzt
+direkter Import aus `util/popup.js`. Ohne die Auflösung der Delegaten wäre das nicht aufgefallen:
+die gleichnamige Klassenmethode in `ogkush.js` ließ den Aufruf im ganzen Repo plausibel aussehen.
 
-**Exit-Kriterium.** `ogkush.js` unter 18.500 Zeilen, keine Methode ohne Aufrufer, keine Funktion
-zweimal im Repo, `git ls-files | wc -l` um 123 kleiner, Tests grün.
+### Problem C — `createDOM` doppelt
 
-**Risiko.** Gering, aber Punkt 3 braucht Sorgfalt bei den 52 Stellen.
+`createDOMSanitized()` liegt jetzt in `util/dom.js`, die 52 Aufrufstellen (51 in `ogkush.js`, 1 in
+`messages-analyzer`) zeigen darauf, die Klassenmethode ist weg. **Nicht** durch `DOM.createDOM`
+ersetzt — der Unterschied ist real und bleibt erhalten:
+
+|                | `createDOM`                   | `createDOMSanitized`                 |
+| :------------- | :---------------------------- | :----------------------------------- |
+| Inhalt         | `textContent`                 | `innerHTML` via `DOMPurify.sanitize` |
+| `0` als Inhalt | übersprungen (falsy)          | wird gerendert                       |
+| `<select>`     | bekommt `dropdownInitialized` | bekommt es nicht                     |
+
+Vier neue Tests in `test/util/dom-and-wait.test.js` schreiben genau diese drei Unterschiede fest,
+inklusive der Falle, dass `"" == 0` in JS **wahr** ist — der leere String läuft also trotz
+„übersprungen" durch den Sanitizer. Erst mit diesem Netz lässt sich später Stelle für Stelle
+entscheiden, welche eigentlich `textContent` will.
+
+### Problem E — der Zweitbaum
+
+`local-extension-backup/` ist untracked (`git rm -r --cached`) und steht in `.gitignore`; die
+Dateien bleiben auf der Platte, verschwinden aber aus jedem `git grep` und aus ripgrep.
+315 → 192 getrackte Dateien.
+
+Vorher geprüft: alle 123 Dateien haben ein Gegenstück in `src/`, keine Schlüssel oder Zugangsdaten
+darin, und es ist ein **gestempelter Build**, kein Quellstand — `version.js` steht auf `"1.0.0"`
+statt `"__VERSION__"`, und `fetching.js` enthält noch das `window.onbeforeunload`-Muster, das
+`test/util/abort.test.js` heute verbietet. Er war also nicht nur redundant, sondern zeigte auf einen
+Stand, den das Projekt bewusst verlassen hat.
+
+### Schritt 5 — `messages-analyzer/index.js`: Entscheidung getroffen, Ausführung wartet auf Phase 2
+
+**Entscheidung: der neuere Pfad gewinnt, die Datei wird gelöscht.** Sie ist noch da, weil Phase 2
+erst die fünf Analyzer-Klassen abdecken muss. Die Begründung steht als Kopfkommentar in der Datei,
+damit sie nicht nur hier steht. Was der Vergleich ergeben hat:
+
+- **Genau ein Feature hat kein Gegenstück** im neuen Pfad: die Zeitzonen-Umschreibung von
+  `.msg_date` (`updateTimeZone()`). `msg_date` und `timezoneDiff` kommen in keiner Analyzer-Klasse
+  vor. Das ist das Einzige, was vor dem Löschen umziehen muss. Alles andere — `ogk-expedition`,
+  `ogk-harvest`, `ogk-combat`, `expeditionSums`, `combats` — existiert doppelt.
+- **Beide Pfade schreiben in dieselben Store-Schlüssel und sind sich über die Form uneinig.**
+  `HarvestMessagesAnalyzer` legt `harvest: [0, 0, 0]` an (Metall, Kristall, Deuterium), der Alt-Pfad
+  `harvest: [0, 0]` und addiert nur auf Slot 0 und 1. Wer ein Datum zuerst sieht, bestimmt die Form.
+  Das ist kein Stilproblem, das ist ein Datenfehler mit Laufzeit-Rennen.
+- Der auskommentierte Deuterium-Parser (`:513`) war damit erledigt: er beschreibt eine Lücke, die
+  nur die sterbende Kopie hat. Der nackte `@TODO` ist raus, die Tatsache steht als Kommentar an der
+  Stelle und im Dateikopf.
+
+### Exit-Kriterien
+
+| Kriterium                | Ziel            | Ist                                                     |
+| :----------------------- | :-------------- | :------------------------------------------------------ |
+| `ogkush.js`              | < 18.500 Zeilen | **18.654** — verfehlt, siehe `fetchAndConvertRC` oben   |
+| Methode ohne Aufrufer    | 0               | **0** von 151                                           |
+| Funktion doppelt im Repo | 0               | **0** (`createDOM`, `cleanValue`, `generateGalaxyLink`) |
+| `git ls-files`           | −123            | **−123** (315 → 192)                                    |
+| Tests                    | grün            | **395/395**                                             |
+
+Das Zeilenziel war eine Schätzung in diesem Plan, keine Anforderung, und beruhte auf „10 tote
+Methoden, rund 250 Zeilen". Es waren neun mit 148 Zeilen. Die substanziellen Kriterien sind erfüllt;
+die restlichen ~150 Zeilen fallen in Phase 3, wenn die `@deprecated`-Aliase mitgehen.
 
 ---
 
@@ -591,8 +631,16 @@ eigener Commit.
   Übersetzungstabelle liegt tatsächlich als 2.626-zeiliges `Object.freeze({…})` in
   `src/util/translate.js:6`. Entweder die Aufteilung wirklich bauen (sie hätte einen echten Nutzen:
   das Bundle trägt heute sechs Sprachen, gebraucht wird eine plus Englisch als Fallback) oder die
-  Doku korrigieren. Ebenso: `CLAUDE.md` nennt `background.js` „near-empty" (481 Zeilen) und behauptet,
-  zehn `src/`-Dateien scheiterten an Prettier (es sind fünf, und `ogkush.js` gehört nicht dazu).
+  Doku korrigieren. Ebenso: `CLAUDE.md` nennt `background.js` „near-empty" (481 Zeilen). Die
+  Prettier-Behauptung im selben Absatz ist mit Phase 0 erledigt und dort korrigiert.
+- **Uhrzeit-/Statusleiste, aus `showTabTimer()` gerettet.** Die Methode wurde in Phase 1 gelöscht
+  (der Aufruf war seit Langem auskommentiert, und sie startete ein Sekunden-`setInterval`, das nur
+  den Seitentitel umschrieb). Ihre Entwurfsnotizen sind das Behaltenswerte und stehen deshalb hier:
+  Anzeige in den Uhr-Bereich verschieben statt in `document.title`; letzte Aktualisierungszeit aus
+  dem OGame-Zeitstempel statt aus `window.performance.timing` (deprecated) ziehen; Zeitzonen-
+  Indikator, Ping-Statistik (über die Performance-API statt der alten Messung) und eventuell eine
+  Ladezeit dort zusammenführen. Wenn das gebaut wird, dann ohne Sekundentakt — ein Timer pro Seite
+  ist genau das, was die Performance-Arbeit gerade abgebaut hat.
 - **`packaging.sh`** ist Bash + `zip` + GNU-`sed -i` und läuft auf Windows nur aus Git Bash/WSL.
   Nach `scripts/` als Node-Skript portieren, wie `build-unpacked.mjs` es bereits vormacht — dann
   funktioniert `make build` überall gleich.

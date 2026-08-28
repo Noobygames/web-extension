@@ -83,6 +83,71 @@ test("createDOM keeps an explicit class when marking a select", async () => {
   });
 });
 
+// createDOMSanitized was lifted out of OGInfinity.createDOM() in the Phase 1 cut.
+// It differs from createDOM in exactly the two ways asserted below, and both
+// differences are load-bearing for its ~50 call sites - hence the tests.
+// DOMPurify is a page global injected by main.js, so it is stubbed here; what
+// matters is that the content goes through it, not what it strips.
+async function withSanitizer(run, options) {
+  const browser = setupBrowser(options);
+  const calls = [];
+  globalThis.DOMPurify = {
+    sanitize: (input) => {
+      calls.push(input);
+      return String(input).replace(/<script[^>]*>.*?<\/script>/g, "");
+    },
+  };
+  try {
+    await run(domModule, calls);
+  } finally {
+    delete globalThis.DOMPurify;
+    browser.cleanup();
+  }
+}
+
+test("createDOMSanitized inserts content as HTML, through DOMPurify", async () => {
+  await withSanitizer(({ createDOMSanitized }, calls) => {
+    const element = createDOMSanitized("div", { class: "ogl-dialog" }, "<b>ok</b><script>alert(1)</script>");
+
+    assert.equal(element.getAttribute("class"), "ogl-dialog");
+    assert.deepEqual(calls, ["<b>ok</b><script>alert(1)</script>"], "content must pass through the sanitizer");
+    assert.equal(element.querySelector("b").textContent, "ok", "surviving markup becomes real elements");
+    assert.equal(element.querySelector("script"), null);
+  });
+});
+
+test("createDOMSanitized treats a numeric 0 as content, unlike createDOM", async () => {
+  await withSanitizer(({ createDOMSanitized, createDOM }) => {
+    // The class version guarded with `content || content == 0`; call sites pass
+    // resource counts, so a real zero has to render.
+    assert.equal(createDOMSanitized("div", {}, 0).textContent, "0");
+    assert.equal(createDOM("div", {}, 0).textContent, "", "createDOM still skips it");
+  });
+});
+
+test("createDOMSanitized only skips content that is absent, not content that is empty", async () => {
+  await withSanitizer(({ createDOMSanitized }, calls) => {
+    // TRAP: the guard is `content || content == 0`, and "" == 0 is true in JS,
+    // so an empty string still reaches the sanitizer. Inherited verbatim from
+    // OGInfinity.createDOM(); the result is the same empty element either way,
+    // but do not "simplify" the guard without checking this.
+    assert.equal(createDOMSanitized("div", {}, "").innerHTML, "");
+    assert.deepEqual(calls, [""]);
+
+    assert.equal(createDOMSanitized("span").innerHTML, "");
+    assert.equal(createDOMSanitized("i", {}, null).innerHTML, "");
+    assert.deepEqual(calls, [""], "undefined and null never reach the sanitizer");
+  });
+});
+
+test("createDOMSanitized does not mark selects the way createDOM does", async () => {
+  await withSanitizer(({ createDOMSanitized }) => {
+    // Deliberate: the class version never did, and no caller builds a <select>
+    // through it. Documented in util/dom.js so the difference stays a choice.
+    assert.equal(createDOMSanitized("select").classList.contains("dropdownInitialized"), false);
+  });
+});
+
 test("createSVG builds elements in the SVG namespace", async () => {
   await withDom(({ createSVG }) => {
     const circle = createSVG("circle", { cx: "10", cy: "10", r: "5" });

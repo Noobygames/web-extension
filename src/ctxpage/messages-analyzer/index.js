@@ -1,4 +1,32 @@
-import { createDOM } from "../../util/dom.js";
+/**
+ * LEGACY message analyzer - superseded, still live, scheduled for deletion.
+ *
+ * This is the older of the two message paths. It runs on every messages page via
+ * `OGInfinity.messagesAnalyzer()` -> `ctxMessageAnalyzer.call(this)`, in parallel
+ * with the newer `ctxpage/messages/index.js` and its five analyzer classes.
+ *
+ * Decision (Phase 1 of refactoring.md): the newer path wins, this file goes.
+ * It is NOT deleted yet because Phase 2 has to cover the new analyzers first -
+ * deleting 678 live lines whose only failure mode shows up in a real universe is
+ * exactly the regression this repo has no test for.
+ *
+ * What the comparison actually showed:
+ *
+ * - Everything this file writes has an equivalent in the new path, except one
+ *   thing: the timezone rewrite of `.msg_date` (`updateTimeZone()` below).
+ *   `msg_date` and `timezoneDiff` appear in no analyzer class. That is the one
+ *   piece that has to be carried over before this file can be removed.
+ * - Both paths accumulate into the SAME store keys, `OGIData.expeditionSums` and
+ *   `OGIData.combats`, and they disagree on the shape: `HarvestMessagesAnalyzer`
+ *   creates `harvest: [0, 0, 0]` (metal, crystal, deuterium) while this file
+ *   creates `harvest: [0, 0]` and only ever adds to slots 0 and 1. Whichever path
+ *   sees a date first decides the shape. The deuterium column is therefore the
+ *   old model's gap, not a missing feature of the new one - which is why the bare
+ *   `@TODO` that used to sit on that line was removed rather than kept.
+ *
+ * Do not add features here. Fixes that cannot wait go in the new analyzers.
+ */
+import { createDOM, createDOMSanitized } from "../../util/dom.js";
 import { getLogger } from "../../util/logger.js";
 import { fromFormattedNumber } from "../../util/numbers.js";
 import { pageContextRequest } from "../../util/service.callbackEvent.js";
@@ -164,7 +192,7 @@ function analyzer() {
             msg
               .querySelector(".msg_actions")
               .appendChild(
-                this.createDOM(
+                createDOMSanitized(
                   "div",
                   { class: "ogl-unknown-warning" },
                   `${this.getTranslatedText(112)}` +
@@ -510,7 +538,8 @@ function analyzer() {
             let matches = content.match(/[0-9.,]*[0-9]/gm);
             let met = fromFormattedNumber(matches[matches.length - 3]);
             let cri = fromFormattedNumber(matches[matches.length - 2]);
-            /* @TODO let deu = fromFormattedNumber(matches[matches.length - 1]); */
+            // Deuterium is present in `matches[matches.length - 1]` but never stored:
+            // this path's `harvest` array has only two slots. See the file header.
             let combat = false;
             if (coords.split(":")[2] == 16) {
               msg.classList.add("ogk-expedition");
