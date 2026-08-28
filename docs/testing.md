@@ -1,6 +1,6 @@
 # Testing
 
-The repository had no tests before this suite. This document describes how the suite is set up, what it currently covers, and how to add to it.
+Repo had no tests before this suite. Doc cover setup, coverage, how to add.
 
 ```bash
 make test          # or: npm test
@@ -8,23 +8,23 @@ make test-watch    # re-run on change
 make coverage      # run + print a per-file coverage table
 ```
 
-Tests also run in CI on every push to `master` and on every pull request (`.github/workflows/test.yml`).
+Tests run in CI on every push to `master` and every pull request (`.github/workflows/test.yml`).
 
 ---
 
 ## Stack
 
-| Piece      | Choice                  | Why                                                                                                  |
-| ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------- |
-| Runner     | `node:test` (built in)  | No new runtime dependency, native ESM, watch mode and coverage included.                             |
-| Assertions | `node:assert/strict`    | Built in.                                                                                            |
-| DOM        | `jsdom` (devDependency) | The only added dependency. Most of `src/` needs a real `document`, `CustomEvent` and `localStorage`. |
+| Piece      | Choice                  | Why                                                                                        |
+| ---------- | ----------------------- | ------------------------------------------------------------------------------------------ |
+| Runner     | `node:test` (built in)  | No new runtime dependency. Native ESM, watch mode, coverage included.                      |
+| Assertions | `node:assert/strict`    | Built in.                                                                                  |
+| DOM        | `jsdom` (devDependency) | Only added dependency. Most of `src/` need real `document`, `CustomEvent`, `localStorage`. |
 
-Consequences of that choice, worth knowing before you start:
+Consequences, know before start:
 
-- The repository is now `"type": "module"`, so Node loads `src/**/*.js` as ES modules — which is what the browser already did via `<script type="module">`. The one CommonJS file, `.eslintrc.js`, was renamed to `.eslintrc.cjs`.
-- `npm test` runs with `--experimental-test-module-mocks`, which enables `mock.module()`. It is used where a module-level singleton cannot otherwise be varied (see `test/util/numbers.test.js`).
-- The extension build is untouched: `packaging.sh` and `scripts/build-unpacked.mjs` copy `src/`, never `node_modules/` or `test/`.
+- Repo now `"type": "module"`. Node load `src/**/*.js` as ES modules — same as browser already did via `<script type="module">`. One CommonJS file, `.eslintrc.js`, renamed `.eslintrc.cjs`.
+- `npm test` run with `--experimental-test-module-mocks`, enable `mock.module()`. Used where module-level singleton cannot vary otherwise (see `test/util/numbers.test.js`).
+- Extension build untouched: `packaging.sh` and `scripts/build-unpacked.mjs` copy `src/`, never `node_modules/` or `test/`.
 
 ## Layout
 
@@ -36,11 +36,11 @@ test/
   ctxcontent/*.test.js        src/ctxcontent
 ```
 
-One test file per source module, named after it. Files run in **separate processes**, so module-level state never leaks between files — only within one.
+One test file per source module, named after it. Files run in **separate processes** — module-level state never leak between files, only within one.
 
 ## The harness: `test/helpers/globals.js`
 
-`src/` is written against a browser with OGame already loaded and reads globals nothing declares. `setupBrowser()` installs them and returns a `cleanup()` that restores the previous values:
+`src/` written against browser with OGame already loaded, read globals nothing declare. `setupBrowser()` install them, return `cleanup()` that restore previous values:
 
 ```js
 import { setupBrowser } from "../helpers/globals.js";
@@ -56,32 +56,32 @@ try {
 
 Options: `html`, `url`, `userAgent`, `gameLang`, `ogameVersion`, `localization` (`LOCALIZATION_DE` / `LOCALIZATION_EN`), `chrome`.
 
-`chrome: true` means **content-script context** and installs a `chrome` stub whose `storage.local` is a real Map supporting both the callback and the promise form. `chrome: false` (the default) means **page context** and deletes `window.chrome`, which is what `pageContextInit()` checks for. Getting this wrong is the most common reason a test fails for the wrong reason.
+`chrome: true` mean **content-script context**. Install `chrome` stub whose `storage.local` is real Map supporting callback and promise form. `chrome: false` (default) mean **page context**, delete `window.chrome` — what `pageContextInit()` check for. Get this wrong = most common reason test fail for wrong reason.
 
-The stub exposes `chrome._store` (the Map) and `chrome._calls` (call counters) for assertions.
+Stub expose `chrome._store` (the Map) and `chrome._calls` (call counters) for assertions.
 
-`setupBrowser()` deliberately does **not** call `window.close()`. Modules such as `src/util/fetching.js` build a `DOMParser` at import time and hold it for the process lifetime; closing the window it came from turns that into a null-dereference in a later suite.
+`setupBrowser()` deliberately **not** call `window.close()`. Modules like `src/util/fetching.js` build `DOMParser` at import time, hold it for process lifetime. Close the window it came from = null-dereference in later suite.
 
 ### `importFresh(specifier)`
 
-Loads a module under a cache-busting URL so a module-level singleton is re-evaluated. Needed for `OGIData`, `OgamePageData` and `service.callbackEvent`, whose behaviour depends on state captured at import time.
+Load module under cache-busting URL so module-level singleton re-evaluate. Needed for `OGIData`, `OgamePageData`, `service.callbackEvent` — behaviour depend on state captured at import time.
 
-**Use it only when the test is about construction.** Two reasons:
+**Use only when test is about construction.** Two reasons:
 
-1. It defeats the point of a singleton — everywhere else, a shared instance is the more faithful model of the real page.
-2. Node's coverage reporter merges every URL for a path into one row and keeps the last evaluation it saw, so a single `importFresh()` makes the whole module look barely covered. `src/util/OGIData.js` reports ~36% for exactly this reason; its accessors are in fact exercised exhaustively by `test/util/OGIData.test.js`. The construction tests were moved to `OGIData.construction.test.js` to contain the damage, but a merged multi-file run still reports the low number. Treat that one row as an artefact, not a gap.
+1. Defeats point of singleton — everywhere else, shared instance is more faithful model of real page.
+2. Node coverage reporter merge every URL for a path into one row, keep last evaluation seen. One `importFresh()` make whole module look barely covered. `src/util/OGIData.js` report ~36% for exactly this reason; accessors in fact exercised exhaustively by `test/util/OGIData.test.js`. Construction tests moved to `OGIData.construction.test.js` to contain damage, but merged multi-file run still report low number. Treat that row as artefact, not gap.
 
-Where a singleton can be reset through its own API, prefer that — `OGIData.json = {…}` is a full reset and keeps the report honest.
+Where singleton can reset through own API, prefer that — `OGIData.json = {…}` is full reset, keep report honest.
 
 ## What is covered
 
-`make coverage` prints the current table. As of writing: **485 tests**. The headline percentage is not meaningful on its own, because `ogkush.js` is in the denominator and only its calculation core is covered.
+`make coverage` print current table. As of writing: **502 tests**. Headline percentage not meaningful alone — the extracted page modules are in the denominator and almost none of them has behavioural coverage.
 
 | Area              | Module                                                                                 | Notes                                                                                                 |
 | ----------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Serialisation     | `util/json.js`                                                                         | Map/Set encoding, `extractJSON`, native round-trip. 96%                                               |
 | Coordinates       | `util/ogame.coordinate.js`                                                             | Encoding, ordering, type handling. 99%                                                                |
-| Costs             | `util/fleetCost.js`, `defenceCost.js`, `enum/*Costs.js`, `recyclingYieldCalculator.js` | Includes a consistency check that every ship/defence has a cost entry and vice versa. 100%            |
+| Costs             | `util/fleetCost.js`, `defenceCost.js`, `enum/*Costs.js`, `recyclingYieldCalculator.js` | Includes consistency check: every ship/defence has cost entry and vice versa. 100%                    |
 | Numbers           | `util/numbers.js`, `cleanValue.js`                                                     | Both locales, unit suffixes, parse/format round-trip. 83% / 100%                                      |
 | Context bridge    | `util/service.callbackEvent.js`                                                        | Full request/response round-trip across both contexts, error paths, concurrency, Firefox `cloneInto`. |
 | Context detection | `util/runContext.js`                                                                   | Chrome/Edge/Firefox, script injection. 96%                                                            |
@@ -91,69 +91,69 @@ Where a singleton can be reset through its own API, prefer that — `OGIData.jso
 | Content storage   | `ctxcontent/services/universe.storage.js`                                              | Key namespacing, Map/Set round-trip. 95%                                                              |
 | API parsers       | `ctxcontent/helpers/universe.{planets,players,alliances}.js`                           | XML fixtures, `fetch` stubbed.                                                                        |
 
-| Page context seam | `util/pageContext.js` | Everything `OGInfinity`'s constructor reads out of the DOM. 100% |
-| Calculation core | `ogkush.js` | `consumption`, `minesProduction`, `research`, `building`, the five `roi*` methods, `getBestRoi`, `calcNeededShips`, `selectBestCargoShip` - reached through `OGInfinity.prototype` with a hand-made `this`. Characterisation only. |
-| Service worker | `background.js` | Persistence across a worker restart, alarm scheduling, notification clicks, per-domain sync. 81% |
-| Message analyzers | `ctxcontent/services/analyzer/*` | Tab dispatch for all five; parsing paths for harvest, trade and expedition fights. |
+| Page context seam | `util/pageContext.js` | Everything `OGInfinity` constructor read out of DOM. 100% |
+| Calculation core | `util/gameFormulas.js` | `consumption`, `minesProduction`, `research`, `building`, five `roi*` functions, `getBestRoi`. Characterisation only: values recorded before the Phase 3 move and unchanged after it. |
+| Service worker | `background.js` | Persistence across worker restart, alarm scheduling, notification clicks, per-domain sync. 81% |
+| Message analyzers | `ctxcontent/services/analyzer/*` | Tab dispatch for all five; parsing paths for harvest, trade, expedition fights. |
 
-**Fixtures** live in `test/fixtures/`. `ogamePage.js` builds OGame 13 page fragments
-(planet bar, officer bar, meta tags) out of named pieces rather than a saved dump: a
-real overview page is ~400 KB of markup and hides which attribute a test depends on.
-Every selector in there is one that `src/` reads. **OGame 13 markup only** - v12
-support was dropped, so there is no second variant to keep in step.
+**Fixtures** live in `test/fixtures/`. `ogamePage.js` build OGame 13 page fragments
+(planet bar, officer bar, meta tags) out of named pieces, not saved dump: real
+overview page is ~400 KB markup and hide which attribute a test depend on.
+Every selector in there is one `src/` read. **OGame 13 markup only** - v12
+support dropped, no second variant to keep in step.
 
-**Reaching into `ogkush.js`.** The module exports `OGInfinity` for tests only, and
-`test/bundle.test.js` asserts that this stays the _only_ export of the page bundle.
-Importing the module runs its boot IIFE, so the test file's `setupBrowser()` URL uses
-`component=intro` - one of the three pages the IIFE bails out on before it touches
-the DOM or the network.
+**Reaching into `ogkush.js`.** Module export `OGInfinity` for tests only, and
+`test/bundle.test.js` assert this stay the _only_ export of page bundle.
+Importing module run its boot IIFE, so test file `setupBrowser()` URL use
+`component=intro` - one of three pages IIFE bail out on before touching
+DOM or network.
 
-Not covered, in rough order of value:
+Not covered, rough order of value:
 
-- **`src/ogkush.js`** — everything that is not the calculation core. The way in stays the same: keep moving logic out into `src/ctxpage/**` and `src/util/**` and test it there.
-- **`SpyMessagesAnalyzer`** (1k lines) and **`ExpeditionMessagesAnalyzer`** — only `support()` and `clean()` are covered. Their parsing paths need full spy-report and expedition-message fixtures.
-- **`ctxcontent/data-helper.js`** — the `update()` orchestration and the `loading` race behind issue #131.
+- **The extracted page modules** (`ctxpage/stats/`, `ctxpage/fleetdispatch/`, `ctxpage/galaxy/`, …). Phase 3 moved ~17k lines out of `ogkush.js`; almost none has behavioural coverage. `test/ctxpage/module-wiring.test.js` guards the wiring statically — module reachable, no binding left behind in `ogkush.js`, `this` only where an OGame object owns it — but nothing opens the pages they draw.
+- **`SpyMessagesAnalyzer`** (1k lines) and **`ExpeditionMessagesAnalyzer`** — only `support()` and `clean()` covered. Parsing paths need full spy-report and expedition-message fixtures.
+- **`ctxcontent/data-helper.js`** — `update()` orchestration and `loading` race behind issue #131.
 - `util/translate.js`, `util/stalk.js`, `util/flying.js`, `util/needs.js`.
 
 ## Conventions
 
-**Name the behaviour, not the function.** `"a player without an alliance attribute gets null, not NaN"` beats `"toPlayerResponse works"`. The name is what a future reader sees when it fails.
+**Name the behaviour, not the function.** `"a player without an alliance attribute gets null, not NaN"` beat `"toPlayerResponse works"`. Name is what future reader see when it fail.
 
-**Test observable behaviour through the public export.** Nothing here reaches into private state.
+**Test observable behaviour through public export.** Nothing here reach into private state.
 
-**`KNOWN BUG:` / `TRAP:` prefixes.** Several tests assert behaviour that is wrong but currently shipped. They are named with one of those prefixes and carry a comment explaining what should happen instead. They exist so a fix registers as a _deliberate_ change rather than a silent one — when you fix the bug, update the test and drop the prefix.
+**`KNOWN BUG:` / `TRAP:` prefixes.** Several tests assert behaviour that is wrong but currently shipped. Named with one of those prefixes, carry comment explaining what should happen instead. Exist so fix register as _deliberate_ change, not silent one — when you fix bug, update test and drop prefix.
 
 Current entries:
 
-| Test                                                | Module                              | Defect                                                                                                                                                                                 |
-| --------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| invalid input throws TypeError                      | `ogame.coordinate.js`               | `throw InvalidCoordinateArgument(...)` is missing `new`, so the intended error never reaches the caller.                                                                               |
-| `toNumber(instance)` ignores the type               | `ogame.coordinate.js`               | The free function and the method disagree about a moon's encoding.                                                                                                                     |
-| `toString` returns `undefined`                      | `ogame.coordinate.js`               | An empty `if (text === undefined) {}` guard.                                                                                                                                           |
-| `contentContextInit` throws `ReferenceError`        | `service.callbackEvent.js`          | `!chrome.runtime` dereferences an undeclared global in the page context.                                                                                                               |
-| `pageContextInit()` overwrites the token with `"1"` | `service.callbackEvent.js`          | A second init latches onto a token nobody listens on.                                                                                                                                  |
-| a precision of `0` is ignored                       | `numbers.js`                        | `precision ? precision : 0` treats a valid `0` as absent.                                                                                                                              |
-| mutating a getter result does not persist           | `OGIData.js`                        | Contract trap, not a bug — but the failure is silent. Flagged in review on PR #546.                                                                                                    |
-| pretty-printed XML crashes the parsers              | `ctxcontent/helpers/*`              | `childNodes` includes text nodes; works only because the live API minifies.                                                                                                            |
-| an error response surfaces as a `TypeError`         | `ctxcontent/helpers/*`              | `fetchXml()` checks neither `response.ok` nor `<parsererror>`.                                                                                                                         |
-| `roiMine` charges the target level once per level   | `ogkush.js`                         | The cost loop counts `lvl` but passes `tolvl` to `building()`, so a 20→25 upgrade is priced as 5× level 25.                                                                            |
-| `getBestRoi` averages over two empire lists         | `ogkush.js`                         | Sums over `OGIData.empire`, divides by `this.json.empire.length`. Identical in production; an empty `json.empire` makes `averageMines` Infinity and `roiAstrophysics()` loops forever. |
-| `TradeMessagesAnalyzer` discards what it computes   | `analyzer/TradeMessagesAnalyzer.js` | Both writes back to `OGIData` are commented out and nothing else writes `trades`, so trade statistics have no source.                                                                  |
-| one bad message blanks the battle-report tab        | `analyzer/FightMessagesAnalyzer.js` | Neither message filter checks `data-raw-messagetype`, so `JSON.parse(null).owner` throws out of `analyze()` and the rest of the pass is skipped.                                       |
-| `readPageContext` throws on an incomplete page      | `util/pageContext.js`               | Three separate null dereferences (player-id meta, empty planet list, universe meta). Lifted verbatim out of the constructor; recorded rather than repaired.                            |
+| Test                                                | Module                              | Defect                                                                                                                                           |
+| --------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| invalid input throws TypeError                      | `ogame.coordinate.js`               | `throw InvalidCoordinateArgument(...)` missing `new`, so intended error never reach caller.                                                      |
+| `toNumber(instance)` ignores the type               | `ogame.coordinate.js`               | Free function and method disagree about moon encoding.                                                                                           |
+| `toString` returns `undefined`                      | `ogame.coordinate.js`               | Empty `if (text === undefined) {}` guard.                                                                                                        |
+| `contentContextInit` throws `ReferenceError`        | `service.callbackEvent.js`          | `!chrome.runtime` dereference undeclared global in page context.                                                                                 |
+| `pageContextInit()` overwrites the token with `"1"` | `service.callbackEvent.js`          | Second init latch onto token nobody listen on.                                                                                                   |
+| a precision of `0` is ignored                       | `numbers.js`                        | `precision ? precision : 0` treat valid `0` as absent.                                                                                           |
+| mutating a getter result does not persist           | `OGIData.js`                        | Contract trap, not bug — but failure is silent. Flagged in review on PR #546.                                                                    |
+| pretty-printed XML crashes the parsers              | `ctxcontent/helpers/*`              | `childNodes` include text nodes; work only because live API minifies.                                                                            |
+| an error response surfaces as a `TypeError`         | `ctxcontent/helpers/*`              | `fetchXml()` check neither `response.ok` nor `<parsererror>`.                                                                                    |
+| `roiMine` charges the target level once per level   | `ogkush.js`                         | Cost loop count `lvl` but pass `tolvl` to `building()`, so 20→25 upgrade priced as 5× level 25.                                                  |
+| ~~`getBestRoi` averages over two empire lists~~     | `util/gameFormulas.js`              | **Fixed by the Phase 3 move**: both reads collapsed onto `OGIData.json.empire`, so they can no longer drift. Prefix dropped.                     |
+| `TradeMessagesAnalyzer` discards what it computes   | `analyzer/TradeMessagesAnalyzer.js` | Both writes back to `OGIData` commented out, nothing else write `trades`, so trade statistics have no source.                                    |
+| one bad message blanks the battle-report tab        | `analyzer/FightMessagesAnalyzer.js` | Neither message filter check `data-raw-messagetype`, so `JSON.parse(null).owner` throw out of `analyze()` and rest of pass skipped.              |
+| `readPageContext` throws on an incomplete page      | `util/pageContext.js`               | Three separate null dereferences (player-id meta, empty planet list, universe meta). Lifted verbatim out of constructor; recorded, not repaired. |
 
-**Fixed since, prefix dropped** — both were in this table and are now ordinary tests:
-`pageContextRequest` has a 30 s deadlock guard instead of hanging forever, and a
-corrupt `ogk-data` starts an empty store (moving the unreadable value to
+**Fixed since, prefix dropped** — both were in this table, now ordinary tests:
+`pageContextRequest` has 30 s deadlock guard instead of hanging forever, and
+corrupt `ogk-data` start empty store (move unreadable value to
 `ogk-data-corrupt`) instead of throwing at import time.
 
 **Never hit the network.** Stub `globalThis.fetch`; see `stubFetchXml` in `test/ctxcontent/universe.helpers.test.js`.
 
-**Formatting.** Test files follow the same prettier config as `src/`. Run `npm run format` before committing; `npm run check` lints `src/` and `test/` (the vendored `src/libs/` is excluded via `.eslintignore`). `npm run check` is green and gates CI (Phase 0 of `refactoring.md`); the `indent` rule that used to disagree with prettier over nested ternaries is gone, so prettier's formatting is the only authority.
+**Formatting.** Test files follow same prettier config as `src/`. Run `npm run format` before committing; `npm run check` lint `src/` and `test/` (vendored `src/libs/` excluded via `.eslintignore`). `npm run check` green, gates CI (Phase 0 of `refactoring.md`). The `indent` rule that used to disagree with prettier over nested ternaries is gone — prettier formatting now only authority.
 
 ## Adding a test for a new module
 
-1. Does it read a global at **import** time (`document`, `window`, `LocalizationStrings`)? If not, a static `import` at the top of the test file is best — it keeps coverage attribution clean. If yes, `await import()` it after the first `setupBrowser()`.
-2. Does it hold module-level state that the test needs to vary? Reset it through its own API if you can; reach for `importFresh()` only if you cannot, and put those tests in a separate file.
-3. Content context or page context? Pass `chrome: true` or leave it out.
-4. If it fetches, stub `globalThis.fetch` and delete it in `finally`.
+1. Read global at **import** time (`document`, `window`, `LocalizationStrings`)? No: static `import` at top of test file is best — keep coverage attribution clean. Yes: `await import()` after first `setupBrowser()`.
+2. Hold module-level state test need to vary? Reset through own API if you can. Reach for `importFresh()` only if you cannot, and put those tests in separate file.
+3. Content context or page context? Pass `chrome: true` or leave out.
+4. If it fetches, stub `globalThis.fetch` and delete in `finally`.

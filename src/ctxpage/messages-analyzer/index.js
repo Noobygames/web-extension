@@ -28,6 +28,9 @@
  */
 import { createDOM, createDOMSanitized } from "../../util/dom.js";
 import { getLogger } from "../../util/logger.js";
+import DateTime from "../../util/dateTime.js";
+import Translator from "../../util/translate.js";
+import { DISCORD_INVITATION_URL } from "../../util/gameConstants.js";
 import { fromFormattedNumber } from "../../util/numbers.js";
 import { pageContextRequest } from "../../util/service.callbackEvent.js";
 
@@ -56,7 +59,7 @@ function analyzer() {
         const msgDate = msg.querySelector(".msg_date");
         if (!msgDate || msgDate.classList.contains("ogl-ready")) return;
 
-        const serveTimestamp = this.dateStrToDate(msgDate.textContent).getTime();
+        const serveTimestamp = DateTime.dateStrToDate(msgDate.textContent).getTime();
         const localDateTime = getFormatedDate(serveTimestamp + this.json.timezoneDiff * 1e3, "[d].[m].[Y] [H]:[i]:[s]");
 
         msgDate.setAttribute("data-server-date", `${serveTimestamp}`);
@@ -195,8 +198,8 @@ function analyzer() {
                 createDOMSanitized(
                   "div",
                   { class: "ogl-unknown-warning" },
-                  `${this.getTranslatedText(112)}` +
-                    `<a href="${DISCORD_INVITATION_URL}"> ${this.getTranslatedText(113)}</a>`
+                  `${Translator.translate(112)}` +
+                    `<a href="${DISCORD_INVITATION_URL}"> ${Translator.translate(113)}</a>`
                 )
               );
         } else if (expeditionData.busy) {
@@ -204,26 +207,26 @@ function analyzer() {
             msg.querySelector(".msg_actions").appendChild(
               createDOM("a", {
                 class: "ogl-warning ogl-tooltipRight ogl-tooltipReady ogl-tooltipInit",
-                "data-title": this.getTranslatedText(114),
+                "data-title": Translator.translate(114),
               })
             );
         }
 
         const msgExpeditionClass = `ogk-${expeditionData.result.toLowerCase()}`;
         const labels = {
-          "ogk-metal": this.getTranslatedText(0, "res", false),
-          "ogk-crystal": this.getTranslatedText(1, "res", false),
-          "ogk-deuterium": this.getTranslatedText(2, "res", false),
-          "ogk-am": this.getTranslatedText(3, "res", false),
-          "ogk-fleet": this.getTranslatedText(63, "text", false),
-          "ogk-object": this.getTranslatedText(78, "text", false),
-          "ogk-aliens": this.getTranslatedText(79, "text", false),
-          "ogk-pirates": this.getTranslatedText(80, "text", false),
-          "ogk-late": this.getTranslatedText(81, "text", false),
-          "ogk-early": this.getTranslatedText(82, "text", false),
-          "ogk-bhole": this.getTranslatedText(71, "text", false),
-          "ogk-merchant": this.getTranslatedText(84, "text", false),
-          "ogk-void": this.getTranslatedText(83, "text", false),
+          "ogk-metal": Translator.translate(0, "res", false),
+          "ogk-crystal": Translator.translate(1, "res", false),
+          "ogk-deuterium": Translator.translate(2, "res", false),
+          "ogk-am": Translator.translate(3, "res", false),
+          "ogk-fleet": Translator.translate(63, "text", false),
+          "ogk-object": Translator.translate(78, "text", false),
+          "ogk-aliens": Translator.translate(79, "text", false),
+          "ogk-pirates": Translator.translate(80, "text", false),
+          "ogk-late": Translator.translate(81, "text", false),
+          "ogk-early": Translator.translate(82, "text", false),
+          "ogk-bhole": Translator.translate(71, "text", false),
+          "ogk-merchant": Translator.translate(84, "text", false),
+          "ogk-void": Translator.translate(83, "text", false),
         };
         const msgTitle = msg.querySelector(".msg_head .msg_title");
         msgTitle.append(
@@ -314,7 +317,7 @@ function analyzer() {
                   this.json.expeditionSums[date] = sums;
                   this.json.expeditions[id] = {
                     result: type,
-                    date: new Date(this.dateStrToDate(date)),
+                    date: new Date(DateTime.dateStrToDate(date)),
                     favorited: msg.querySelector(".icon_favorited") ? true : false,
                   };
                   view(msg, false);
@@ -361,7 +364,7 @@ function analyzer() {
                 this.json.discoveriesSums[date] = sums;
                 this.json.discoveries[id] = {
                   result: type,
-                  date: new Date(this.dateStrToDate(date)),
+                  date: new Date(DateTime.dateStrToDate(date)),
                   favorited: msg.querySelector(".icon_favorited") ? true : false,
                 };
                 this.saveData();
@@ -583,7 +586,7 @@ function analyzer() {
               this.json.combatsSums[date].harvest[1] += cri;
             }
             this.json.harvests[id] = {
-              date: new Date(this.dateStrToDate(date)),
+              date: new Date(DateTime.dateStrToDate(date)),
               metal: met,
               crystal: cri,
               coords: coords,

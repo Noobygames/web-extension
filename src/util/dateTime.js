@@ -1,4 +1,19 @@
 export default {
+  /**
+   * Parses the `dd.mm.yyyy hh:mm:ss` OGame prints in message headers.
+   *
+   * It swaps the first two components and lets `Date` parse the result as
+   * `mm/dd/yyyy`, which is the only reason it works. Lifted out of `OGInfinity` in
+   * Phase 3 of refactoring.md, unchanged.
+   */
+  dateStrToDate: (datestr) => {
+    let splits = datestr.split(".");
+    let tmp = splits[0];
+    splits[0] = splits[1];
+    splits[1] = tmp;
+    return new Date(splits.join("/"));
+  },
+
   timeSince: (date) => {
     let seconds = Math.floor((new Date(localTime) - date) / 1e3);
     let interval = Math.floor(seconds / 86400);
