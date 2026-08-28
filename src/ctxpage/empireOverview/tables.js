@@ -9,6 +9,7 @@ import shipEnum from "../../util/enum/ship.js";
 import { CARGO_SHIP_IDS } from "../../util/harvestPlanner.js";
 import RecyclingYieldCalculator from "../../util/recyclingYieldCalculator.js";
 import { planHarvest } from "../../util/harvestPlanner.js";
+import flying from "../../util/flying.js";
 
 /** The four tables the overview popup shows, one per tab. */
 function minesOverview(context) {
@@ -393,7 +394,7 @@ function fleetOverview(context, moon) {
   });
   row.appendChild(createDOM("th", { class: "ogl-sum-symbol" }, "Σ"));
   table.appendChild(row);
-  let flying = flying();
+  let currentFlying = flying();
 
   const sumPerPlanet = [];
   Object.values(shipEnum).forEach((id) => {
@@ -401,7 +402,7 @@ function fleetOverview(context, moon) {
       return;
     }
     row = createDOM("tr");
-    let shipCount = flying.fleet[id];
+    let shipCount = currentFlying.fleet[id];
     let td = createDOM("td", { class: shipCount ? "" : "ogl-fleet-empty" });
     td.appendChild(
       createDOM(

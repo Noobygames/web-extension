@@ -7,6 +7,7 @@ import PlayerClass from "../../util/enum/playerClass.js";
 import shipEnum from "../../util/enum/ship.js";
 import AllianceClass from "../../util/enum/allianceClass.js";
 import { generateMMORPGLink } from "../../util/mmorpgStats.js";
+import flying from "../../util/flying.js";
 
 import { statsState } from "./state.js";
 import { APIStringToClipboard } from "./boxes.js";
@@ -304,7 +305,7 @@ function generalStats(player) {
   );
   let fleetDetail = details.appendChild(createDOM("div", { class: "ogk-box" }));
   let fleet = fleetDetail.appendChild(createDOM("div", { class: "ogk-fleet" }));
-  let flying = flying();
+  let currentFlying = flying();
   let totalFleet = {};
   let cyclos = 0;
   let totalSum = 0;
@@ -312,7 +313,7 @@ function generalStats(player) {
   Object.values(shipEnum)
     .filter((id) => id !== shipEnum.SolarSatellite && id !== shipEnum.Crawler)
     .forEach((id) => {
-      let flyingCount = flying.fleet[id];
+      let flyingCount = currentFlying.fleet[id];
       let sum = 0;
       if (flyingCount) sum = flyingCount;
       OGBIData.empire.forEach((planet) => {

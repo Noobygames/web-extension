@@ -5,6 +5,7 @@ import * as standardUnit from "../../util/standardUnit.js";
 import Translator from "../../util/translate.js";
 import OGBIData from "../../util/OGBIData.js";
 import { tooltip } from "../../util/tooltip.js";
+import flying from "../../util/flying.js";
 
 /**
  * The resource panel that replaces OGame's own numbers in the top bar, and the update
