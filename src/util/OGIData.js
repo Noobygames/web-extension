@@ -1,6 +1,11 @@
 import * as perf from "./perf.js";
+import { getLogger } from "./logger.js";
 
 const localStorageKey = "ogk-data";
+/** Where an unparseable ogk-data is moved so it is not lost when the store is reset. */
+const corruptStorageKey = "ogk-data-corrupt";
+
+const logger = getLogger("OGIData");
 
 class OGIData {
   _json;
@@ -273,9 +278,43 @@ class OGIData {
   constructor() {
     const at = perf.isEnabled() ? performance.now() : 0;
     const raw = localStorage.getItem(localStorageKey);
-    const res = JSON.parse(raw);
-    this._json = res || {};
+    this._json = OGIData.#parse(raw);
     perf.accumulate("ogk-data parse", perf.isEnabled() ? performance.now() - at : 0, raw ? raw.length : 0);
+  }
+
+  /**
+   * Reads the stored blob, and survives it being unreadable.
+   *
+   * This runs at module evaluation, so a bare `JSON.parse` threw before any feature
+   * had started - a single truncated write (a browser killed mid-save, a hand-edited
+   * value, a quota failure) left the whole page context dead with a SyntaxError and
+   * no way back except clearing site data by hand.
+   *
+   * The unreadable value is moved aside rather than overwritten: ogk-data is the
+   * user's entire history - spy reports, expeditions, markers - and the very next
+   * setter would otherwise write an empty object over it. Starting empty loses the
+   * session; starting empty AND discarding the file loses the account.
+   *
+   * @param {string|null} raw
+   * @returns {object}
+   */
+  static #parse(raw) {
+    if (!raw) return {};
+
+    try {
+      return JSON.parse(raw) || {};
+    } catch (error) {
+      logger.error(`ogk-data could not be parsed (${error.message}). Starting empty.`);
+      try {
+        localStorage.setItem(corruptStorageKey, raw);
+        logger.error(`The unreadable value was kept under "${corruptStorageKey}".`);
+      } catch (backupError) {
+        // Out of quota, most likely. Nothing to do but say so - the alternative is
+        // failing to start at all, which is what this whole guard exists to avoid.
+        logger.error(`It could not be backed up either: ${backupError.message}`);
+      }
+      return {};
+    }
   }
 
   #save() {

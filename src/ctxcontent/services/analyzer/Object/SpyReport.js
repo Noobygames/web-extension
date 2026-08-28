@@ -143,10 +143,13 @@ export class SpyReport {
 
     this._detailLink = message.querySelector(".msg_actions message-footer-details a.fright")?.href;
 
-    // TODO: after 11.16.0, modify fleet& defense to obtain values directly of data raw. no need of regex & cleanValue
+    // Fleet and defense come straight out of the raw message data. Before 11.16.0
+    // those attributes did not exist and the values were scraped back out of a
+    // tooltip with a locale-dependent regex; that fallback went out with v12 support.
+    // The attribute check stays as a guard: cleanValue() throws on a null input,
+    // so a message without the attribute must not reach it.
     const fleet = message.getAttribute("data-messages-filters-fleet");
     const defense = message.getAttribute("data-messages-filters-defense");
-    const regExp = new RegExp(`[\\d${LocalizationStrings["thousandSeperator"]}]+`);
 
     if (fleet === "-") {
       this._fleet = "No data";
@@ -155,10 +158,7 @@ export class SpyReport {
     } else if (message.querySelector(".rawMessageData").getAttribute("data-raw-fleetvalue")) {
       this._fleet = cleanValue(message.querySelector(".rawMessageData").getAttribute("data-raw-fleetvalue"));
     } else {
-      // @deprecated
-      this._fleet = cleanValue(
-        regExp.exec(message.querySelector(".fleetInfo > .shipsTotal")?.getAttribute("data-tooltip-title"))?.[0] || ""
-      );
+      this._fleet = "No data";
     }
 
     if (defense === "-") {
@@ -168,11 +168,7 @@ export class SpyReport {
     } else if (message.querySelector(".rawMessageData").getAttribute("data-raw-defensevalue")) {
       this._defense = cleanValue(message.querySelector(".rawMessageData").getAttribute("data-raw-defensevalue"));
     } else {
-      // @deprecated
-      this._defense = cleanValue(
-        regExp.exec(message.querySelector(".defenseInfo > .defenseTotal")?.getAttribute("data-tooltip-title"))?.[0] ||
-          ""
-      );
+      this._defense = "No data";
     }
 
     // Date

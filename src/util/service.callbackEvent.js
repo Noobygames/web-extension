@@ -143,6 +143,15 @@ export function contentContextInit(callbackCommandMap, presetToken = undefined) 
   });
 }
 
+/**
+ * How long a page-context request waits for its reply before it gives up.
+ *
+ * Generous on purpose: the commands behind the bridge (`ptre.galaxy`,
+ * `messages.expeditionType`) do cross-origin network work in the content script, so
+ * this is a deadlock guard, not a latency budget.
+ */
+const REQUEST_TIMEOUT_MS = 30_000;
+
 export function pageContextInit() {
   if (window.chrome !== undefined && window.chrome?.runtime) {
     throw new Error("Invalid context execution");
@@ -172,15 +181,35 @@ export function pageContextRequest(command, action, ...args) {
       args: args,
     };
 
-    document.addEventListener(
-      _buildRefererEvent(detail.referer),
-      function (evt) {
-        /** @type {ResponseCallbackEvent} */
-        const detail = evt.detail;
-        detail.success ? resolve(detail) : reject(detail);
-      },
-      { once: true }
-    );
+    // The reply arrives as a one-shot event, and there is no guarantee it ever
+    // arrives: the content half may not be listening on this token (see the
+    // pageContextInit() placeholder), the command may not be registered, or the
+    // page may be mid-navigation. Without the timeout the promise stayed pending
+    // forever and its caller - and everything awaiting that caller - stalled
+    // silently, which is the worst possible failure for a bridge.
+    const eventName = _buildRefererEvent(detail.referer);
+
+    const onResponse = (evt) => {
+      clearTimeout(timer);
+      /** @type {ResponseCallbackEvent} */
+      const response = evt.detail;
+      response.success ? resolve(response) : reject(response);
+    };
+
+    // Plain removeEventListener rather than an AbortController: this module runs in
+    // the page context, where an AbortSignal built from a different realm's
+    // AbortController is not accepted by addEventListener.
+    const timer = setTimeout(() => {
+      document.removeEventListener(eventName, onResponse);
+      /** @type {ResponseCallbackEvent} */
+      reject({
+        referer: detail.referer,
+        success: false,
+        data: `No response for "${command}.${action}" within ${REQUEST_TIMEOUT_MS} ms`,
+      });
+    }, REQUEST_TIMEOUT_MS);
+
+    document.addEventListener(eventName, onResponse, { once: true });
 
     const eRequest = new CustomEvent(DATASET_NAME.concat(callbackToken), { detail });
     document.dispatchEvent(eRequest);

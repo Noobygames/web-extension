@@ -363,25 +363,48 @@ test('KNOWN BUG: pageContextInit() overwrites the published token with "1"', asy
   }
 });
 
-test("KNOWN BUG: a request for an unregistered token never settles", async () => {
-  // Follow-on from the above: after a second pageContextInit() the module token
-  // is "1", no listener exists for that event name, and pageContextRequest()
-  // returns a promise that neither resolves nor rejects - there is no timeout.
+test("a request for an unregistered token is rejected rather than left hanging", async (t) => {
+  // Follow-on from the above: after a second pageContextInit() the module token is
+  // "1" and no listener exists for that event name. This used to be a KNOWN BUG -
+  // the promise neither resolved nor rejected, so the caller and everything awaiting
+  // it stalled with no error anywhere. There is now a 30 s deadlock guard.
   const { browser, bridge } = await installBridge({ ptre: { galaxy: () => 1 } });
+  t.mock.timers.enable({ apis: ["setTimeout"] });
 
   try {
     bridge.pageContextInit(); // re-init picks up the placeholder token "1"
 
-    const settled = await Promise.race([
-      bridge.pageContextRequest("ptre", "galaxy").then(
-        () => "resolved",
-        () => "rejected"
-      ),
-      new Promise((resolve) => setTimeout(() => resolve("still pending"), 50)),
-    ]);
+    const request = bridge.pageContextRequest("ptre", "galaxy");
+    const outcome = request.then(
+      () => ({ settled: "resolved" }),
+      (reason) => ({ settled: "rejected", reason })
+    );
 
-    assert.equal(settled, "still pending");
+    t.mock.timers.tick(30_000);
+    const result = await outcome;
+
+    assert.equal(result.settled, "rejected");
+    assert.equal(result.reason.success, false);
+    assert.match(result.reason.data, /No response for "ptre\.galaxy"/);
   } finally {
+    t.mock.timers.reset();
+    browser.cleanup();
+  }
+});
+
+test("a request that gets its reply does not fire the timeout", async (t) => {
+  const { browser, bridge } = await installBridge({ ptre: { galaxy: () => 42 } });
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+
+  try {
+    const response = await bridge.pageContextRequest("ptre", "galaxy");
+    assert.equal(response.success, true);
+
+    // Winding the clock past the deadline must not turn a settled promise into a
+    // rejection, and must not leave an unhandled one behind.
+    t.mock.timers.tick(60_000);
+  } finally {
+    t.mock.timers.reset();
     browser.cleanup();
   }
 });

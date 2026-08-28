@@ -68,11 +68,15 @@ test("nothing is left to fetch: no static imports survive", () => {
   }
 });
 
-test("the page bundle exports nothing, the content bundle exports only main", () => {
-  // ogkush.js is injected as a script and consumed by nobody. ctxcontent's
-  // `main` is what main.js calls after its dynamic import, so that one export
-  // has to survive bundling or the content half never starts.
-  assert.equal(/^\s*export\s/m.test(pageBundle), false);
+test("the page bundle exports only the test seam, the content bundle only main", () => {
+  // ogkush.js is injected as a script and consumed by nobody at runtime. The one
+  // export is the seam the calculation tests reach the class through; it must stay
+  // the ONLY one, because anything else would mean a page-context module started
+  // being imported rather than injected. ctxcontent's `main` is what main.js calls
+  // after its dynamic import, so that one has to survive bundling or the content
+  // half never starts.
+  const pageExports = (pageBundle.match(/^\s*export\s.*$/gm) || []).map((line) => line.trim());
+  assert.deepEqual(pageExports, ["export { OGInfinity };"]);
   assert.match(contentBundle, /^export \{ main \};$/m);
 });
 

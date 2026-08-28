@@ -80,7 +80,18 @@ function define(key, value) {
  */
 export function createChromeStub() {
   const store = new Map();
-  const calls = { set: 0, get: 0, clear: 0, sendMessage: [] };
+  const calls = {
+    set: 0,
+    get: 0,
+    clear: 0,
+    sendMessage: [],
+    alarmsCreated: [],
+    alarmsCleared: [],
+    notificationsCreated: [],
+    notificationsCleared: [],
+    tabsUpdated: [],
+    tabsCreated: [],
+  };
 
   /** chrome.storage.local.get accepts null, a string, an array or a defaults object. */
   function requestedKeys(keys) {
@@ -133,6 +144,14 @@ export function createChromeStub() {
     },
   };
 
+  // Alarms, notifications and tabs exist for background.js, which is nothing but
+  // three listeners over these three APIs. They record rather than no-op, because
+  // "did the service worker schedule an alarm" is the only observable it has.
+  const alarms = new Map();
+  const notifications = new Map();
+  const tabs = [];
+  const listeners = { message: [], alarm: [], notificationClicked: [] };
+
   return {
     runtime: {
       getURL: (path) => `chrome-extension://ogi-test-id/${path.replace(/^\.?\//, "")}`,
@@ -140,14 +159,76 @@ export function createChromeStub() {
         calls.sendMessage.push(message);
         callback?.({});
       },
-      onMessage: { addListener() {} },
+      onMessage: {
+        addListener(fn) {
+          listeners.message.push(fn);
+        },
+      },
       lastError: undefined,
     },
     storage: { local },
-    notifications: { create() {} },
+    notifications: {
+      create(id, options) {
+        calls.notificationsCreated.push({ id, options });
+        notifications.set(id, options);
+      },
+      clear(id) {
+        calls.notificationsCleared.push(id);
+        notifications.delete(id);
+        return Promise.resolve(true);
+      },
+      onClicked: {
+        addListener(fn) {
+          listeners.notificationClicked.push(fn);
+        },
+      },
+    },
+    alarms: {
+      create(name, info) {
+        calls.alarmsCreated.push({ name, ...info });
+        // The real API reports `scheduledTime` as epoch milliseconds; background.js
+        // turns it back into an ISO string to compare against the notification.
+        alarms.set(name, { name, scheduledTime: info.when });
+      },
+      get(name) {
+        return Promise.resolve(alarms.get(name));
+      },
+      clear(name) {
+        calls.alarmsCleared.push(name);
+        return Promise.resolve(alarms.delete(name));
+      },
+      onAlarm: {
+        addListener(fn) {
+          listeners.alarm.push(fn);
+        },
+      },
+    },
+    tabs: {
+      query({ url }) {
+        // The real matcher is a match pattern; only the trailing `*` is used here.
+        const prefix = String(url).replace(/\*$/, "");
+        return Promise.resolve(tabs.filter((tab) => tab.url.startsWith(prefix)));
+      },
+      update(id, properties) {
+        calls.tabsUpdated.push({ id, ...properties });
+        const tab = tabs.find((candidate) => candidate.id === id);
+        if (tab) Object.assign(tab, properties);
+        return Promise.resolve(tab);
+      },
+      create(properties) {
+        calls.tabsCreated.push(properties);
+        const tab = { id: tabs.length + 1, ...properties };
+        tabs.push(tab);
+        return Promise.resolve(tab);
+      },
+    },
     /** test-only handles */
     _store: store,
     _calls: calls,
+    _alarms: alarms,
+    _notifications: notifications,
+    _tabs: tabs,
+    _listeners: listeners,
   };
 }
 

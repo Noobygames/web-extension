@@ -53,14 +53,54 @@ test("a fresh instance sees what a previous one persisted", async () => {
   }
 });
 
-test("KNOWN BUG: corrupt localStorage content crashes on import", async () => {
-  // The constructor calls JSON.parse() without a try/catch. A truncated or
-  // hand-edited ogk-data value takes the whole page context down at import
-  // time, before any feature has a chance to recover.
+test("corrupt localStorage content starts an empty store instead of crashing", async () => {
+  // This used to be a KNOWN BUG: the constructor called JSON.parse() without a
+  // try/catch, so one truncated write took the whole page context down at module
+  // evaluation - before any feature existed to recover from it.
+  // The failure is not asserted through the log: util/logger.js captures
+  // `console.error` at module evaluation, so swapping it out afterwards observes
+  // nothing. The backup key written in the same catch block is the durable evidence
+  // that the guard ran, and it is asserted in the next test.
   const browser = setupBrowser();
   try {
     globalThis.localStorage.setItem(STORAGE_KEY, "{not json");
-    await assert.rejects(() => importFresh("src/util/OGIData.js"), SyntaxError);
+
+    const data = (await importFresh("src/util/OGIData.js")).default;
+
+    assert.deepEqual(data.json, {}, "it starts empty rather than throwing");
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("the unreadable value is moved aside, not overwritten", async () => {
+  // ogk-data is the user's whole history. Starting empty costs the session; letting
+  // the next setter write `{}` over the damaged blob would cost the account, so the
+  // raw value is kept under its own key for recovery.
+  const browser = setupBrowser();
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    globalThis.localStorage.setItem(STORAGE_KEY, "{not json");
+
+    const data = (await importFresh("src/util/OGIData.js")).default;
+    data.technology = { 1: 1 }; // any setter, to force a write-through
+
+    assert.equal(globalThis.localStorage.getItem("ogk-data-corrupt"), "{not json");
+    assert.equal(globalThis.localStorage.getItem(STORAGE_KEY), JSON.stringify({ technology: { 1: 1 } }));
+  } finally {
+    console.error = originalError;
+    browser.cleanup();
+  }
+});
+
+test("an empty or absent ogk-data is not treated as corrupt", async () => {
+  const browser = setupBrowser();
+  try {
+    const data = (await importFresh("src/util/OGIData.js")).default;
+
+    assert.deepEqual(data.json, {});
+    assert.equal(globalThis.localStorage.getItem("ogk-data-corrupt"), null, "nothing was backed up");
   } finally {
     browser.cleanup();
   }

@@ -16,8 +16,8 @@ Alle Zahlen aus dem aktuellen `master` gemessen, nicht geschätzt.
 | Messung                                | Wert                                                               |
 | :------------------------------------- | :----------------------------------------------------------------- |
 | `src/**` ohne `libs/`                  | ~~33.859~~ **33.580** Zeilen (Phase 1)                             |
-| davon `src/ogkush.js`                  | ~~19.024~~ **18.654 Zeilen (55 %)**, **151 Methoden** (Phase 1)    |
-| Testabdeckung gesamt                   | 68,1 % Zeilen — aber `ogkush.js` ist **nicht dabei**               |
+| davon `src/ogkush.js`                  | ~~19.024~~ → 18.654 (Ph. 1) → **18.442 Zeilen**, 149 Methoden      |
+| Testabdeckung                          | 391 → **485 Tests**; `ogkush.js` erstmals dabei (Rechenkerne)      |
 | Dateien ohne jede Abdeckung            | 34, darunter `ogkush.js`, `background.js`, alle 5 Message-Analyzer |
 | `npm run check`                        | ~~404 Fehler~~ **0** — Phase 0 erledigt, gatet in CI               |
 | `document.querySelector*` in ogkush.js | 424                                                                |
@@ -66,7 +66,7 @@ Schnitte.**
 ```
 Phase 0  Werkzeug reparieren        [ERLEDIGT]  -> Lint ist grün und gatet in CI
 Phase 1  Toter Code + Delegaten     [ERLEDIGT]  -> 370 Zeilen weg, 123 Dateien untracked
-Phase 2  Charakterisierungstests    (1-2 Wochen)-> Netz für alles Folgende
+Phase 2  Charakterisierungstests    [ERLEDIGT]  -> 485 Tests, 7 neue Fehler gefunden
 Phase 3  ogkush.js aufteilen        (Wochen)    -> der eigentliche Schnitt
 Phase 4  Store-Zugriff vereinheitl. (1 Woche)   -> this.json -> OGIData
 Phase 5  Seitenweises Code-Splitting(1 Woche)   -> Boot-Payload halbieren
@@ -117,37 +117,26 @@ Aktivität (`AGENTS.md` §4) — oder sie veralten unbemerkt. Beides ist relevan
 → **Einordnung: eigener kleiner PR, unabhängig von den Phasen.** Drei Helfer auf
 `universe.expirations.js` umstellen, `universe.expirations.js` (heute 0 % Abdeckung) mittesten.
 
-### 3.2 OGame-Versions-Altlasten — drei Blöcke, vier Marker, alle überfällig
+### 3.2 OGame-Versions-Altlasten — **ERLEDIGT (Phase 2)**
 
-| Ort                                                              | Bedingung                                        |
-| :--------------------------------------------------------------- | :----------------------------------------------- |
-| `ogkush.js:3652`–`3702` (`topBarUtilities`)                      | „temporary until +12 ogame came into production" |
-| `ctxcontent/services/analyzer/ExpeditionMessagesAnalyzer.js:265` | „remove after v12"                               |
-| `ctxcontent/services/analyzer/Object/SpyReport.js:146`           | „after 11.16.0, … no need of regex & cleanValue" |
-
-Der Code kennt bereits `OgamePageData.isAtLeast_13_0_0` und schaltet daran Selektoren um — v13 ist
-also draußen, v12 und 11.16 sind Vergangenheit. Diese drei Blöcke warten damit auf ein Ereignis,
-das längst eingetreten ist.
-
-→ **Einordnung: Phase 6.** Aber erst prüfen, ab wann v12 wirklich nicht mehr unterstützt wird;
-`CLAUDE.md` verlangt bis dahin beide Zweige. Wenn v12-Support fällt, fallen diese drei Blöcke, die
-`isAtLeast_13_0_0`-Verzweigungen und ein Teil der Fixture-Arbeit aus Phase 2 zusammen weg — deshalb
-gehört diese Entscheidung **vor** Phase 2 getroffen, nicht danach.
+v12-Support ist gefallen. Alle vier Marker sind weg, zusammen mit 34
+`isAtLeast_13_0_0`-Verzweigungen und den drei Codeblöcken, auf die sie sich bezogen. Einzelheiten
+im Phase-2-Abschnitt weiter unten; `isAtLeast_13_0_0` selbst bleibt als Startpfad-Warnung erhalten.
 
 ### 3.3 Produktionsberechnung — 8 TODOs, und es gibt bereits einen getesteten Zweitmotor
 
 `updateEmpireProduction()` (`ogkush.js:12539`–`12818`, 279 Zeilen, mit `// WIP` überschrieben) trägt:
 
-| Zeile   | Lücke                                                                                         |
-| :------ | :-------------------------------------------------------------------------------------------- |
-| `12542` | `productionFactor = 1` fest verdrahtet — „change use in fleetDispatcher with computed factor" |
-| `12598` | Solarsatelliten-Energie wird nicht berechnet (`3: 0`)                                         |
-| `12626` | Ingenieur-Energie wird nicht berechnet (`3: 0`)                                               |
-| `12686` | „compute energy detailed production if used"                                                  |
-| `12718` | Fusionsreaktor-Faktor fehlt                                                                   |
-| `12738` | Crawler-Prozentsatz geraten statt berechnet                                                   |
-| `14123` | Lifeform-Verbrauchsreduktion fehlt                                                            |
-| `14373` | „check if own population factor is needed"                                                    |
+| Zeile       | Lücke                                                                                                                      |
+| :---------- | :------------------------------------------------------------------------------------------------------------------------- |
+| ~~`12542`~~ | `productionFactor = 1` — in Phase 2 als bewusste Konstante kenntlich gemacht, Begründung im Code. Die Lücke selbst bleibt. |
+| `12598`     | Solarsatelliten-Energie wird nicht berechnet (`3: 0`)                                                                      |
+| `12626`     | Ingenieur-Energie wird nicht berechnet (`3: 0`)                                                                            |
+| `12686`     | „compute energy detailed production if used"                                                                               |
+| `12718`     | Fusionsreaktor-Faktor fehlt                                                                                                |
+| `12738`     | Crawler-Prozentsatz geraten statt berechnet                                                                                |
+| `14123`     | Lifeform-Verbrauchsreduktion fehlt                                                                                         |
+| `14373`     | „check if own population factor is needed"                                                                                 |
 
 Gleichzeitig liegt in `src/util/productionEngine.js` ein Produktionsmodell mit **100 % Abdeckung**
 (`plasmaBonus`, `effectiveCrawlers`, `crawlerBonus`, `realProduction`, `productionBreakdown`) — das
@@ -431,59 +420,152 @@ die restlichen ~150 Zeilen fallen in Phase 3, wenn die `@deprecated`-Aliase mitg
 
 ---
 
-## Phase 2 — Charakterisierungstests, bevor irgendetwas geschnitten wird
+## Phase 2 — Charakterisierungstests — **ERLEDIGT**
 
-**Problem.** Die 19.024 Zeilen von `ogkush.js` haben **keine** Testabdeckung. `bundle.test.js`
-wertet das Bundle zwar aus, bricht aber erwartungsgemäß im `OGInfinity`-Konstruktor ab — er liest
-sofort `meta[name="ogame-player-id"]`. Damit prüft der Test die Auswertungsreihenfolge, nicht das
-Verhalten. Dasselbe gilt für `background.js` (481 Zeilen, zwei Klassen, drei `chrome.*`-Listener —
-`CLAUDE.md` beschreibt ihn immer noch als „near-empty service worker") und für alle fünf
-Message-Analyzer.
+Tests **395 → 485**, alle grün. Lint 0. Bundle 1122 KB. `ogkush.js` **18.435 Zeilen**.
 
-**Ziel dieser Phase ist nicht schöne Testabdeckung, sondern ein Netz für Phase 3.** Getestet wird
-das, was gleich verschoben wird.
+### Vorbedingung: v12-Support ist gefallen
 
-**Vorbedingung: die v12-Frage entscheiden.** Fixtures für zwei Spielversionen zu pflegen ist der
-teuerste Einzelposten dieser Phase. Wenn v12-Support ohnehin fällt (siehe Abschnitt 3.2 — drei
-Codeblöcke warten explizit darauf), halbiert das die Fixture-Arbeit und löscht nebenbei die
-`isAtLeast_13_0_0`-Verzweigungen. Diese Entscheidung gehört **vor** den ersten Fixture-Commit.
+Die Entscheidung wurde getroffen (Auftrag: „V12 support kann weg") und **vor** dem ersten Fixture
+umgesetzt. Damit ist die teuerste Einzelposition dieser Phase weg: es gibt nur einen Fixture-Satz.
 
-**Schritte.**
+- **34 `isAtLeast_13_0_0`-Verzweigungen aufgelöst** — 27 Ternäre, 6 `if`/`else`, ein
+  zusammengesetztes `if (… && techId == -200)`. Nicht per Regex, sondern über den AST (`acorn`),
+  weil die meisten Ternäre mehrzeilig und teils ineinander geschachtelt sind.
+- **Die drei Blöcke aus Abschnitt 3.2 sind weg**: der `#bar ul`-Kopfzeilenpfad in
+  `topBarUtilities()` (51 Zeilen), der Piraten-/Alien-Stichwortabgleich in
+  `ExpeditionMessagesAnalyzer` (v13 liefert `combatPirates` und `combatAliens` als eigene Typen,
+  30 Zeilen), und die Regex-Rückfallpfade in `SpyReport` für Flotten- und Verteidigungswerte
+  (`data-raw-fleetvalue` gibt es seit 11.16). Letztere schreiben jetzt `"No data"` statt aus einem
+  Tooltip zu kratzen; die Attributprüfung bleibt als Wächter stehen, weil `cleanValue(null)` wirft.
+- **`prodFactor` ist jetzt sichtbar konstant.** Der Faktor wurde berechnet und eine Zeile später
+  bedingungslos mit `1` überschrieben — die Bedingung war `isAtLeast_13_0_0`. Mit v12 fällt die
+  Berechnung; die Begründung (v13 liefert keine belastbare Stundenproduktion) steht jetzt als
+  Kommentar an der Konstanten. Das ist Lücke 1 der acht aus Abschnitt 3.3, ab jetzt als solche
+  lesbar statt als toter Rechenweg getarnt.
+- **`isAtLeast_13_0_0` bleibt** — mit genau einem Aufrufer: eine Meldung im Startpfad, falls das
+  Spiel eine Version unter 13.0.0 meldet. Ohne v12-Zweige findet die Extension dort schlicht nichts;
+  eine Zeile im Log ist der Unterschied zwischen „diagnostizierbar" und „kaputt ohne Hinweis".
+  Die Tests zu `OgamePageData` bleiben damit ebenfalls sinnvoll.
 
-1. **DOM-Fixtures bauen.** `test/fixtures/` mit je einem gespeicherten Ausschnitt der OGame-Seiten,
-   die am meisten Code triggern: Overview, Fleetdispatch, Galaxy, Messages — je für v12 und v13,
-   solange beide unterstützt werden, weil `OgamePageData.isAtLeast_13_0_0` die Selektoren umschaltet.
-   Ohne beide Varianten testet man die Hälfte.
-2. **Konstruktor testbar machen.** `OGInfinity` liest DOM direkt im Konstruktor. Diese Lesevorgänge
-   in eine `readPageContext(document)`-Funktion ziehen, die ein einfaches Objekt liefert. Das ist der
-   kleinste Eingriff, der die Klasse überhaupt instanziierbar macht — und Voraussetzung für alles
-   Weitere.
-3. **Charakterisierungstests** für die Rechenkerne, die in Phase 3 wandern und die **kein** DOM
-   brauchen: `research()`, `building()`, `minesProduction()`, `consumption()`, `roiMine()`,
-   `roiAstrophysics()`, `roiPlasmatechnology()`, `roiLfResearch()`, `roiLfBuilding()`,
-   `getBestRoi()`, `calcNeededShips()`, `selectBestCargoShip()`. Sie schreiben fest, **was der Code
-   heute tut** — auch wenn es falsch ist. Für bekannt falsches Verhalten die Repo-Konvention nutzen:
-   Test mit `KNOWN BUG:` oder `TRAP:` präfixen und in `docs/testing.md` eintragen
-   (Fix später = Präfix weg, kein stiller Delete).
-4. **`background.js`** bekommt eigene Tests: Notification-Persistenz über `chrome.storage.local`,
-   Alarm-Handling, Reaktion auf `chrome.runtime.onMessage`. Er ist der einzige Teil, der einen
-   Neustart des Service Workers überlebt — hier tut ein Fehler am meisten weh, und niemand sieht ihn.
-5. **Die fünf Message-Analyzer** bekommen je einen Test pro `support()`/`analyze()`-Pfad, mit einem
-   gespeicherten Nachrichten-HTML als Eingabe.
-6. **Die zwei ernsten `KNOWN BUG:`-Tests mitnehmen** (Abschnitt 3.7), weil ihre Module hier ohnehin
-   angefasst werden: die nie auflösende Bridge-Promise
-   (`test/util/service.callbackEvent.test.js:366`) und der Absturz bei beschädigtem `localStorage`
-   (`test/util/OGIData.construction.test.js:56`). Fix plus Präfix am Test entfernen.
+### Schritt 2 — der Konstruktor hat eine Naht
 
-`docs/testing.md` vor dem ersten Test lesen — die beiden nicht offensichtlichen Regeln (`chrome: true`
-bei `setupBrowser()` nur für Content-Context-Module; `importFresh()` nur für Konstruktionstests, weil
-es die Abdeckungszuordnung zerschießt) stehen dort und sonst nirgends.
+`src/util/pageContext.js` (neu, **100 % Abdeckung**) enthält `readPageContext(doc, loc)` — alles,
+was der Konstruktor aus dem DOM las — und `stripCoordinateBrackets(doc)`, den einen DOM-**Schreib**-
+vorgang, der zwischen den Lesevorgängen stand. Der Konstruktor ist jetzt sechs Zeilen.
 
-**Exit-Kriterium.** Die 12 Rechenkerne oben sind abgedeckt, `background.js` > 70 %, jeder Analyzer
-hat mindestens einen Test, `OGInfinity` lässt sich im Test konstruieren, `KNOWN BUG:`-Tests von 11
-auf 9.
+Die Lesevorgänge sind **wörtlich** übernommen, einschließlich der drei Stellen, die auf einer
+unvollständigen Seite werfen (fehlendes `ogame-player-id`-Meta, leere Planetenliste, fehlendes
+Universum-Meta). Das ist Absicht: eine Naht, keine Reparatur. Alle drei sind als `KNOWN BUG:`
+festgeschrieben, damit eine spätere Nachsicht als bewusste Änderung erscheint.
 
-**Risiko.** Zeitaufwand. Das ist die unbeliebteste Phase und die, ohne die Phase 3 blind ist.
+Nebenbei festgehalten: `stripCoordinateBrackets()` ist **nicht idempotent** — zweimal aufgerufen
+frisst es die Koordinaten an. Als `TRAP:` markiert.
+
+**`new OGInfinity()` läuft jetzt im Test.** Dafür exportiert `ogkush.js` die Klasse — ausschließlich
+zu diesem Zweck, dokumentiert an der Export-Zeile, und `test/bundle.test.js` prüft, dass es der
+**einzige** Export des Page-Bundles bleibt. Zur Laufzeit importiert die Datei niemand; sie wird als
+`<script type="module">` injiziert, wo ein ungenutzter Export wirkungslos ist.
+
+Der Alternativweg — die Methoden erst herauszuziehen und dann den herausgezogenen Stand zu testen —
+prüft die Verschiebung nicht, sondern nur ihr Ergebnis. Genau davor warnt diese Phase.
+
+### Schritt 3 — die zwölf Rechenkerne
+
+Alle zwölf abgedeckt, 35 Tests in `test/ogkush.calculations.test.js`. Sie werden über
+`OGInfinity.prototype` mit einem selbstgebauten `this` aufgerufen; die erwarteten Werte stammen aus
+dem laufenden Code, nicht aus einer Nachrechnung — das ist der Punkt einer Charakterisierung.
+
+**Zwei echte Fehler dabei gefunden**, beide als `KNOWN BUG:` festgeschrieben:
+
+1. **`roiMine()` verrechnet sich um ein Vielfaches.** Die Kostenschleife zählt `lvl` hoch, übergibt
+   aber `tolvl` an `building()`. Ein Ausbau von 20 auf 25 wird als **fünfmal die Kosten von Stufe
+   25** bepreist statt als Summe der Stufen 21–25. Die Amortisationszeit ist damit systematisch zu
+   hoch, und zwar umso mehr, je mehr Stufen der Vorschlag überspringt — also genau bei den großen
+   Sprüngen, für die man das Werkzeug benutzt. `roiLfBuilding()`, zwei Methoden weiter oben, macht
+   dieselbe Schleife richtig.
+2. **`getBestRoi()` mittelt über zwei verschiedene Listen.** Es summiert die Minenstufen über
+   `OGIData.empire`, teilt aber durch `this.json.empire.length`. In der Produktion ist das dasselbe
+   Array, der Fehler also latent. Driften die beiden auseinander, wird `averageMines` bei leerer
+   `json.empire` **Infinity** — und `roiAstrophysics()` zählt dann `for (lvl = 1; lvl <= Infinity;
+lvl++)` und hängt die Seite auf. Beim Schreiben dieses Tests ist genau das passiert: der erste
+   Anlauf lief 120 Sekunden ins Timeout.
+
+### Schritt 4 — `background.js`
+
+18 Tests, **81 % Zeilen / 71 % Zweige** (Ziel war > 70 %). Er hat keine Exporte, also werden die
+drei registrierten Listener so aufgerufen, wie Chrome es tut, und das Ergebnis über den
+`chrome`-Stub beobachtet. Abgedeckt: Persistenz über einen Worker-Neustart (bereits gemeldete und
+über fünf Minuten überfällige Benachrichtigungen werden beim Wiedereinlesen verworfen),
+Alarm-Planung und -Ersetzung, Sofortbenachrichtigung, Klickbehandlung mit und ohne passenden Tab,
+und die domänenweise Synchronisation.
+
+Der `chrome`-Stub in `test/helpers/globals.js` kann dafür jetzt `alarms`, `tabs`,
+`notifications.onClicked` und `runtime.onMessage` — aufzeichnend, nicht als Leerlauf, weil „hat der
+Service Worker einen Alarm gestellt" die einzige beobachtbare Größe ist, die er hat.
+
+### Schritt 5 — die fünf Analyzer
+
+19 Tests. Die Tab-Zuständigkeit ist für alle fünf abgedeckt, samt der Prüfung, dass **kein Tab von
+zwei Analyzern beansprucht** wird. Parsing-Pfade: Harvest (98 % Abdeckung), Trade (97 %),
+Expeditionskämpfe (Fight, 70 %). `SpyMessagesAnalyzer` (1.039 Zeilen) und
+`ExpeditionMessagesAnalyzer` haben `support()` bzw. `clean()`, aber noch keine Parsing-Fixtures —
+offen und in `docs/testing.md` als solches benannt.
+
+**Zwei weitere echte Fehler:**
+
+3. **`TradeMessagesAnalyzer` wirft weg, was es berechnet.** Beide Rückschreibungen in den Store sind
+   auskommentiert (`/*OGIData.trades = trades;*/`), und **niemand sonst** schreibt `trades` — der
+   Alt-Analyzer behandelt Transporte gar nicht. `OGIData.trades` bleibt also für immer leer, der
+   `msgId`-Cache eine Zeile darüber kann nie greifen, und die Handelsstatistik hat keine Datenquelle.
+4. **Eine unpassende Nachricht leert den ganzen Kampfbericht-Tab.** Weder `#getExpeditionFight()`
+   noch `#getFight()` prüft `data-raw-messagetype`; sie sehen nur auf Koordinaten und Hashcode. Alles
+   andere landet im Parser, wo `JSON.parse(null).owner` wirft — und der Fehler verlässt `analyze()`,
+   sodass jede Nachricht danach übersprungen wird. Harvest und Trade filtern beide zuerst auf den
+   Typ.
+
+**Korrektur zur Phase-1-Notiz:** dort stand, dem neuen Pfad fehle gegenüber
+`messages-analyzer/index.js` nur die `.msg_date`-Zeitzonenumschreibung. Befund 3 zeigt, dass auch
+die Handelsdaten in keinem der beiden Pfade ankommen. Die Entscheidung („der neue Pfad gewinnt")
+bleibt, aber die Liste dessen, was vor dem Löschen noch entstehen muss, ist länger als gedacht.
+
+### Schritt 6 — die zwei ernsten `KNOWN BUG:`-Tests behoben
+
+- **`pageContextRequest()` hängt nicht mehr.** Ohne Antwort blieb die Promise für immer offen, und
+  jeder, der darauf wartete, ebenso — ohne Fehler, ohne Log, ohne Ende. Jetzt ein
+  Verklemmungswächter von 30 Sekunden, der mit einer regulären `ResponseCallbackEvent`-Ablehnung
+  auflöst und seinen Listener abräumt. Bewusst kein `AbortController`: dessen `signal` stammt aus
+  einer anderen Realm und wird von `addEventListener` im Page-Context nicht angenommen — schlichtes
+  `removeEventListener` tut es.
+- **Beschädigter `localStorage` legt die Extension nicht mehr lahm.** `JSON.parse` im Konstruktor
+  ohne `try/catch` bedeutete: ein abgeschnittener Schreibvorgang, und der ganze Page-Context stirbt
+  bei der Modulauswertung — vor jedem Feature, das sich hätte erholen können. Jetzt startet der
+  Store leer, und der unlesbare Wert wird nach `ogk-data-corrupt` **beiseitegelegt statt
+  überschrieben**: `ogk-data` ist die gesamte Historie des Spielers, und der nächste Setter hätte
+  ein `{}` darüber geschrieben. Leer starten kostet die Sitzung; leer starten und wegwerfen kostet
+  den Account.
+
+### Exit-Kriterien
+
+| Kriterium                  | Ziel      | Ist                                                        |
+| :------------------------- | :-------- | :--------------------------------------------------------- |
+| Die 12 Rechenkerne         | abgedeckt | **12/12**, 35 Tests                                        |
+| `background.js`            | > 70 %    | **81 % Zeilen / 71 % Zweige**                              |
+| Analyzer                   | ≥ 1 Test  | **alle 5**, 19 Tests                                       |
+| `OGInfinity` konstruierbar | ja        | **ja** (`pageContext.js`, 100 %)                           |
+| `KNOWN BUG:`-Tests         | 11 → 9    | **9 alte, 2 behoben** — plus **7 neu gefundene**, jetzt 16 |
+| Tests gesamt               | —         | 395 → **485**                                              |
+
+Die letzte Zeile ist der eigentliche Ertrag dieser Phase, nicht die Zahl: **sieben Fehler, die
+vorher niemand sehen konnte**, davon vier mit echter Wirkung im Spiel (`roiMine`-Kosten,
+Handelsstatistik ohne Daten, Kampfbericht-Tab, aufgehängte Seite bei Infinity). Das ist genau der
+Zweck von Charakterisierungstests: sie finden nichts, indem sie klug sind, sondern indem sie den
+Code zum ersten Mal ausführen.
+
+**Risiko für Phase 3.** Das Netz deckt die Rechenkerne, den Konstruktor, den Service Worker und die
+Tab-Verteilung ab. Es deckt **nicht** die ~150 DOM-schreibenden Methoden in `ogkush.js` ab. Wer dort
+schneidet, hat weiterhin kein Netz — Phase 3 muss das Modul für Modul mitziehen, nicht darauf
+vertrauen, dass Phase 2 es schon erledigt hat.
 
 ---
 

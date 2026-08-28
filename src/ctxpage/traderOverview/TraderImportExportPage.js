@@ -14,26 +14,23 @@ class TraderImportExportPage {
   }
 
   #isImportExportActiveRequest() {
-    const searchParams = OgamePageData.isAtLeast_13_0_0
-      ? new URLSearchParams({
-          page: "componentOnly",
-          component: "externaldataexport",
-          action: "importExportInfo",
-          asJson: "1",
-        })
-      : new URLSearchParams({ page: "ajax", component: "traderimportexport" });
+    const searchParams = new URLSearchParams({
+      page: "componentOnly",
+      component: "externaldataexport",
+      action: "importExportInfo",
+      asJson: "1",
+    });
 
-    if (OgamePageData.isAtLeast_13_0_0) {
-      return fetch(`?${searchParams.toString()}`, {
-        signal: pageSignal(),
-        headers: { "X-Requested-With": "XMLHttpRequest" },
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data) {
-            if (data.hasBought == "false" || data.gotItem == "false") return { active: true, rarity: data.rarity };
-            return { active: false };
-            /*
+    return fetch(`?${searchParams.toString()}`, {
+      signal: pageSignal(),
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data) {
+          if (data.hasBought == "false" || data.gotItem == "false") return { active: true, rarity: data.rarity };
+          return { active: false };
+          /*
           rarity:
           rare ?
           uncommon => confirmed
@@ -41,18 +38,8 @@ class TraderImportExportPage {
           buddy ?
           epic ?
            */
-          }
-        });
-    } else {
-      return fetch(`?${searchParams.toString()}`, { signal: pageSignal() })
-        .then((response) => response.text())
-        .then((string) =>
-          new DOMParser()
-            .parseFromString(string, "text/html")
-            .querySelector("#div_traderImportExport .content .right_content")
-        )
-        .then((element) => this.#isImportExportActive(element));
-    }
+        }
+      });
   }
 
   #isImportExportActive(element) {
@@ -136,44 +123,23 @@ class TraderImportExportPage {
         const menuItem =
           document.querySelector("#left .menubutton[data-ipi-hint='ipiToolbarTrader']") ??
           document.querySelector("#leftMenu .menubutton[data-ipi-hint='ipiToolbarTrader']");
-        if (page == (OgamePageData.isAtLeast_13_0_0 ? "trader" : "traderOverview")) {
-          const importExportShop = document.querySelector(
-            OgamePageData.isAtLeast_13_0_0 ? "#js_importexport" : "#js_traderImportExport"
-          );
+        if (page == "trader") {
+          const importExportShop = document.querySelector("#js_importexport");
           if (importExportShop) {
             if (importExportReminderMode == 1) {
               addHint(menuItem);
               addHint(importExportShop.querySelector("h2"));
             } else if (importExportReminderMode == 2) addHint(importExportShop);
             importExportShop.addEventListener("click", () => {
-              wait
-                .waitForQuerySelector(
-                  OgamePageData.isAtLeast_13_0_0 ? "#div_importexport" : "#div_traderImportExport",
-                  250,
-                  10000
-                )
-                .then((traderImportExportDiv) => {
-                  const importExportStatus = this.#isImportExportActive(traderImportExportDiv);
-                  if (importExportStatus.active) {
-                    // Import/export is active, wee need to detect when user clicks the take button
-                    const paymentElement = traderImportExportDiv.querySelector(".payment");
-                    const payButton = traderImportExportDiv.querySelector("a.pay ");
-                    if (payButton && paymentElement && paymentElement.style.display === "block") {
-                      payButton.addEventListener("click", () => {
-                        wait.waitForQuerySelector("a.bargain.import_bargain.take", 250, 10000).then((takeButton) => {
-                          addHint(takeButton);
-                          //take button is now available, we can update the reminder (in case user does not take it now), and add a listener to it
-                          updateReminder(getNextReminderDate(), true);
-                          takeButton.addEventListener("click", () => {
-                            // User has clicked the import/export take, do not remind for a while
-                            updateReminder(getNextReminderDate(), false);
-                          });
-                        });
-                      });
-                    } else {
-                      // No pay button, probably an active import/export ready to take
-                      const takeButton = traderImportExportDiv.querySelector("a.bargain.import_bargain.take");
-                      if (takeButton) {
+              wait.waitForQuerySelector("#div_importexport", 250, 10000).then((traderImportExportDiv) => {
+                const importExportStatus = this.#isImportExportActive(traderImportExportDiv);
+                if (importExportStatus.active) {
+                  // Import/export is active, wee need to detect when user clicks the take button
+                  const paymentElement = traderImportExportDiv.querySelector(".payment");
+                  const payButton = traderImportExportDiv.querySelector("a.pay ");
+                  if (payButton && paymentElement && paymentElement.style.display === "block") {
+                    payButton.addEventListener("click", () => {
+                      wait.waitForQuerySelector("a.bargain.import_bargain.take", 250, 10000).then((takeButton) => {
                         addHint(takeButton);
                         //take button is now available, we can update the reminder (in case user does not take it now), and add a listener to it
                         updateReminder(getNextReminderDate(), true);
@@ -181,13 +147,26 @@ class TraderImportExportPage {
                           // User has clicked the import/export take, do not remind for a while
                           updateReminder(getNextReminderDate(), false);
                         });
-                      }
-                    }
+                      });
+                    });
                   } else {
-                    // Import/export is not active, do not remind for a while
-                    updateReminder(getNextReminderDate(), false);
+                    // No pay button, probably an active import/export ready to take
+                    const takeButton = traderImportExportDiv.querySelector("a.bargain.import_bargain.take");
+                    if (takeButton) {
+                      addHint(takeButton);
+                      //take button is now available, we can update the reminder (in case user does not take it now), and add a listener to it
+                      updateReminder(getNextReminderDate(), true);
+                      takeButton.addEventListener("click", () => {
+                        // User has clicked the import/export take, do not remind for a while
+                        updateReminder(getNextReminderDate(), false);
+                      });
+                    }
                   }
-                });
+                } else {
+                  // Import/export is not active, do not remind for a while
+                  updateReminder(getNextReminderDate(), false);
+                }
+              });
             });
           }
         } else {
