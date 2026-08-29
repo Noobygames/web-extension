@@ -162,9 +162,13 @@ function playerSearch(context, show, name) {
     return planetsColumn;
   };
   let activeId, activeNode;
-  let updatePlayerList = (players, forced) => {
-    players.forEach(async (player, index) => {
-      if (forced && index != 0) return;
+  // async, not forEach(async ...): forEach never awaits its callback, so the DOM
+  // row for each player was appended whenever that player's own await resolved -
+  // not in the rank/position order updateSearch() had just sorted them into.
+  // refactoring-new.md Phase A.4 #9.
+  let updatePlayerList = async (players, forced) => {
+    for (const [index, player] of players.entries()) {
+      if (forced && index != 0) continue;
       if (!player.points) {
         player.points = player.economy = player.research = player.military = { position: 0, score: 0 };
       }
@@ -226,7 +230,7 @@ function playerSearch(context, show, name) {
       });
       searchResult.appendChild(playerNode);
       if (forced) playerNode.click();
-    });
+    }
   };
   let updateSearch = async (value, alliance, forced) => {
     searchResult.replaceChildren();

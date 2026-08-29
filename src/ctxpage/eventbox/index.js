@@ -4,6 +4,10 @@ import OGBIData from "../../util/OGBIData.js";
 import { updateresourceDetail } from "../empireOverview/index.js";
 import { updateEmpireData } from "../empire/index.js";
 import flying from "../../util/flying.js";
+import * as wait from "../../util/wait.js";
+import { getLogger } from "../../util/logger.js";
+
+const logger = getLogger("eventBox");
 
 /**
  * The fleet-movement panel OGame drops in over the top bar, with OGI's own totals.
@@ -12,9 +16,13 @@ import flying from "../../util/flying.js";
  */
 
 function eventBox(context) {
-  let interval = setInterval(() => {
-    if (document.querySelector("#eventboxLoading").style.display == "none") {
-      clearInterval(interval);
+  // wait.waitFor(), not an unguarded setInterval: the old poll had no timeout, so a
+  // page where #eventboxLoading never reaches display:none (element missing, OGame
+  // markup changed) polled forever, once every 10ms, for the rest of the page's
+  // life. refactoring-new.md Phase A.4 #10.
+  wait
+    .waitFor(() => document.querySelector("#eventboxLoading").style.display == "none", 10)
+    .then(async () => {
       const currentFlying = flying();
       if (JSON.stringify(OGBIData.json.flying.ids) != JSON.stringify(currentFlying.ids)) {
         let gone = [];
@@ -94,15 +102,18 @@ function eventBox(context) {
         // The setter's write-through persists the arrival bookkeeping done above.
         OGBIData.needsUpdate = update;
         if (update) {
-          updateEmpireData(context.empireContext);
+          // Awaited, not fire-and-forget: refactoring-new.md Phase A.4 #11 - a
+          // rejection here used to be an unobserved promise rejection instead of
+          // reaching the .catch() this .then() chain already has below.
+          await updateEmpireData(context.empireContext);
         }
         OGBIData.json.needSync = true;
       }
       OGBIData.json.flying = currentFlying;
       OGBIData.Save();
       updateresourceDetail(context.overviewContext);
-    }
-  }, 10);
+    })
+    .catch((error) => logger.error("#eventboxLoading never finished loading", error));
   let addOptions = () => {
     let header = document.querySelector("#eventHeader");
     let div = header.appendChild(createDOM("div"));
@@ -258,12 +269,15 @@ function eventBox(context) {
     toggleEvents.loaded = true;
     document.querySelector("#eventboxContent").style.display = "block";
   }
-  let inter = setInterval(() => {
-    if (toggleEvents.loaded) {
-      clearInterval(inter);
-      updateEventBox();
-    }
-  }, 100);
+  // Same fix as the poll at the top of this function: bounded, not an unguarded
+  // setInterval. `toggleEvents` is OGame's own eventbox toggle object
+  // (config/ogame-globals.cjs) - `.loaded` flips once the game's own script has
+  // finished loading the panel, which is genuinely out of this extension's control
+  // and therefore exactly the kind of wait that needs a timeout.
+  wait
+    .waitFor(() => toggleEvents.loaded, 100)
+    .then(() => updateEventBox())
+    .catch((error) => logger.error("OGame's own eventbox never finished loading", error));
 }
 
 export { eventBox };

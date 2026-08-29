@@ -27,41 +27,53 @@ function combatStats() {
     topDiv.appendChild(createDOM("div", { class: "ogk-head" }, Translator.translate(74)));
     topDiv.appendChild(createDOM("div", { class: "ogk-head" }, Translator.translate(75)));
     topDiv.appendChild(createDOM("div", { class: "ogk-head" }, Translator.translate(76)));
-    sums.topCombats.forEach(async (top) => {
-      if (!top.loot) top.loot = 0;
-      let player = await dataHelper.getPlayer(top.ennemi);
-      topDiv.appendChild(createDOM("p", {}, player.name));
-      topDiv.appendChild(
-        createDOM(
-          "div",
-          {
-            class: top.loot > 0 ? "undermark tooltip" : "overmark tooltip",
-            "data-title": toFormattedNumber(top.loot, 0),
-          },
-          toFormattedNumber(top.loot, null, true)
-        )
-      );
-      topDiv.appendChild(
-        createDOM(
-          "div",
-          {
-            class: "overmark tooltip",
-            "data-title": toFormattedNumber(top.losses, 0),
-          },
-          "-" + toFormattedNumber(top.losses, null, true)
-        )
-      );
-      topDiv.appendChild(
-        createDOM(
-          "div",
-          {
-            class: "debris tooltip",
-            "data-title": toFormattedNumber(top.debris, 0),
-          },
-          toFormattedNumber(top.debris, null, true)
-        )
-      );
-    });
+    // reduce() into a promise chain, not forEach(async ...): forEach never awaits
+    // its callback, so each row's dataHelper.getPlayer() lookup raced the others and
+    // topDiv ended up in whatever order they happened to resolve in - not the
+    // debris+loot order combatsSums.topCombats was sorted into. renderDetails()
+    // itself stays synchronous (its seven call sites all treat it that way, none
+    // await it) - the chain runs after this function has already returned, exactly
+    // as fire-and-forget as the forEach it replaces, just ordered.
+    // refactoring-new.md Phase A.4 #9.
+    sums.topCombats.reduce(
+      (chain, top) =>
+        chain.then(async () => {
+          if (!top.loot) top.loot = 0;
+          let player = await dataHelper.getPlayer(top.ennemi);
+          topDiv.appendChild(createDOM("p", {}, player.name));
+          topDiv.appendChild(
+            createDOM(
+              "div",
+              {
+                class: top.loot > 0 ? "undermark tooltip" : "overmark tooltip",
+                "data-title": toFormattedNumber(top.loot, 0),
+              },
+              toFormattedNumber(top.loot, null, true)
+            )
+          );
+          topDiv.appendChild(
+            createDOM(
+              "div",
+              {
+                class: "overmark tooltip",
+                "data-title": toFormattedNumber(top.losses, 0),
+              },
+              "-" + toFormattedNumber(top.losses, null, true)
+            )
+          );
+          topDiv.appendChild(
+            createDOM(
+              "div",
+              {
+                class: "debris tooltip",
+                "data-title": toFormattedNumber(top.debris, 0),
+              },
+              toFormattedNumber(top.debris, null, true)
+            )
+          );
+        }),
+      Promise.resolve()
+    );
     let details = content.appendChild(createDOM("div", { class: "ogk-details" }));
     let losses = fleetCost(sums.losses);
     let box = resourceBox(

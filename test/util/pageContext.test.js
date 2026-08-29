@@ -197,32 +197,34 @@ test("readPageContext exposes the raw planet list as a live NodeList", () => {
 });
 
 // --------------------------------------------------------------------------
-// The parts that throw. Recorded, not fixed.
+// The parts that throw. Still throw - construction cannot meaningfully continue
+// without a player id, a home planet or a universe - but the message now says
+// which precondition was missing instead of surfacing as a bare null dereference.
+// Fixed in refactoring-new.md Phase A.2 #6.
 // --------------------------------------------------------------------------
 
-test("KNOWN BUG: a page without the player-id meta throws instead of degrading", () => {
-  // Every OGame page carries this tag, so in practice it is unreachable - but it is
-  // the first thing the constructor touches, which is why `new OGBeyondInfinity()` could
-  // not be tested at all before this seam existed. A tolerant version would report
-  // a missing player id rather than a TypeError from a null dereference.
+test("a page without the player-id meta throws a descriptive error, not a TypeError", () => {
+  // Every OGame page carries this tag, so in practice it is unreachable - but it was
+  // the first thing the constructor touched, which is why `new OGBeyondInfinity()`
+  // could not be tested at all before this seam existed.
   const html = [characterClass(), officers(), planetList([{ id: 1, coords: "1:2:3", active: true }])].join("\n");
-  withPage(html, (read) => assert.throws(read, TypeError));
+  withPage(html, (read) => assert.throws(read, { message: /ogame-player-id/ }));
 });
 
-test("KNOWN BUG: an empty planet list throws instead of reporting no planets", () => {
+test("an empty planet list throws a descriptive error, not a TypeError one line later", () => {
+  // Before the fix, `Math.min()` of nothing was Infinity, `indexOf(Infinity)` was
+  // -1, and `planetList[-1]` was undefined - so the failure surfaced one line later
+  // as a null dereference, with no hint that the planet list was the problem.
   const html = [metaTags(), characterClass(), officers(), planetList([])].join("\n");
-  // `Math.min()` of nothing is Infinity, `indexOf(Infinity)` is -1, and
-  // `planetList[-1]` is undefined - so the failure surfaces one line later as a
-  // null dereference, with no hint that the planet list was the problem.
-  withPage(html, (read) => assert.throws(read, TypeError));
+  withPage(html, (read) => assert.throws(read, { message: /planet list/ }));
 });
 
-test("KNOWN BUG: a missing universe meta throws after the planet reads have succeeded", () => {
+test("a missing universe meta throws a descriptive error after the planet reads succeed", () => {
   const html = [
     '<meta name="ogame-player-id" content="7">',
     characterClass(),
     officers(),
     planetList([{ id: 1, coords: "1:2:3", active: true }]),
   ].join("\n");
-  withPage(html, (read) => assert.throws(read, TypeError));
+  withPage(html, (read) => assert.throws(read, { message: /ogame-universe/ }));
 });

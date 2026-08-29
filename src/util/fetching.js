@@ -38,7 +38,24 @@ export class FetchResponse {
 export function fetchXml(input, init) {
   init = fixInit(init);
   return fetch(input, init).then(async (response) => {
-    return new FetchResponse(domParser.parseFromString(await response.text(), "text/xml"), response.headers);
+    // Neither of these was checked before: an HTTP error response was parsed as if
+    // it were XML anyway and only failed later, deep inside a mapping function, as
+    // an opaque "node.getAttribute is not a function" - and a caller catching a
+    // broad error (DataHelper.update() does) silently kept stale data instead of
+    // seeing an actual fetch failure. Fixed in refactoring-new.md Phase A.2 #7.
+    if (!response.ok) {
+      throw new Error(`fetchXml: ${input} responded with HTTP ${response.status}`);
+    }
+
+    const document = domParser.parseFromString(await response.text(), "text/xml");
+    // DOMParser does not throw on malformed XML - it replaces the document with a
+    // <parsererror> node instead, in every implementation that follows the
+    // long-standing de-facto convention (Firefox, Chromium and jsdom all do).
+    if (document.getElementsByTagName("parsererror").length > 0) {
+      throw new Error(`fetchXml: ${input} did not return valid XML`);
+    }
+
+    return new FetchResponse(document, response.headers);
   });
 }
 

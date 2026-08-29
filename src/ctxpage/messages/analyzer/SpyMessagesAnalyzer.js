@@ -1,4 +1,4 @@
-import { messagesTabs } from "../../../ctxpage/messages/index.js";
+import { messagesTabs } from "../index.js";
 import { getLogger } from "../../../util/logger.js";
 import { createDOM } from "../../../util/dom.js";
 import { SpyReport } from "./Object/SpyReport.js";
@@ -465,15 +465,6 @@ class SpyMessagesAnalyzer {
       bodyRow.appendChild(coordsCol);
 
       const nameCol = createDOM("td", { class: "ogl-name" });
-      const classByStatus = {
-        "": "status_abbr_active",
-        "(i)": "status_abbr_inactive",
-        "(I)": "status_abbr_longinactive",
-        "(ph)": "status_abbr_honorableTarget",
-        "(v)": "status_abbr_vacation",
-        "(vi)": "status_abbr_vacation",
-      };
-
       const nameColLink = createDOM("a", { class: report.statusCssClass }, `${report.name} ${report.status}`);
       nameCol.appendChild(nameColLink);
       bodyRow.appendChild(nameCol);

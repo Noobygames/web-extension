@@ -11,6 +11,10 @@ import OGIObserver from "../../util/observer.js";
 import { tooltip } from "../../util/tooltip.js";
 import RecyclingYieldCalculator from "../../util/recyclingYieldCalculator.js";
 import * as iconVisibility from "../../util/iconVisibility.js";
+import * as wait from "../../util/wait.js";
+import { getLogger } from "../../util/logger.js";
+
+const logger = getLogger("planetbar");
 
 /**
  * The right-hand planet bar: mine levels, harvest and jump-gate shortcuts, the
@@ -174,12 +178,17 @@ function flyingFleet() {
   let per = (flyingCount / fleetCount) * 100;
   let color = "friendly";
   if (per >= 90) color = "neutral";
-  let inter = setInterval(() => {
-    let current = document.querySelector(".ogk-flying-per");
-    if (current) current.remove();
-    let eventList = document.querySelector(".event_list");
-    if (eventList) {
-      clearInterval(inter);
+  // wait.waitFor(), not an unguarded setInterval: the old poll had no timeout - a
+  // page where .event_list never appears polled every 200ms, removing and
+  // re-checking for .ogk-flying-per, for the rest of the page's life.
+  // refactoring-new.md Phase A.4 #10.
+  wait
+    .waitFor(() => {
+      let current = document.querySelector(".ogk-flying-per");
+      if (current) current.remove();
+      return document.querySelector(".event_list") !== null;
+    }, 200)
+    .then(() => {
       if (fleetCount == null || fleetCount == 0) {
         fleetCount = 1;
       }
@@ -198,8 +207,8 @@ function flyingFleet() {
             "%</span>"
         )
       );
-    }
-  }, 200);
+    })
+    .catch((error) => logger.error(".event_list never appeared", error));
 }
 
 function harvest(context) {

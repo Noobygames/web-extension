@@ -13,10 +13,28 @@ const needs = {
 
 const obs = new OGBIObserver();
 
+/**
+ * The extension's own read of what is currently in flight, refreshed every time
+ * `display()` runs and used only to net cargo already en route out of the lock
+ * icons below.
+ *
+ * Deliberately not `OGBIData.json.flying`. `eventBox()` (ctxpage/eventbox) owns
+ * that field: it is the persisted snapshot eventBox() diffs the current event box
+ * against to notice an own fleet arriving, and it is meant to survive untouched
+ * from the moment this page loads until eventBox() runs its own diff, once. This
+ * used to write straight into it - `display()` fires off the `#eventboxContent`
+ * mutation observer below, which resolves as a microtask and so almost always ran
+ * before eventBox()'s 10ms poll got there, replacing the cross-navigation baseline
+ * with a same-navigation snapshot before eventBox() ever compared them. The diff
+ * always found no difference, and an own fleet arriving stopped crediting its
+ * cargo. Phase 6 of refactoring.md.
+ */
+let currentFlying = {};
+
 export function display() {
   if (document.getElementById("eventboxLoading").style.display === "block") return;
 
-  OGBIData.json.flying = flying();
+  currentFlying = flying();
   document.querySelectorAll(".smallplanet").forEach((planet) => {
     const coords = planet.querySelector(".planet-koords")?.textContent;
 
@@ -64,8 +82,7 @@ export function getNeedsByCoords(coords, isMoon) {
 
   if (needsTarget === undefined) return;
 
-  const flying = { ...OGBIData.json.flying };
-  const flyingTarget = isMoon ? flying.planets?.[coords]?.moon : flying.planets?.[coords]?.planet;
+  const flyingTarget = isMoon ? currentFlying.planets?.[coords]?.moon : currentFlying.planets?.[coords]?.planet;
 
   const metal = Math.max((needsTarget?.metal || 0) - (planet?.metal || 0) - (flyingTarget?.metal || 0), 0);
   const crystal = Math.max((needsTarget?.crystal || 0) - (planet?.crystal || 0) - (flyingTarget?.crystal || 0), 0);

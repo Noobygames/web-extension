@@ -11,11 +11,17 @@ import ogiMode from "./enum/ogiMode.js";
  * constructed anywhere except a fully rendered OGame page - which is why
  * `bundle.test.js` only ever got as far as asserting that the constructor throws.
  *
- * The reads are lifted verbatim, including the parts that throw on a page that does
- * not have them (missing player-id meta, no `.smallplanet` entries, no universe
- * meta). That is deliberate: this is a characterisation seam, not a repair. The
- * throwing cases are pinned by tests in `test/util/pageContext.test.js`, so a later
- * decision to make them tolerant registers as a deliberate change.
+ * Three preconditions used to fail as a bare null dereference deep in the reads
+ * below (missing player-id meta, no `.smallplanet` entries, no universe meta) -
+ * `Cannot read properties of null (reading 'content')`, with no indication of which
+ * precondition was missing. Fixed in refactoring-new.md Phase A.2 #6: each is now
+ * a named, descriptive `Error` instead. This does not make construction survive a
+ * page missing one of these - virtually every feature downstream needs a player id,
+ * a home planet and a universe, so there is no useful degraded state to hand back -
+ * it only makes the one thing the boot path's `catch (ex) { logger.error(ex); }`
+ * prints actually say what went wrong. All three are unreachable on a real OGame
+ * page; `test/util/pageContext.test.js` exercises them through a deliberately
+ * incomplete fixture.
  *
  * Pure: it reads, it does not write. The one DOM mutation that used to sit among
  * these lines - stripping the brackets OGame renders around `.planet-koords` - has
@@ -27,6 +33,11 @@ import ogiMode from "./enum/ogiMode.js";
  */
 export function readPageContext(doc = document, loc = window.location) {
   const getMetaValue = (name) => doc.querySelector(`meta[name="${name}"]`);
+  const requireMetaValue = (name) => {
+    const meta = getMetaValue(name);
+    if (!meta) throw new Error(`readPageContext: the page has no <meta name="${name}"> tag`);
+    return meta;
+  };
 
   const rawURL = new URL(loc.href);
 
@@ -40,10 +51,11 @@ export function readPageContext(doc = document, loc = window.location) {
   }
 
   const planetList = doc.querySelectorAll(".smallplanet");
+  if (planetList.length === 0) {
+    throw new Error("readPageContext: no .smallplanet entries - the page reports an empty planet list");
+  }
 
-  // The lowest planet id is the home planet. `Math.min()` of an empty list is
-  // Infinity, so an empty planet list lands on `undefined` here and throws on the
-  // next line - same as before this function existed.
+  // The lowest planet id is the home planet.
   const planetIds = [...planetList].map((planet) => parseInt(planet.id.split("-")[1]));
   const mainPlanet = planetList[planetIds.indexOf(Math.min(...planetIds))];
   const mainPlanetCoords = mainPlanet
@@ -63,7 +75,7 @@ export function readPageContext(doc = document, loc = window.location) {
   current.isMoon = !!(current.hasMoon && currentPlanet.querySelector(".moonlink.active"));
 
   return {
-    playerId: parseInt(doc.querySelector('meta[name="ogame-player-id"]').content),
+    playerId: parseInt(requireMetaValue("ogame-player-id").content),
     commander: doc.querySelector("#officers > a.commander.on") !== null,
     rawURL,
     page: rawURL.searchParams.get("component") || rawURL.searchParams.get("page"),
@@ -78,8 +90,8 @@ export function readPageContext(doc = document, loc = window.location) {
     },
     isMobile: "ontouchstart" in doc.documentElement,
     universe: loc.host.replace(/\D/g, ""),
-    universeUrl: `https://${getMetaValue("ogame-universe").content}`,
-    universeName: getMetaValue("ogame-universe-name").content,
+    universeUrl: `https://${requireMetaValue("ogame-universe").content}`,
+    universeName: requireMetaValue("ogame-universe-name").content,
     universeDomain: getMetaValue("ogame-universe").content,
     geologist: !!doc.querySelector(".geologist.on"),
     technocrat: !!doc.querySelector(".technocrat.on"),

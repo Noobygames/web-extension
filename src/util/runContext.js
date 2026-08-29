@@ -16,7 +16,12 @@ export function isPluginContext() {
     return typeof browser !== "undefined" && browser.runtime;
   }
 
-  throw Error("It is not possible to identify the execution context");
+  // A browser this function does not recognise (Safari, a privacy-hardened UA, a
+  // headless test runner) is not a supported plugin context - and returning `false`
+  // is what the JSDoc above already promises ("false: page context"). Throwing here
+  // used to take injectScript() and the whole boot IIFE down with it on any such
+  // browser, instead of just not injecting. refactoring-new.md Phase A.5.
+  return false;
 }
 
 /**

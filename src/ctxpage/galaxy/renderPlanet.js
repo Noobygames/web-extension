@@ -1,6 +1,6 @@
 import { createDOM } from "../../util/dom.js";
 import OGBIData from "../../util/OGBIData.js";
-import { probingWarning } from "../settings/index.js";
+import { probingWarning } from "../settings/probingWarning.js";
 import { setHighlightCoords } from "../../util/highlightTarget.js";
 
 /**

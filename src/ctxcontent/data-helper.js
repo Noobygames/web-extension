@@ -161,11 +161,12 @@ export class DataHelper {
     }
     if (scannedPlanets) {
       for (let [coords, moon] of Object.entries(scannedPlanets)) {
-        response.planets.forEach((planet, index) => {
-          if (coords == planet.coords) {
-            response.planets.splice(index, 1);
-          }
-        });
+        // filter(), not forEach()+splice(): splice()-while-iterating skips the
+        // element right after whatever it just removed, so a second planet at the
+        // same coords (should not happen, but nothing enforced it) would survive
+        // alongside the new scanned placeholder pushed below. refactoring-new.md
+        // Phase A.4 #8.
+        response.planets = response.planets.filter((planet) => coords != planet.coords);
         let pla = { coords: coords, moon: moon, scanned: true };
         if (moon == null) {
           pla.deleted = true;

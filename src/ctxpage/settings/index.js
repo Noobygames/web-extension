@@ -20,40 +20,13 @@ import { pageContextRequest } from "../../util/service.callbackEvent.js";
  * `OGBIData.json`; the two page facts the dialog reads - whether the commander is
  * active and which universe this is - arrive as an explicit `context`.
  *
- * `probingWarning()` is a compliance notice, not a setting: direct probing outside
- * galaxy view and the spy-report inbox is forbidden (AGENTS.md 1.5.1), and the icons
- * stay in place but inert until the feature is removed entirely. It lives here
- * because it is the only other thing in this file that just opens a popup.
+ * `probingWarning()` used to live here too. It moved to `./probingWarning.js` in
+ * Phase 5: its only caller is `galaxy/renderPlanet.js`, which is core code, so a
+ * 26-line popup was keeping this entire file in the boot bundle.
  *
  * `getLocalStorageSize()` and `purgeLocalStorage()` came along because the storage row
  * of the dialog is their only caller.
  */
-
-function probingWarning() {
-  const content = createDOM("div", { style: "text-align: center; width: 550px" });
-  const text1 = createDOM(
-    "span",
-    { class: "overmark", style: "font-size: 15px; font-weight: 800;" },
-    "Direct probing in stalks, player profiles, target lists and highscore is disabled as requested by "
-  );
-  text1.append(
-    createDOM(
-      "a",
-      { href: "https://forum.origin.ogame.gameforge.com/forum/thread/29-forbidden-features/", target: "_blank" },
-      "Gameforge rules"
-    ),
-    createDOM("small", { class: "undermark" }, " ('Automation' and 'Drastic shortcuts' sections)")
-  );
-  content.append(
-    text1,
-    createDOM("br", {}),
-    createDOM("br", {}),
-    createDOM("span", {}, "The icons are not functional until a complete removal of the feature is done"),
-    createDOM("br", {}),
-    createDOM("span", {}, "If you have to blame someone, please do it in the proper direction")
-  );
-  popupUtil.popup(null, content);
-}
 
 function welcome(context) {
   let container = createDOM("div", { class: "ogk-welcome" });
@@ -881,6 +854,13 @@ function settings(context) {
     ptreInput.type = "password";
   });
 
+  // Phase 6 of refactoring.md: a malformed key used to be silently cleared on save
+  // with no indication why PTRE stayed DISABLED. Hidden until the save handler
+  // below has something to say.
+  let ptreKeyError = ptreSection.appendChild(
+    createDOM("div", { style: "display: none; color: #f5a3a3; font-size: 11px; margin-top: 2px;" })
+  );
+
   // Systems count row in PTRE settings. Live query against `dataHelper.galaxyStorage`
   // via the page->content bridge - the value reflects the current in-memory store
   // at the moment the settings modal opens.
@@ -952,9 +932,19 @@ function settings(context) {
     OGBIData.json.options.rvalSelfLimitMoon = fromFormattedNumber(rvalSelfInputMoon.value, true);
     if (ptreInput.value && ptreInput.value.replace(/-/g, "").length === 18 && ptreInput.value.startsWith("TM")) {
       OGBIData.json.options.ptreTK = ptreInput.value;
+      ptreKeyError.style.display = "none";
     } else {
       OGBIData.json.options.ptreTK = "";
-      // TODO: Display an error message "Invalid PTRE Team Key Format. TK should look like: TM-XXXX-XXXX-XXXX-XXXX"
+      // A typo used to be swallowed here with no sign anything went wrong: the key
+      // was silently cleared and PTRE just stayed off. An empty input is a valid
+      // "turn PTRE off" and gets no error; anything else that does not match the
+      // format does.
+      if (ptreInput.value) {
+        ptreKeyError.textContent = "Invalid PTRE Team Key format. It should look like: TM-XXXX-XXXX-XXXX-XXXX";
+        ptreKeyError.style.display = "block";
+      } else {
+        ptreKeyError.style.display = "none";
+      }
     }
     pageContextRequest("ptre", "setTeamKey", OGBIData.json.options.ptreTK || "").catch((err) =>
       console.warn("[OGI][PTRE] setTeamKey failed", err)
@@ -1052,4 +1042,4 @@ function settings(context) {
   popupUtil.popup(false, container);
 }
 
-export { settings, welcome, probingWarning };
+export { settings, welcome };

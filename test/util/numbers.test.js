@@ -61,13 +61,15 @@ test("toFormattedNumber honours an explicit precision", async () => {
   });
 });
 
-test("KNOWN BUG: a precision of 0 is ignored", async () => {
+test("an explicit precision of 0 rounds to a whole number", async () => {
   await withNumbers(german, ({ toFormattedNumber }) => {
-    // numbers.js decides with `precision ? precision : 0` / `precision ? precision : 2`,
-    // so the falsy value 0 falls through to the default range instead of
-    // rounding to a whole number.
-    assert.equal(toFormattedNumber(1234.5678, 0), "1.234,57");
-    assert.notEqual(toFormattedNumber(1234.5678, 0), "1.235");
+    // Fixed in refactoring-new.md Phase A.1 #4: numbers.js used to decide with
+    // `precision ? precision : 0` / `precision ? precision : 2` - the falsy value 0
+    // fell through to the 0-to-2-decimal default range instead of rounding to a
+    // whole number. `precision ?? 0` / `precision ?? 2` only falls back when
+    // precision is genuinely unset (the default parameter value is `null`).
+    assert.equal(toFormattedNumber(1234.5678, 0), "1.235");
+    assert.equal(toFormattedNumber(1234, 0), "1.234");
   });
 });
 

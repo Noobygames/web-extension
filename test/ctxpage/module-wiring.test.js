@@ -187,6 +187,24 @@ test("the only `this` left in an extracted module belongs to an OGame object", (
 });
 
 /**
+ * Every relative specifier in a file, static or dynamic.
+ *
+ * Both forms have to count. Since Phase 5 of refactoring.md the page-specific
+ * modules are reached through `import("./ctxpage/...")` rather than a top-level
+ * `import ... from`, and a walk that only followed the static form would report
+ * every split-out page as dead - which is the exact opposite of the truth.
+ *
+ * @param {string} source a file with its comments already stripped
+ * @returns {string[]}
+ */
+function specifiers(source) {
+  const found = [];
+  for (const m of source.matchAll(/from\s+"([^"]+)"/g)) found.push(m[1]);
+  for (const m of source.matchAll(/\bimport\s*\(\s*"([^"]+)"\s*\)/g)) found.push(m[1]);
+  return found.filter((specifier) => specifier.startsWith("."));
+}
+
+/**
  * A module nobody imports is dead weight that still looks alive: the file is there,
  * ESLint is happy, and the page it draws simply never appears. It happened once, when
  * the statistics tabs were split into their own files and the entry point kept
@@ -202,6 +220,45 @@ test("every extracted module is reachable from ogCore.js", () => {
     if (seen.has(file)) continue;
     seen.add(file);
 
+    for (const specifier of specifiers(withoutComments(read(file)))) {
+      queue.push(path.posix.normalize(path.posix.join(path.posix.dirname(file), specifier)));
+    }
+  }
+
+  const unreachable = PHASE_3_MODULES.filter((file) => !seen.has(file));
+  assert.deepEqual(unreachable, [], "nothing imports these, so their pages are gone");
+});
+
+/**
+ * The chunk boundaries themselves.
+ *
+ * A dynamic import only pays for itself while nothing in the core graph reaches the
+ * same module statically: rollup runs with `treeshake: false`, so one static edge
+ * from core pulls the whole module - and, through a barrel's re-exports, everything
+ * it re-exports - straight back into the boot bundle. That is not a build error and
+ * not a runtime error. The chunk simply stops existing and the page bundle quietly
+ * grows again, which is exactly how `probingWarning()` kept the 43 KB settings
+ * dialog and `openPlanetList()` kept the 185 KB fleet-dispatch page on the boot
+ * path before Phase 5 pulled them into files of their own.
+ */
+test("nothing in the core graph statically imports a module meant to be a chunk", () => {
+  // The dynamic-import targets, as `ogCore.js` writes them.
+  const dynamic = new Set(
+    [...withoutComments(read("src/ogCore.js")).matchAll(/\bimport\s*\(\s*"([^"]+)"\s*\)/g)].map((m) =>
+      path.posix.normalize(path.posix.join("src", m[1]))
+    )
+  );
+  assert.ok(dynamic.size >= 6, `only ${dynamic.size} chunk entries - did the split get reverted?`);
+
+  // Walk the graph reachable from ogCore.js through STATIC edges only, stopping at
+  // nothing: if a chunk entry turns up in here, it is in the core bundle.
+  const seen = new Set();
+  const queue = ["src/ogCore.js"];
+  while (queue.length) {
+    const file = queue.pop();
+    if (seen.has(file)) continue;
+    seen.add(file);
+
     const source = withoutComments(read(file));
     for (const m of source.matchAll(/from\s+"([^"]+)"/g)) {
       if (!m[1].startsWith(".")) continue;
@@ -209,6 +266,6 @@ test("every extracted module is reachable from ogCore.js", () => {
     }
   }
 
-  const unreachable = PHASE_3_MODULES.filter((file) => !seen.has(file));
-  assert.deepEqual(unreachable, [], "nothing imports these, so their pages are gone");
+  const leaked = [...dynamic].filter((entry) => seen.has(entry));
+  assert.deepEqual(leaked, [], "these are loaded as chunks but a core module also imports them statically");
 });

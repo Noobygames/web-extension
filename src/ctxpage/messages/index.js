@@ -1,10 +1,10 @@
 import OGBIObserver from "../../util/observer.js";
 import { getLogger } from "../../util/logger.js";
-import SpyMessagesAnalyzer from "../../ctxcontent/services/analyzer/SpyMessagesAnalyzer.js";
-import ExpeditionMessagesAnalyzer from "../../ctxcontent/services/analyzer/ExpeditionMessagesAnalyzer.js";
-import FightMessagesAnalyzer from "../../ctxcontent/services/analyzer/FightMessagesAnalyzer.js";
-import HarvestMessagesAnalyzer from "../../ctxcontent/services/analyzer/HarvestMessagesAnalyzer.js";
-import TradeMessagesAnalyzer from "../../ctxcontent/services/analyzer/TradeMessagesAnalyzer.js";
+import SpyMessagesAnalyzer from "./analyzer/SpyMessagesAnalyzer.js";
+import ExpeditionMessagesAnalyzer from "./analyzer/ExpeditionMessagesAnalyzer.js";
+import FightMessagesAnalyzer from "./analyzer/FightMessagesAnalyzer.js";
+import HarvestMessagesAnalyzer from "./analyzer/HarvestMessagesAnalyzer.js";
+import TradeMessagesAnalyzer from "./analyzer/TradeMessagesAnalyzer.js";
 
 export const messagesTabs = Object.freeze({
   // Name: ID

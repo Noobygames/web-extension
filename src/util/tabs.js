@@ -25,6 +25,11 @@ export function tabs(titles) {
     if (!first) first = titles[title];
     tabs.push(header.appendChild(createDOMSanitized("span", { class: "ogl-tab" }, title)));
   }
+  // An empty title map used to throw here (tabs[0] is undefined) instead of
+  // rendering an empty strip. No caller passes one today, but a tab set built from
+  // a filtered list should degrade to "no tabs", not crash. refactoring-new.md
+  // Phase A.5.
+  if (tabs.length === 0) return body;
   tabs[0].classList.add("ogl-active");
   let tabListener = (evt) => {
     tabs.forEach((tab) => tab.classList.remove("ogl-active"));

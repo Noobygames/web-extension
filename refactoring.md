@@ -54,7 +54,7 @@ Phase 1  Toter Code + Delegaten     [ERLEDIGT]  -> 370 Zeilen weg, 123 Dateien u
 Phase 2  Charakterisierungstests    [ERLEDIGT]  -> 485 Tests, 7 neue Fehler gefunden
 Phase 3  ogCore.js aufteilen        [ERLEDIGT]  -> 19.024 -> 1.846 Zeilen
 Phase 4  Store-Zugriff vereinheitl. [ERLEDIGT]  -> this.json weg, ein Weg zum Store
-Phase 5  Seitenweises Code-Splitting(1 Woche)   -> Boot-Payload halbieren
+Phase 5  Seitenweises Code-Splitting[ERLEDIGT]  -> Page-Bundle 1.132 -> 472 KB
 Phase 6  Altlasten & Doku-Drift     (laufend)
 ```
 
@@ -90,6 +90,8 @@ Gruppiert nach **Ursache**, nicht nach Datei — sonst sieht man nicht, dass sec
 Folge im Betrieb: Allianz-, Highscore- und Spielerdaten in `chrome.storage.local` haben kein Ablaufdatum. Werden öfter geholt als nötig — jeder Hintergrund-Request erzeugt Aktivität (`AGENTS.md` §4) — oder veralten unbemerkt. Beides relevant, nicht kosmetisch.
 
 → **Einordnung: eigener kleiner PR, unabhängig von Phasen.** Drei Helfer auf `universe.expirations.js` umstellen, `universe.expirations.js` (heute 0 % Abdeckung) mittesten.
+
+**Update (`refactoring-new.md` Phase A.3):** `universe.data.js`, der eine Nutzer von `universe.expirations.js`, war zum Zeitpunkt der Analyse oben selbst **unerreichbar** — kein Aufrufer im ganzen Repo, per Erreichbarkeitsanalyse bestätigt. Statt ihn zu löschen wurde er umgebaut: liefert jetzt rohen `serverData.xml`-Text, gecacht über `universe.expirations.js`/`universe.storage.js` mit fixer 24-h-TTL, erreicht über eine neue Bridge-Command `serverData.get` (`docs/context.content.commands.md`), einzige Aufrufstelle ist `OGBeyondInfinity.updateServerSettings()`. `universe.expirations.js` hat jetzt echte Testabdeckung (`test/ctxcontent/universe.data.test.js`) — der oben vorgeschlagene Anschluss der drei Helfer hat damit ein lebendes Vorbild, nicht mehr nur einen toten.
 
 ### 3.2 OGame-Versions-Altlasten — **ERLEDIGT (Phase 2)**
 
@@ -543,42 +545,101 @@ Zahlen zu Beginn der Phase, nicht die aus Abschnitt 0 — Phase 3 hatte den Löw
 
 ---
 
-## Phase 5 — Seitenweises Laden
+## Phase 5 — Seitenweises Laden — **ERLEDIGT**
 
-**Problem.** Page-Bundle ist 1,13 MB und wird auf **jeder** Seite geladen — OGame ist keine Single-Page-App, also bei jedem Ansichtswechsel erneut. `docs/performance.md` §6 nennt das ausdrücklich als „was übrig bleibt": Weiterkommen heißt, Monolithen so aufzuteilen, dass seitenspezifischer Code nur dort geladen wird, wo er gebraucht wird. Phase 3 macht das möglich.
+Page-Bundle **1.132 KB → 472 KB**. Tests 516 → **541**, alle grün. Lint 0 Fehler. 19 Chunks, zusammen 686 KB, von denen ein Seitenaufruf null bis zwei anfasst.
 
-Code sagt selbst, wo Grenzen liegen: 37 Abfragen auf `this.page`, davon 18 auf `fleetdispatch`, dazu `galaxy`, `highscore`, `movement`, `shop` und die Baumenüs (`supplies`/`facilities`/`research`/`shipyard`/`defenses`/`lfbuildings`/`lfresearch`).
+**Problem.** Das Page-Bundle wurde auf **jeder** Seite geladen — OGame ist keine Single-Page-App, also bei jedem Ansichtswechsel erneut. `docs/performance.md` §6 nennt das ausdrücklich als „was übrig bleibt". Der Code sagte selbst, wo die Grenzen liegen: 37 Abfragen auf `this.page`, davon 18 auf `fleetdispatch`.
 
-**Schritte.**
+### Wie geschnitten wurde
 
-1. `scripts/bundle.mjs` auf mehrere Ausgänge erweitern: Kern-Bundle plus je ein Chunk für Fleetdispatch, Galaxy, Stats/Overlays, Bauseiten.
-2. In `start()` dynamisch importieren: `if (this.page === "fleetdispatch") await import(...)`. `web_accessible_resources` in **beiden** Manifesten entsprechend erweitern.
-3. On-Demand-UI (Stats, Settings, Empire-Overview — alles, was erst nach Klick auf Seitenleiste erscheint) hinter denselben Mechanismus legen. Diese ~7.300 Zeilen sieht Mehrheit der Seitenaufrufe nie.
-4. `test/bundle.test.js` erweitern, sodass es **jeden** Chunk auswertet, nicht nur den Kern.
+`scripts/bundle.mjs` bekam **keine** Chunk-Liste. Es setzt `chunkFileNames` und lässt **Rollup** aus dem Importgraphen entscheiden: was in `src/` über ein dynamisches `import()` erreicht wird, wird ein eigener Chunk unter `chunks/`. Damit gibt es keine zweite Liste, die mit `src/` in Schritt gehalten werden müsste. `chunks/*` steht als **ein** Eintrag in beiden Manifesten, dort muss also nie wieder etwas nachgetragen werden.
 
-**Exit-Kriterium.** Kern-Bundle unter 500 KB; Overview-Seitenaufruf lädt messbar weniger als heute (Startup-Profil vorher/nachher im PR).
+Zwei Rollup-Vorgaben mussten dafür abgeschaltet werden, beide hätten den Schnitt sonst still entwertet:
 
-**Risiko.** Mittel. Dynamischer Import ist zusätzlicher Round-Trip — lohnt nur, wenn Chunk groß genug. Chunks unter ~50 KB bleiben im Kern.
+- `preserveEntrySignatures: "allow-extension"` — die Vorgabe `"exports-only"` schreibt eine **Fassade**: ein zweizeiliges `ogCore.js`, das einen Chunk mit dem ganzen Programm re-exportiert. Jedes Byte wäre aus der Datei gewandert, die das Manifest injiziert, und die Messung des Einstiegs wäre bedeutungslos geworden.
+- `minifyInternalExports: false` — Bindungen, die Einstieg und Chunk teilen, heißen sonst `a`, `$`, `a0`. Das ist Minifizierung unter anderem Namen, ausgerechnet in der Datei, die ein Prüfer zuerst öffnet (`AGENTS.md` §0).
 
----
+Geladen wird über `util/loadChunk.js`. Ein fehlgeschlagener Chunk-Abruf ist ein Fehlermodus, den statische Importe nicht hatten — Extension unter einer offenen Seite neu geladen, `web_accessible_resources` in einem der beiden Manifeste vergessen. `loadChunk()` nennt den Namen im Log und liefert `undefined`; der Aufrufer prüft darauf, der Rest der Seite läuft weiter.
+
+### Was jetzt wo liegt
+
+| Chunk                  |  Größe | Geholt, wenn                                   |
+| :--------------------- | -----: | :--------------------------------------------- |
+| `fleetdispatch.js`     | 166 KB | `component=fleetdispatch`                      |
+| `stats.js`             | 111 KB | Klick auf den Statistik-Knopf                  |
+| `messages.js`          |  95 KB | `component=messages`                           |
+| `technoDetail.js`      |  43 KB | eine der sieben Bauseiten (`isBuildPage()`)    |
+| `settings.js`          |  41 KB | Klick auf Einstellungen, oder Erstbegrüßung    |
+| `overview.js`          |  37 KB | Klick auf den Imperium-Knopf                   |
+| `messages-analyzer.js` |  28 KB | `component=messages` (Altpfad)                 |
+| `galaxyView.js`        |  26 KB | `component=galaxy`                             |
+| `de/es/fr/tr/br.js`    | ~12 KB | der Spieler spielt in dieser Sprache           |
+| `pantry.js`            |   9 KB | der Spieler hat einen Pantry-Schlüssel gesetzt |
+| `shared-*.js`          | ~60 KB | von zwei Chunks geteilt, Rollup entscheidet    |
+
+**Ein Overview-Seitenaufruf lädt davon nichts** außer der Sprachtabelle — und `pantry.js`, falls konfiguriert. Vorher: 1.132 KB, immer.
+
+### Die Übersetzungstabelle war der Rest
+
+Nach den Seiten-Chunks stand der Kern bei **558 KB**, Ziel verfehlt. Die verbliebenen großen Posten sind alle seitenübergreifend: `empire/production.js` (38 KB) und `empireOverview/resourceDetail.js` (20 KB) hängen an `renderPlanetBar()`, `util/stalk.js` (26 KB) an `sideStalk()` — alle drei laufen auf jeder Seite.
+
+Der einzige große Posten, der nicht seitenweise, aber sehr wohl bedarfsweise teilbar war, ist die Übersetzungstabelle: **78 KB, sechs Sprachen, ein Eintrag pro Schlüssel mit allen sechs Zeichenketten**. Jeder Spieler hat immer fünf davon geparst, um eine zu lesen.
+
+Aufgeteilt nach `src/util/translations/<lang>.js`, eine Datei je Sprache. **Englisch bleibt statisch importiert**, weil es der Rückfall für jeden Schlüssel ist, den die Spielersprache nicht hat; die anderen fünf hängen an je einem wörtlichen `import()`. Ein aus der Sprachvariablen zusammengesetzter Pfad hätte gelintet, gebaut und **in gar keinen Chunk geteilt** — deshalb ein `switch` mit fünf Literalen und ein Test, der genau das festhält.
+
+Geladen wird in `ogCore.js` direkt nach `domReady()` **ohne `await`**; gewartet wird erst hinter dem DOMPurify-Wächter. Zwischen beiden Punkten übersetzt nichts, der Abruf überlappt also Konstruktion und Wartezeit, statt sie zu verlängern. Nach `DOMContentLoaded` muss er liegen, weil die Sprache aus einem `<meta>`-Tag kommt, das zur Modulauswertungszeit noch nicht existiert (Leitplanke 5).
+
+Zwei Schlüssel sind dabei entfallen, `tech.label` und `text.166`: beide führten alle sechs Sprachen als `undefined` und lieferten vorher wie nachher `""`.
+
+**Preis der Aufteilung:** ein neuer Text ist jetzt sechs Änderungen statt einer, und fünf davon zu vergessen ist unsichtbar — die fehlenden Sprachen fallen auf Englisch zurück und sehen für den Autor richtig aus. `test/util/translations.test.js` (6 Tests) nennt deshalb Datei und Schlüssel: gleiche Schlüsselmenge in allen sechs, keine leeren Zeichenketten (eine leere gewinnt gegen den Rückfall und zeigt dem Spieler ein leeres Feld), alle sechs eingefroren.
+
+### Ein echter Fehler, gefunden beim Schneiden
+
+`technoDetail()` baute die Zugehörigkeitsprüfung **20-mal von Hand** nach — `page == "research" || page == "lfresearch"` und `page == "supplies" || page == "facilities" || page == "lfbuildings"`. Solange die Prüfung einmal in der Funktion stand, war das eine Stilfrage. Mit dem Chunk stehen zwei Prüfungen in zwei Dateien, und **die äußere gewinnt lautlos**: eine Seite, die in `ogCore.js` aus der Liste fällt, ist nirgends ein Fehler — das Baudetail-Panel erscheint dort einfach nicht mehr, und niemand bekommt eine Meldung.
+
+`src/util/enum/gamePages.js` hält jetzt drei eingefrorene Listen (`BUILD_PAGES`, `RESEARCH_PAGES`, `LEVELED_BUILDING_PAGES`), beide Seiten der Chunk-Grenze lesen dieselbe, und `test/util/gamePages.test.js` (7 Tests) schlägt fehl, sobald eine solche Kette zurückkommt.
+
+`shipyard` und `defenses` gehören zu **keiner** der beiden Unterlisten, und das ist Absicht: es sind Bauseiten, aber ein Schiff hat keine Stufe, über die `building()` summieren könnte. Der Test nagelt das fest, weil das „Vervollständigen" der Liste der naheliegende falsche Fix ist.
+
+### Wächter
+
+`test/bundle.test.js` wertet jetzt **jeden** Chunk aus, nicht nur den Kern: jeder ist lesbar (nicht minifiziert), keiner trägt lokale Dateipfade, jeder wertet sich ohne Ausnahme aus, keiner liegt außerhalb von `chunks/` — sonst steht er in keinem `web_accessible_resources` und 404t genau in dem Moment, in dem der Benutzer klickt — und beide Manifeste führen `chunks/*`.
+
+Die Größe des Einstiegs ist als **`< 512_000` Bytes** festgehalten, also das Exit-Kriterium dieser Phase als Zahl, auf die ein Test fehlschlagen kann. Dazu eine Namensliste der Chunks, die existieren müssen: fehlt einer, ist ein statischer Import zurückgekrochen und hat das Modul in den Kern gezogen. Das macht nichts kaputt und ist ohne diesen Test unsichtbar — genau die Fehlerklasse aus Phase 3, Punkt 6.
+
+### Exit-Kriterien
+
+| Kriterium                  | Ziel      | Ist                                                   |
+| :------------------------- | :-------- | :---------------------------------------------------- |
+| Kern-Bundle (Page-Context) | < 500 KB  | **472 KB** (483.493 Bytes), per Test gedeckelt        |
+| Overview-Seitenaufruf      | weniger   | **472 KB statt 1.132 KB** — gerechnet, nicht gemessen |
+| `test/bundle.test.js`      | pro Chunk | **jeder Chunk**, 9 Tests                              |
+| `web_accessible_resources` | beide     | **beide**, `chunks/*`, per Test geprüft               |
+| Tests gesamt               | —         | 516 → **541**                                         |
+| `npm run check`            | 0 Fehler  | **0**                                                 |
+
+**Das Startup-Profil ist weiterhin offen** — dieselbe Lücke wie am Ende von Phase 3. Die Zahl oben ist gerechnet, nicht gemessen: sie sagt, wie viele Bytes ein Overview-Aufruf lädt und parst, nicht wie viele Millisekunden das spart. `localStorage["ogi-perf"] = "1"` vor und nach dem Schnitt auf einer echten OGame-Seite steht aus.
+
+**Was diese Phase bewusst nicht getan hat:** die drei großen seitenübergreifenden Posten angefasst (`empire/production.js`, `empireOverview/resourceDetail.js`, `util/stalk.js`, zusammen 84 KB). Alle drei hängen an `renderPlanetBar()` oder an `sideStalk()`. Sie kleiner zu bekommen heißt, sie umzustrukturieren, nicht sie zu verschieben — und das ist ausdrücklich nicht, was diese Phase tut.
 
 ## Phase 6 — Altlasten, laufend
 
 Kleinere Punkte, keine eigene Phase nötig, aber nicht vergessen. Jeder ein eigener Commit.
 
-- **Regelverstoß, weiterhin offen.** `ogCore.js:17815` startet auf Overview-Seite ein `setInterval`, das `location.reload()` aufruft, sobald Rohstoffspeicher volläuft. Timergesteuerter Seiten-Reload, damit **`AGENTS.md` §1.3 verboten** („Auto refreshing/reloading game page (timer or otherwise)"). `docs/performance.md` weist bereits darauf hin. Produktentscheidung, kein Refactoring: entweder entfernen oder in etwas umbauen, das Spieler selbst auslöst — **vor nächster Toleration-Einreichung**. Beide anderen `location.reload()`-Stellen (3134, 3145) in Ordnung, laufen aus Click-Handler.
-- **`tchat` überlebt keine Navigation.** `chat()` (`ogCore.js`) setzt bei jedem Seitenaufruf `OGBIData.json.tchat = !!document.querySelector("#chatBar")`, überschreibt also den gespeicherten Wert mit dem, was gerade im DOM steht. Der Umschalter darunter schreibt sauber über den Setter, aber der nächste Seitenwechsel macht ihn wieder zunichte. In Phase 4 aufgefallen und bewusst liegengelassen: eine Verhaltensentscheidung, keine Speicherfrage — soll das Feld das gespeicherte Nutzer-Häkchen sein oder die aktuelle DOM-Beobachtung? Es kann nicht beides sein.
-- **`flying` wird an zwei Stellen anders behandelt.** `util/needs.js:19` schreibt `OGBIData.json.flying = flying()` ohne zu speichern (bei jedem Planetenleisten-Aufbau, also bewusst kein Schreibvorgang), `ctxpage/eventbox/index.js` speichert dasselbe Feld. Ein Setter für `flying` würde die stille Variante persistent machen und damit Schreibvorgänge hinzufügen, was Phase 4 ausdrücklich nicht tun sollte. Entscheiden, welche der beiden recht hat, dann angleichen.
-- **Polling auf ein Promise.** `sideOptions()` (ogCore.js:5056, 5084) und Statistik-Buttons starten `setInterval(…, 20)`, um auf `this.isLoading` zu warten — während `updateEmpireData()` direkt daneben Promise zurückgibt, das verworfen wird. Ersetzen durch `await`. Drei Stellen, je zwei Zeilen.
-- **jQuery.** 87 `$(…)`-Stellen hängen am jQuery der Spielseite. Keine Panik-Migration, aber: neuer Code nutzt es nicht, und wer Datei in Phase 3 anfasst, ersetzt jQuery-Aufrufe darin gleich mit.
-- **`innerHTML`.** 69 Stellen. Laufen über `Element.prototype.html`, also durch DOMPurify — in Ordnung. Direkte `innerHTML =`-Zuweisungen prüfen und auf `.html()` umstellen.
-- **Verzeichnisname stimmt nicht.** `src/ctxcontent/services/analyzer/` läuft im **Page**-Context. Nach `src/ctxpage/messages/analyzer/` verschieben — reine Umbenennung, beseitigt aber Falle, dass jemand dort `chrome.*` verwendet.
-- **Doku-Drift.** `CLAUDE.md` beschreibt drei Dinge, die es nicht (mehr) gibt: `src/util/translations/<lang>.json`, `make translations`, `scripts/split-translations.mjs`. Übersetzungstabelle liegt tatsächlich als 2.626-zeiliges `Object.freeze({…})` in `src/util/translate.js:6`. Entweder Aufteilung wirklich bauen (hätte echten Nutzen: Bundle trägt heute sechs Sprachen, gebraucht wird eine plus Englisch als Fallback) oder Doku korrigieren. Ebenso: `CLAUDE.md` nennt `background.js` „near-empty" (481 Zeilen). Prettier-Behauptung im selben Absatz mit Phase 0 erledigt und dort korrigiert.
-- **Uhrzeit-/Statusleiste, aus `showTabTimer()` gerettet.** Methode in Phase 1 gelöscht (Aufruf lange auskommentiert, startete Sekunden-`setInterval`, das nur Seitentitel umschrieb). Entwurfsnotizen sind das Behaltenswerte, deshalb hier: Anzeige in Uhr-Bereich statt `document.title`; letzte Aktualisierungszeit aus OGame-Zeitstempel statt aus `window.performance.timing` (deprecated); Zeitzonen-Indikator, Ping-Statistik (über Performance-API statt alter Messung) und eventuell Ladezeit dort zusammenführen. Wenn gebaut, dann ohne Sekundentakt — ein Timer pro Seite ist genau das, was die Performance-Arbeit gerade abgebaut hat.
-- **`packaging.sh`** ist Bash + `zip` + GNU-`sed -i` und läuft auf Windows nur aus Git Bash/WSL. Nach `scripts/` als Node-Skript portieren, wie `build-unpacked.mjs` es vormacht — dann funktioniert `make build` überall gleich.
-- **16 MB HAR-Datei im Repo.** `analysis/s282-de.ogame.gameforge.com.har` ist getrackt und macht jeden Clone um 16 MB schwerer. Geprüft: Datei enthält **keine** `cookies`-Arrays, keine `set-cookie`-, `authorization`-, `PHPSESSID`-, `gf-token`- oder `prsess`-Vorkommen, also keine Sitzungsdaten — nur groß. Entweder in `.gitignore` und lokal behalten, oder als Anhang an ein Issue. Falls sie bleiben soll: kurz im Repo begründen, wozu.
-- **Überfällige Versions-Altlasten** aus Abschnitt 3.2, sobald v12-Support-Entscheidung getroffen.
-- **PTRE-Team-Key ohne Fehlermeldung** (`ogCore.js:16075`, Abschnitt 3.6): Tippfehler im Key führt heute stillschweigend dazu, dass nichts passiert.
+- **Regelverstoß, weiterhin offen — bewusst übersprungen.** `ogCore.js:17815` startet auf Overview-Seite ein `setInterval`, das `location.reload()` aufruft, sobald Rohstoffspeicher volläuft. Timergesteuerter Seiten-Reload, damit **`AGENTS.md` §1.3 verboten** („Auto refreshing/reloading game page (timer or otherwise)"). `docs/performance.md` weist bereits darauf hin. Produktentscheidung, kein Refactoring: entweder entfernen oder in etwas umbauen, das Spieler selbst auslöst — **vor nächster Toleration-Einreichung**. Beide anderen `location.reload()`-Stellen (3134, 3145) in Ordnung, laufen aus Click-Handler. Auftrag für diesen Durchlauf war ausdrücklich, diesen Punkt auszulassen — steht weiterhin offen.
+- **`tchat` überlebt keine Navigation — ERLEDIGT.** `chat()` (`ogCore.js`) setzte bei jedem Seitenaufruf `OGBIData.json.tchat = !!document.querySelector("#chatBar")` — überschrieb also den gespeicherten Wert mit „existiert das Element gerade im DOM", was auf jeder Seite mit Chat fast immer `true` ist, unabhängig davon, ob der Spieler ihn zuvor versteckt hatte. Entscheidung: das Feld ist das **gespeicherte Nutzer-Häkchen**, nicht die DOM-Beobachtung — dafür existiert bereits der Write-Through-Setter `OGBIData.tchat`, den `toggleChat()` sauber benutzt. Die Existenzprüfung („hat diese Seite überhaupt einen Chat-Balken") ist jetzt eine lokale, unpersistierte Variable; sie entscheidet nur noch über den frühen Return.
+- **`flying` wird an zwei Stellen anders behandelt — ERLEDIGT, echter Fehler dabei gefunden.** `util/needs.js` schrieb bei jedem Planetenleisten-Aufbau `OGBIData.json.flying = flying()` — ohne `Save()`, aber in-memory, auf **demselben** Feld, das `ctxpage/eventbox/index.js` als persistierte Baseline für seinen Ankunfts-Diff braucht (alte vs. aktuelle Flugliste, um ein gelandetes eigenes Schiff zu erkennen und dessen Fracht gutzuschreiben). `display()` in `needs.js` hängt an einem `MutationObserver` auf `#eventboxContent` und läuft als Microtask praktisch immer **vor** dem 10-ms-Poll in `eventBox()` — überschrieb also die aus der letzten Navigation persistierte Baseline mit einem Schnappschuss von _derselben_ Seite, bevor `eventBox()` sie je gesehen hatte. Der Diff fand dadurch fast nie einen Unterschied, und die Gutschrift ankommender Fracht lief ins Leere. Fix: `needs.js` bekommt eine eigene modul-lokale Variable (`currentFlying`) für seine Sperr-Icon-Berechnung; `OGBIData.json.flying` wird nur noch von `eventBox()` geschrieben. Zwei neue Tests in `test/util/needs.test.js` nageln beide Garantien fest: `display()` fasst das persistierte Feld nicht an, `getNeedsByCoords()` rechnet trotzdem mit frischer Flugfracht.
+- **Polling auf ein Promise — ERLEDIGT.** Zwei Stellen in `ogCore.js` (`empireBtn`, `statsBtn`) starteten `setInterval(…, 20)`, um auf `this.isLoading` zu warten, während `updateEmpireData()` direkt daneben ein Promise zurückgab, das verworfen wurde. Jetzt wird das Promise gehalten (`const dataReady = updateEmpireData(…)`), der Chunk-Import läuft parallel dazu, und am Ende steht ein `await dataReady`. Als Beifang derselben Fehlerklasse: `ctxpage/stats/index.js` pollte per `setInterval(…, 50)` auf das globale `Chart`, nachdem es per Event dessen Nachladen angestoßen hatte — ersetzt durch `wait.waitForDefinition(window, "Chart")`, denselben Helfer, den der Boot-Pfad schon für `DOMPurify` benutzt.
+- **jQuery.** Unverändert offen, wie geplant — keine Panik-Migration. 87 `$(…)`-Stellen hängen am jQuery der Spielseite; neuer Code nutzt es nicht.
+- **`innerHTML` — geprüft, nichts zu tun.** Alle verbliebenen direkten `.innerHTML`-Zugriffe sind entweder lesend (XML-Textinhalt vergleichen) oder die sanktionierten Implementierungsstellen selbst (`Element.prototype.html`, `util/dom.js`s `createDOMSanitized`). Keine unsanitisierte direkte Zuweisung außerhalb dieser beiden Stellen gefunden.
+- **Verzeichnisname stimmt nicht — ERLEDIGT.** `src/ctxcontent/services/analyzer/` (Page-Context, aber unter dem Content-Context-Verzeichnisnamen) nach `src/ctxpage/messages/analyzer/` verschoben. Reine Umbenennung: beide Pfadtiefen sind identisch, `util/`-Importe in den fünf Analyzer-Klassen und `Object/SpyReport.js` blieben unverändert; nur der `messagesTabs`-Import (`../../../ctxpage/messages/index.js` → `../index.js`) und die Importe in `messages/index.js` selbst (`./analyzer/…`) mussten angepasst werden. `test/ctxcontent/analyzers.test.js` zog mit nach `test/ctxpage/messages/analyzers.test.js`.
+- **Doku-Drift — bereits erledigt.** `CLAUDE.md` beschreibt die Übersetzungsaufteilung (`src/util/translations/<lang>.js`, sechs `.js`-Dateien, `en` statisch, fünf als Chunks) und `background.js` (481 Zeilen) bereits korrekt — offenbar im selben Durchlauf erledigt, der Phase 5 die echte Aufteilung gebaut hat. Keine der drei ursprünglich genannten Karteileichen (`<lang>.json`, `make translations`, `scripts/split-translations.mjs`) taucht noch in `CLAUDE.md` auf. `docs/testing.md` verwies noch auf den alten Analyzer-Pfad — mit der Verzeichnisumbenennung oben korrigiert.
+- **Uhrzeit-/Statusleiste, aus `showTabTimer()` gerettet.** Unverändert: reine Entwurfsnotiz für `docs/roadmap.md`, kein Handlungsbedarf in diesem Durchlauf.
+- **`packaging.sh` — offen gelassen.** Bash + `zip` + GNU-`sed -i`, läuft auf Windows nur aus Git Bash/WSL (`make build` shellt dafür ohnehin nach Bash aus — kein blockierendes Problem, nur ein Portabilitäts-Komfort). Ein Node-Port bräuchte eine neue Abhängigkeit für das Zip-Schreiben (`archiver` o. ä.), die aktuell nirgends im Repo steckt — das ist eine Paketentscheidung, keine reine Verschiebung, deshalb hier ausgelassen statt sie unangekündigt einzuführen.
+- **16 MB HAR-Datei im Repo — gegenstandslos.** `analysis/s282-de.ogame.gameforge.com.har` existiert nicht mehr im Arbeitsbaum und ist auch nicht (mehr) getrackt (`git ls-files` findet keine `.har`-Datei). Nichts zu tun.
+- **Überfällige Versions-Altlasten aus Abschnitt 3.2 — bereits erledigt.** v12-Support ist seit Phase 2 gefallen, Abschnitt 3.2 ist selbst schon als „ERLEDIGT (Phase 2)" markiert. Der Verweis hier war stehen geblieben, obwohl nichts mehr offen ist.
+- **PTRE-Team-Key ohne Fehlermeldung — ERLEDIGT.** `settings/index.js`: ein Format-Fehler beim Team-Key setzte `OGBIData.json.options.ptreTK` still auf `""` zurück, mit einem `// TODO` statt einer sichtbaren Meldung — PTRE blieb `DISABLED`, ohne dass der Spieler einen Grund sah. Jetzt erscheint unter dem Eingabefeld eine Fehlermeldung mit dem erwarteten Format, sobald das Eingegebene nicht leer und nicht gültig ist; ein leeres Feld (bewusst „PTRE aus") bleibt fehlerfrei.
 
 ---
 

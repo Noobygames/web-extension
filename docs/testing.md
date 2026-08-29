@@ -95,7 +95,7 @@ Where singleton can reset through own API, prefer that — `OGBIData.json = {…
 | Page context seam | `util/pageContext.js` | Everything `OGBeyondInfinity` constructor read out of DOM. 100% |
 | Calculation core | `util/gameFormulas.js` | `consumption`, `minesProduction`, `research`, `building`, five `roi*` functions, `getBestRoi`. Characterisation only: values recorded before the Phase 3 move and unchanged after it. |
 | Service worker | `background.js` | Persistence across worker restart, alarm scheduling, notification clicks, per-domain sync. 81% |
-| Message analyzers | `ctxcontent/services/analyzer/*` | Tab dispatch for all five; parsing paths for harvest, trade, expedition fights. |
+| Message analyzers | `ctxpage/messages/analyzer/*` | Tab dispatch for all five; parsing paths for harvest, trade, expedition fights. |
 | Pantry backup | `ctxpage/pantry/index.js` | What the `post` upload actually puts in the basket, plus the timestamp it records. |
 | Bridge token | `main.js` vs `util/service.callbackEvent.js` | The two hand-copied `createCallbackToken()` bodies compared as source. |
 | Ship table | `ctxpage/fleetdispatch/shipData.js` | Table already there / arrives late / empty / never arrives, plus the one-write rule. |
@@ -134,29 +134,50 @@ surface only as a feature quietly doing nothing on a real page. Same reasoning a
 
 **`KNOWN BUG:` / `TRAP:` prefixes.** Several tests assert behaviour that is wrong but currently shipped. Named with one of those prefixes, carry comment explaining what should happen instead. Exist so fix register as _deliberate_ change, not silent one — when you fix bug, update test and drop prefix.
 
-Current entries:
+Current entries — as of `refactoring-new.md` Phase A, only the one genuine `TRAP:`
+remains; every `KNOWN BUG:` in the suite has been fixed and its prefix dropped:
 
-| Test                                                | Module                              | Defect                                                                                                                                           |
-| --------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| invalid input throws TypeError                      | `ogame.coordinate.js`               | `throw InvalidCoordinateArgument(...)` missing `new`, so intended error never reach caller.                                                      |
-| `toNumber(instance)` ignores the type               | `ogame.coordinate.js`               | Free function and method disagree about moon encoding.                                                                                           |
-| `toString` returns `undefined`                      | `ogame.coordinate.js`               | Empty `if (text === undefined) {}` guard.                                                                                                        |
-| `contentContextInit` throws `ReferenceError`        | `service.callbackEvent.js`          | `!chrome.runtime` dereference undeclared global in page context.                                                                                 |
-| `pageContextInit()` overwrites the token with `"1"` | `service.callbackEvent.js`          | Second init latch onto token nobody listen on.                                                                                                   |
-| a precision of `0` is ignored                       | `numbers.js`                        | `precision ? precision : 0` treat valid `0` as absent.                                                                                           |
-| mutating a getter result does not persist           | `OGBIData.js`                       | Contract trap, not bug — but failure is silent. Flagged in review on PR #546.                                                                    |
-| pretty-printed XML crashes the parsers              | `ctxcontent/helpers/*`              | `childNodes` include text nodes; work only because live API minifies.                                                                            |
-| an error response surfaces as a `TypeError`         | `ctxcontent/helpers/*`              | `fetchXml()` check neither `response.ok` nor `<parsererror>`.                                                                                    |
-| `roiMine` charges the target level once per level   | `ogCore.js`                         | Cost loop count `lvl` but pass `tolvl` to `building()`, so 20→25 upgrade priced as 5× level 25.                                                  |
-| ~~`getBestRoi` averages over two empire lists~~     | `util/gameFormulas.js`              | **Fixed by the Phase 3 move**: both reads collapsed onto `OGBIData.json.empire`, so they can no longer drift. Prefix dropped.                    |
-| `TradeMessagesAnalyzer` discards what it computes   | `analyzer/TradeMessagesAnalyzer.js` | Both writes back to `OGBIData` commented out, nothing else write `trades`, so trade statistics have no source.                                   |
-| one bad message blanks the battle-report tab        | `analyzer/FightMessagesAnalyzer.js` | Neither message filter check `data-raw-messagetype`, so `JSON.parse(null).owner` throw out of `analyze()` and rest of pass skipped.              |
-| `readPageContext` throws on an incomplete page      | `util/pageContext.js`               | Three separate null dereferences (player-id meta, empty planet list, universe meta). Lifted verbatim out of constructor; recorded, not repaired. |
+| Test                                      | Module        | Defect                                                                        |
+| ----------------------------------------- | ------------- | ----------------------------------------------------------------------------- |
+| mutating a getter result does not persist | `OGBIData.js` | Contract trap, not bug — but failure is silent. Flagged in review on PR #546. |
 
-**Fixed since, prefix dropped** — both were in this table, now ordinary tests:
-`pageContextRequest` has 30 s deadlock guard instead of hanging forever, and
-corrupt `ogk-data` start empty store (move unreadable value to
-`ogk-data-corrupt`) instead of throwing at import time.
+**Fixed since, prefix dropped** — all were `KNOWN BUG:` in this table, now ordinary
+tests. `pageContextRequest` has a 30 s deadlock guard instead of hanging forever, and
+corrupt `ogk-data` starts an empty store (moves the unreadable value to
+`ogk-data-corrupt`) instead of throwing at import time. `refactoring-new.md` Phase A
+fixed the rest:
+
+- `numbers.js`'s precision-0 handling (`precision ?? 0`, not `precision ? precision : 0`).
+- The pretty-printed-XML and HTTP-error-response crashes in `ctxcontent/helpers/*`
+  (`doc.childNodes` → `doc.children`; `fetchXml()` now checks `response.ok` and the
+  DOM parser's `<parsererror>` node).
+- `roiMine`'s cost loop (summed `lvl`, not `tolvl` five times).
+- `TradeMessagesAnalyzer`'s dead `OGBIData.trades` / `.tradesSums` writes, removed
+  rather than turned back on since nothing ever read either field.
+- One bad message no longer blanking the whole battle-report tab in
+  `FightMessagesAnalyzer` (each message's parse is now isolated in its own
+  `try`/`catch`).
+- `readPageContext()`'s three null-dereference crashes (missing player-id meta,
+  empty planet list, missing universe meta) now throw a named, descriptive error
+  instead of an opaque `TypeError` — construction still cannot continue without
+  them, but the boot path's `catch (ex) { logger.error(ex); }` now says what was
+  missing.
+- `ogame.coordinate.js`: `throw InvalidCoordinateArgument(...)` was missing `new`
+  (a bare `TypeError`, not the intended error type); the free `toNumber()` ignored
+  an `OGameCoordinate` instance's own type, disagreeing with `instance.toNumber()`;
+  `toString()`'s `if (text === undefined) {}` guard was empty.
+- `runContext.js`'s `isPluginContext()` threw for an unrecognised browser instead
+  of returning `false`, which is what its own JSDoc already promised — took
+  `injectScript()` and the whole boot IIFE down with it on Safari, a
+  privacy-hardened UA, or a headless test runner.
+- `tabs()` threw on an empty title map (`tabs[0]` undefined) instead of rendering
+  an empty strip.
+- `service.callbackEvent.js`: `contentContextInit()`'s `!chrome.runtime` guard
+  dereferenced an undeclared global in the page context, throwing a bare
+  `ReferenceError` before its own intended error; `pageContextInit()` had no guard
+  against a second call, which silently latched onto the placeholder token `"1"` it
+  writes on the first call, so every request after that dispatched on an event name
+  nobody listened to.
 
 **Never hit the network.** Stub `globalThis.fetch`; see `stubFetchXml` in `test/ctxcontent/universe.helpers.test.js`.
 

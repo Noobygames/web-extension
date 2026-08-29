@@ -27,7 +27,7 @@ class InvalidCoordinateArgument extends Error {
 function fromOGameToArray(coordinate) {
   let match;
   if ((match = coordinateStringRegex.exec(coordinate)) === null) {
-    throw InvalidCoordinateArgument("Coordinate is not in OGame format.");
+    throw new InvalidCoordinateArgument("Coordinate is not in OGame format.");
   }
 
   return [Number(match.groups["G"]), Number(match.groups["S"]), Number(match.groups["P"])];
@@ -41,7 +41,7 @@ function fromNumberToArray(nCoordinate) {
   let match;
   const coordinate = String(nCoordinate);
   if ((match = coordinateNumberRegex.exec(coordinate)) === null) {
-    throw InvalidCoordinateArgument("Coordinate number is not a valid argument");
+    throw new InvalidCoordinateArgument("Coordinate number is not a valid argument");
   }
 
   return [Number(match.groups["G"]), Number(match.groups["S"]), Number(match.groups["P"])];
@@ -53,7 +53,7 @@ function fromNumberToArray(nCoordinate) {
  * @param {number?} type
  * @return {number} `GSSSPPPT` - G: Galaxy, SSS: System, PPP: Position, T: coordinate type
  */
-export function toNumber(coordinate, type = 0) {
+export function toNumber(coordinate, type = coordinate instanceof OGameCoordinate ? coordinate.type : 0) {
   let parts = undefined;
   if (coordinate instanceof OGameCoordinate) {
     parts = toArray(coordinate);
@@ -62,7 +62,7 @@ export function toNumber(coordinate, type = 0) {
   }
 
   if (parts === undefined) {
-    throw InvalidCoordinateArgument("Invalid coordinate argument, expected string or OGameCoordinate instance");
+    throw new InvalidCoordinateArgument("Invalid coordinate argument, expected string or OGameCoordinate instance");
   }
 
   return Number(parts.map((v) => String(v).padStart(3, "0")).join("") + String(type));
@@ -82,6 +82,7 @@ export function toString(coordinate, withBrackets = false) {
   }
 
   if (text === undefined) {
+    throw new InvalidCoordinateArgument("Invalid coordinate argument, expected OGameCoordinate instance or number");
   }
 
   if (withBrackets) {

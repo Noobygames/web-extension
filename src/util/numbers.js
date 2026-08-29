@@ -56,8 +56,8 @@ export function toFormattedNumber(value, precision = null, units = false) {
     );
   } else {
     return value.toLocaleString(locale, {
-      minimumFractionDigits: precision ? precision : 0,
-      maximumFractionDigits: precision ? precision : 2,
+      minimumFractionDigits: precision ?? 0,
+      maximumFractionDigits: precision ?? 2,
     });
   }
 }

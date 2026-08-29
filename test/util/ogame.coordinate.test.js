@@ -41,7 +41,10 @@ test("toNumber zero-pads system and position so ordering is numeric", () => {
 });
 
 test("toNumber accepts an OGameCoordinate instance", () => {
-  assert.equal(toNumber(fromString("4:250:8", COORDINATE_PLANET)), 42500080);
+  // Trailing digit is the instance's own type (COORDINATE_PLANET = 1) since the
+  // Phase A.5 fix below - the type argument now defaults to the instance's type
+  // instead of unconditionally 0.
+  assert.equal(toNumber(fromString("4:250:8", COORDINATE_PLANET)), 42500081);
 });
 
 test("toString decodes a coordinate number", () => {
@@ -118,35 +121,44 @@ test("equals compares the full encoded value, type included", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Known defects. These assert current behaviour so a fix shows up as a failing
-// test rather than a silent change - see docs/testing.md.
+// Fixed defects (refactoring-new.md Phase A.5). Each of these used to be pinned
+// as a KNOWN BUG: - see docs/testing.md - asserting the wrong behaviour so a fix
+// would register as deliberate rather than silent.
 // ---------------------------------------------------------------------------
 
-test("KNOWN BUG: invalid input throws TypeError, not InvalidCoordinateArgument", () => {
-  // src/util/ogame.coordinate.js throws `InvalidCoordinateArgument(...)` without
-  // `new`. Invoking a class without `new` is itself a TypeError, so the intended
-  // error type never reaches the caller and the message is lost.
+test("invalid input throws the named InvalidCoordinateArgument, not a bare TypeError", () => {
+  // `throw InvalidCoordinateArgument(...)` was missing `new`. Invoking a class
+  // without `new` is itself a TypeError, so the intended error type and message
+  // never reached the caller.
   for (const call of [() => toNumber("nonsense"), () => toNumber(12345), () => toString(12)]) {
     assert.throws(call, (error) => {
-      assert.ok(error instanceof TypeError);
-      assert.match(error.message, /cannot be invoked without 'new'/);
+      assert.equal(error.constructor.name, "InvalidCoordinateArgument");
+      assert.ok(!(error instanceof TypeError), "must not be the bare TypeError 'new' produces");
       return true;
     });
   }
 });
 
-test("KNOWN BUG: toNumber(instance) ignores the instance type, instance.toNumber() does not", () => {
+test("toNumber(instance) keeps the instance type, same as instance.toNumber()", () => {
   const moon = fromString("4:250:8", COORDINATE_MOON);
 
   assert.equal(moon.toNumber(), 42500083, "the method keeps the type");
-  assert.equal(toNumber(moon), 42500080, "the free function drops it to 0");
+  assert.equal(toNumber(moon), 42500083, "the free function now defaults to the instance's own type");
+  assert.equal(toNumber(moon), moon.toNumber(), "both encodings of the same coordinate must agree");
 
-  // Consequence: two encodings of the same coordinate that do not compare equal.
-  assert.notEqual(toNumber(moon), moon.toNumber());
+  // An explicit type argument still overrides the instance's own - the default only
+  // applies when the caller does not pass one.
+  assert.equal(toNumber(moon, COORDINATE_PLANET), 42500081);
 });
 
-test("KNOWN BUG: toString returns undefined for an unsupported argument instead of throwing", () => {
-  // The guard `if (text === undefined) {}` in toString() is empty.
-  assert.equal(toString({}), undefined);
-  assert.equal(toString({}, true), "[undefined]");
+test("toString throws on an unsupported argument instead of silently returning undefined", () => {
+  // The guard `if (text === undefined) {}` in toString() was empty.
+  assert.throws(
+    () => toString({}),
+    (error) => error.constructor.name === "InvalidCoordinateArgument"
+  );
+  assert.throws(
+    () => toString({}, true),
+    (error) => error.constructor.name === "InvalidCoordinateArgument"
+  );
 });

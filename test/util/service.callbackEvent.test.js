@@ -43,18 +43,19 @@ test("contentContextInit refuses to run when chrome.runtime is missing", async (
   }
 });
 
-test("KNOWN BUG: contentContextInit throws ReferenceError when there is no chrome at all", async () => {
-  // The guard is `if (!chrome.runtime)`, which dereferences an undeclared
-  // global in the page context and blows up before the intended message is
-  // produced. pageContextInit() gets this right (`window.chrome !== undefined`).
+test("contentContextInit reports its own error when there is no chrome at all", async () => {
+  // Fixed in refactoring-new.md Phase A.5: the guard was `if (!chrome.runtime)`,
+  // which dereferenced an undeclared global in the page context and blew up with a
+  // bare ReferenceError before the intended message was produced. pageContextInit()
+  // already got this right (reads `window.chrome`, not the bare global).
   const browser = setupBrowser({ chrome: false });
   try {
     const bridge = await importFresh("src/util/service.callbackEvent.js");
     assert.throws(
       () => bridge.contentContextInit({}),
       (error) => {
-        assert.ok(error instanceof ReferenceError);
-        assert.match(error.message, /chrome is not defined/);
+        assert.ok(!(error instanceof ReferenceError), "must not be an accidental ReferenceError");
+        assert.match(error.message, /Invalid context execution/);
         return true;
       }
     );
@@ -346,34 +347,43 @@ test("responses are not cloned on Chromium", async () => {
 // Known defects - see docs/testing.md.
 // ---------------------------------------------------------------------------
 
-test('KNOWN BUG: pageContextInit() overwrites the published token with "1"', async () => {
-  // pageContextInit() ends with `dataset[DATASET_NAME] = "1"`, presumably to
-  // stop other page scripts from reading the token. Two consequences:
-  //   1. a second pageContextInit() silently latches onto the token "1" and
-  //      every subsequent request is dispatched on an event name nobody listens to;
-  //   2. the dataset no longer reflects the real token, so any later
-  //      contentContextInit() sees "1" and reports "already initialized".
-  const { browser, contentToken } = await installBridge({ ptre: { galaxy: () => 1 } });
+test('pageContextInit() still publishes "1" once, but a second call is now refused', async () => {
+  // pageContextInit() ends with `dataset[DATASET_NAME] = "1"`, presumably to stop
+  // other page scripts from reading the real token - that part is intentional and
+  // unchanged. What Phase A.5 of refactoring-new.md fixed is the second call: it
+  // used to silently latch onto that same placeholder "1" as if it were a real
+  // token, and every request after that was dispatched on an event name nobody
+  // listened to, with no error anywhere. Now it throws immediately instead.
+  const { browser, bridge, contentToken } = await installBridge({ ptre: { galaxy: () => 1 } });
 
   try {
     assert.notEqual(contentToken, "1");
     assert.equal(browser.document.documentElement.dataset[DATASET_NAME], "1");
+    assert.throws(() => bridge.pageContextInit(), /already initialized/);
   } finally {
     browser.cleanup();
   }
 });
 
-test("a request for an unregistered token is rejected rather than left hanging", async (t) => {
-  // Follow-on from the above: after a second pageContextInit() the module token is
-  // "1" and no listener exists for that event name. This used to be a KNOWN BUG -
-  // the promise neither resolved nor rejected, so the caller and everything awaiting
-  // it stalled with no error anywhere. There is now a 30 s deadlock guard.
-  const { browser, bridge } = await installBridge({ ptre: { galaxy: () => 1 } });
+test("a request nobody listens for is rejected rather than left hanging", async (t) => {
+  // No contentContextInit() in this test: the token pageContextInit() picks up is
+  // real (placed in the dataset directly, the way main.js does at document_start),
+  // but nothing ever registered a listener for it - content_scripts had not run
+  // yet, or never will. This used to be a KNOWN BUG - the promise neither resolved
+  // nor rejected, so the caller and everything awaiting it stalled with no error
+  // anywhere. There is now a 30 s deadlock guard.
+  const browser = setupBrowser({ chrome: true });
+  const bridge = await importFresh("src/util/service.callbackEvent.js");
+  const token = bridge.createCallbackToken();
+  browser.document.documentElement.dataset[DATASET_NAME] = token;
+
+  delete globalThis.chrome;
+  delete browser.window.chrome;
+  bridge.pageContextInit();
+
   t.mock.timers.enable({ apis: ["setTimeout"] });
 
   try {
-    bridge.pageContextInit(); // re-init picks up the placeholder token "1"
-
     const request = bridge.pageContextRequest("ptre", "galaxy");
     const outcome = request.then(
       () => ({ settled: "resolved" }),

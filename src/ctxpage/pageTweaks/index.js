@@ -8,7 +8,7 @@ import OGBIData from "../../util/OGBIData.js";
 import OgamePageData from "../../util/OgamePageData.js";
 import PlayerClass from "../../util/enum/playerClass.js";
 import { getOption } from "../conf-options.js";
-import { openPlanetList } from "../fleetdispatch/index.js";
+import { openPlanetList } from "../fleetdispatch/planetList.js";
 import { tooltip } from "../../util/tooltip.js";
 import * as needsUtil from "../../util/needs.js";
 import Notifier from "../../util/Notifier.js";

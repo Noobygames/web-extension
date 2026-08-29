@@ -8,7 +8,8 @@
  * after it.
  *
  * They remain characterisation tests - they say what the code does, not what it
- * should. Two of the defects they record are still open, and marked `KNOWN BUG:`.
+ * should. Both defects they originally recorded (`getBestRoi`'s averaging and
+ * `roiMine`'s cost sum) are fixed now; no `KNOWN BUG:` remains in this file.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -317,29 +318,24 @@ test("getBestRoi averages the mine levels over the planets it summed", () => {
   assert.deepEqual(OGBIData.json.averageMines, [30, 27, 22.5]);
 });
 
-test("KNOWN BUG: roiMine charges the target level once per level instead of summing the levels", () => {
-  // The loop counts from the current level to `tolvl` but calls
-  // `building(technoId, tolvl, object)` inside it - `lvl` is never used. So upgrading
-  // 20 -> 25 is priced as five times the cost of level 25, rather than the sum of
-  // levels 21..25. It always over-states the cost, and the more levels are spanned the
-  // worse it gets. roiLfBuilding, two functions up, does it correctly.
+test("roiMine sums the cost of every level spanned, not the target level repeated", () => {
+  // Fixed in refactoring-new.md Phase A.2: the loop counted from the current level to
+  // `tolvl` but called `building(technoId, tolvl, object)` inside it - `lvl` was never
+  // used. Upgrading 20 -> 25 was priced as five times the cost of level 25 instead of
+  // the sum of levels 21..25, which always over-stated the cost and got worse the more
+  // levels a suggestion spanned. roiLfBuilding, two functions up, was already correct
+  // and is the fix's template.
   const planet = planetRow();
   withEmpire([planet]);
 
   const oneLevel = roiMine(1, 21, planet, NOBODY);
   const fiveLevels = roiMine(1, 25, planet, NOBODY);
 
+  // A single-level upgrade is unaffected by the fix: summing one level is that level,
+  // same as charging the target level once. Five levels used to come out as 4209440 -
+  // exactly 5x this result. It no longer does.
   assert.equal(Math.round(oneLevel), 1091176);
-  assert.equal(Math.round(fiveLevels), 4209440);
-
-  // The tell: the five-level result is exactly 5 x cost(level 25) over the same
-  // production difference, which no correct summation could produce.
-  const costOf25 = building(1, 25, planet).cost;
-  const rate = OGBIData.json.options.tradeRate;
-  const mse = (cost) => cost.map((x, n) => (x * rate[0]) / rate[n]).reduce((sum, cur) => sum + cur, 0);
-  const prodDiffMSE = (5 * mse(costOf25) * 3600) / fiveLevels;
-  const impliedSingle = (mse(costOf25) * 3600) / prodDiffMSE;
-  assert.ok(Math.abs(impliedSingle * 5 - fiveLevels) < 1e-6);
+  assert.equal(Math.round(fiveLevels), 2193065);
 });
 
 // --------------------------------------------------------------------------

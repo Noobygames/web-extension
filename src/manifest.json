@@ -25,7 +25,7 @@
       "run_at": "document_start"
     }
   ],
-  "description": "OGI - To Ogame's infinity and beyond!",
+  "description": "OGBI - Beyond Ogame's infinity!",
   "host_permissions": ["https://*.ogame.gameforge.com/game/*"],
   "icons": {
     "512": "assets/images/logo512.png",
@@ -42,7 +42,7 @@
     {
       "extension_ids": ["hfojakphgokgpbnejoobfamojbgolcbo"],
       "matches": ["<all_urls>"],
-      "resources": ["ogCore.js", "main.js", "libs/*", "assets/*", "util/*", "ctxpage/*", "ctxcontent/*"]
+      "resources": ["ogCore.js", "main.js", "chunks/*", "libs/*", "assets/*", "util/*", "ctxpage/*", "ctxcontent/*"]
     }
   ]
 }

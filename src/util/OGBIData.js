@@ -178,26 +178,6 @@ class OGBIData {
     this.#save();
   }
 
-  get trades() {
-    return this._json.trades;
-  }
-
-  set trades(trades) {
-    this._json.trades = trades;
-
-    this.#save();
-  }
-
-  get tradesSums() {
-    return this._json.tradesSums;
-  }
-
-  set tradesSums(tradesSums) {
-    this._json.tradesSums = tradesSums;
-
-    this.#save();
-  }
-
   get harvests() {
     return this._json.harvests;
   }

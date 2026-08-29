@@ -33,7 +33,8 @@ import {
   EXPEDITION_TOP1_POINTS,
 } from "../../util/gameConstants.js";
 import { building, research } from "../../util/gameFormulas.js";
-import { openPlanetList, selectAllShips, selectBestCargoShip, selectMostShips, selectShips } from "./index.js";
+import { selectAllShips, selectBestCargoShip, selectMostShips, selectShips } from "./index.js";
+import { openPlanetList } from "./planetList.js";
 
 /**
  * The fleet-dispatch page: the rebuilt dispatcher UI, the expedition and collect

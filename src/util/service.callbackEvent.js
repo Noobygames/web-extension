@@ -89,6 +89,9 @@ class CallbackRouter {
 /** Guards against a second initialisation in this realm. */
 let contentInitialized = false;
 
+/** Same, for the page-context side of the handshake. */
+let pageInitialized = false;
+
 /**
  * Mints a token for the page <-> content handshake.
  *
@@ -111,7 +114,12 @@ export function createCallbackToken() {
  *   With it, the injection and this module can load in parallel.
  */
 export function contentContextInit(callbackCommandMap, presetToken = undefined) {
-  if (!chrome.runtime) {
+  // `typeof chrome === "undefined"` first: `chrome` is not a declared global in the
+  // page context, so `!chrome.runtime` dereferenced it directly and threw a bare
+  // ReferenceError before this function's own, intended error - pageContextInit()
+  // already got this right below, reading `window.chrome` rather than the bare
+  // global. refactoring-new.md Phase A.5.
+  if (typeof chrome === "undefined" || !chrome.runtime) {
     throw new Error("Invalid context execution");
   }
 
@@ -157,12 +165,25 @@ export function pageContextInit() {
     throw new Error("Invalid context execution");
   }
 
+  // Without this, a second call silently latched onto the placeholder "1" this
+  // function itself writes below - overwriting the real token already captured in
+  // `callbackToken` from the first call, so every request after that dispatched on
+  // an event name nobody listens to. The dataset alone cannot tell a second call
+  // apart from the legitimate case where the page context runs first and reads the
+  // real token before content context has even registered (see
+  // "the page context may consume the token before the content script registers")
+  // - only this module's own state can. refactoring-new.md Phase A.5.
+  if (pageInitialized) {
+    throw new Error("service callback event is already initialized");
+  }
+
   if (!document.documentElement.dataset[DATASET_NAME]) {
     throw new Error("service callback event is not initialized");
   }
 
   callbackToken = document.documentElement.dataset[DATASET_NAME];
   document.documentElement.dataset[DATASET_NAME] = "1";
+  pageInitialized = true;
 }
 
 /**

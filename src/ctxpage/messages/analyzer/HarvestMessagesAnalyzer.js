@@ -1,5 +1,5 @@
 import { getLogger } from "../../../util/logger.js";
-import { messagesTabs } from "../../../ctxpage/messages/index.js";
+import { messagesTabs } from "../index.js";
 import OGBIData from "../../../util/OGBIData.js";
 import MessageType from "../../../util/enum/messageType.js";
 import ship from "../../../util/enum/ship.js";

@@ -13,11 +13,13 @@ import assert from "node:assert/strict";
 import { setupBrowser, importFresh } from "../helpers/globals.js";
 
 /** Installs a fetch stub returning the given XML for every request. */
-function stubFetchXml(xml, headers = {}) {
+function stubFetchXml(xml, headers = {}, { status = 200 } = {}) {
   const requests = [];
   globalThis.fetch = (input, init) => {
     requests.push({ url: String(input), init });
     return Promise.resolve({
+      ok: status >= 200 && status < 300,
+      status,
       text: () => Promise.resolve(xml),
       headers: new globalThis.window.Headers(headers),
     });
@@ -25,10 +27,10 @@ function stubFetchXml(xml, headers = {}) {
   return requests;
 }
 
-async function withUniverse(xml, run, headers) {
+async function withUniverse(xml, run, headers, fetchOptions) {
   const browser = setupBrowser({ chrome: true });
   try {
-    const requests = stubFetchXml(xml, headers);
+    const requests = stubFetchXml(xml, headers, fetchOptions);
     await run(requests, browser);
   } finally {
     delete globalThis.fetch;
@@ -216,38 +218,63 @@ test("the reverse player -> alliance index is built", async () => {
 // Known defects - see docs/testing.md.
 // --------------------------------------------------------------------------
 
-test("KNOWN BUG: pretty-printed XML crashes the parsers", async () => {
-  // All three parsers iterate `doc.childNodes` and call `getAttribute()` on
+test("pretty-printed XML no longer breaks the parsers", async () => {
+  // Fixed in refactoring-new.md Phase A.2 #7: all four parsers (planets, players,
+  // alliances, highscore) iterated `doc.childNodes` and called `getAttribute()` on
   // every entry. Whitespace between elements is a text node, which has no
-  // getAttribute. The code only works because the live API serves minified XML;
-  // any proxy, cache or dev fixture that reformats the response breaks it.
+  // `getAttribute`, so the code only worked because the live API serves minified
+  // XML - any proxy, cache or dev fixture that reformats the response broke it.
+  // `doc.children` (and, for a planet's nested `<moon>`, `firstElementChild`
+  // instead of `firstChild`) is Element-only and does not see whitespace.
   const prettyXml = `<?xml version="1.0" encoding="UTF-8"?>
 <universe timestamp="1700000000">
-  <planet id="33701001" player="101" name="Homeworld" coords="1:2:3"/>
+  <planet id="33701001" player="101" name="Homeworld" coords="1:2:3">
+    <moon id="33801001" name="Moon" size="8500"/>
+  </planet>
+  <planet id="33701002" player="102" name="Enemy" coords="4:250:8"/>
 </universe>`;
 
   await withUniverse(prettyXml, async () => {
     const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
-    await assert.rejects(() => getPlanets("s101-en"), TypeError);
+    const { planetList } = await getPlanets("s101-en");
+
+    assert.equal(planetList.length, 2);
+    assert.equal(planetList[0].id, 33701001);
+    assert.equal(planetList[0].moon, 33801001, "the nested <moon> still resolves once whitespace is skipped");
+    assert.equal(planetList[1].moon, 0, "a planet with no moon element stays 0, not a crash");
   });
 });
 
-test("KNOWN BUG: an error response surfaces as a TypeError, not a fetch error", async () => {
-  // fetchXml() checks neither `response.ok` nor the `<parsererror>` node the
-  // DOM parser emits. A 500 page or an HTML error body is parsed anyway and
-  // only blows up later, deep inside the mapping code, as a generic
-  // "node.getAttribute is not a function". DataHelper.update() swallows that in
-  // its catch block, so the universe data silently stays stale.
+test("an HTTP error response rejects instead of being parsed as if it were XML", async () => {
+  // Fixed in refactoring-new.md Phase A.2 #7: fetchXml() checked neither
+  // `response.ok` nor the `<parsererror>` node the DOM parser emits on invalid
+  // input. A 500 page or an HTML error body used to be parsed anyway and only blow
+  // up later, deep inside the mapping code, as a generic
+  // "node.getAttribute is not a function" - and DataHelper.update() swallows that
+  // in its catch block, so the universe data silently stayed stale with no signal
+  // that the fetch itself had failed.
+  await withUniverse(
+    "<html><body>Service Unavailable</body></html>",
+    async () => {
+      const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+
+      await assert.rejects(
+        () => getPlanets("s101-en"),
+        (error) => /HTTP 503/.test(error.message)
+      );
+    },
+    undefined,
+    { status: 503 }
+  );
+});
+
+test("a 200 response that is not valid XML rejects instead of being parsed anyway", async () => {
   await withUniverse("<<<not xml", async () => {
     const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
 
     await assert.rejects(
       () => getPlanets("s101-en"),
-      (error) => {
-        assert.ok(error instanceof TypeError);
-        assert.match(error.message, /getAttribute is not a function/);
-        return true;
-      }
+      (error) => /did not return valid XML/.test(error.message)
     );
   });
 });

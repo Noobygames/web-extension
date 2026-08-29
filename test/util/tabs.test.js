@@ -103,11 +103,14 @@ test("a single tab still renders its panel", () => {
   });
 });
 
-test("KNOWN BUG: an empty title map throws instead of rendering an empty strip", () => {
-  // `tabs[0].classList` runs before anything checks that there is a tab. No caller
-  // passes an empty map today, so this is recorded rather than repaired - but it is
-  // the reason a tab set built from a filtered list needs a guard at the call site.
+test("an empty title map renders an empty strip instead of throwing", () => {
+  // Fixed in refactoring-new.md Phase A.5: `tabs[0].classList` used to run before
+  // anything checked that there was a tab. No caller passes an empty map today -
+  // this is what makes it safe for one built from a filtered list to do so.
   withPage(() => {
-    assert.throws(() => tabs({}), TypeError);
+    const body = tabs({});
+
+    assert.equal(body.querySelectorAll(".ogl-tab").length, 0);
+    assert.equal(body.children.length, 1, "just the header, no panel");
   });
 });

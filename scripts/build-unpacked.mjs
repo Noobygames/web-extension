@@ -119,6 +119,17 @@ const loadHint =
 
 console.log(`Built unpacked ${target} extension v${version}`);
 console.log(`  ${outDir}`);
-for (const { file, bytes } of bundles) console.log(`  bundled ${file} (${(bytes / 1024).toFixed(0)} KB)`);
+const kb = (bytes) => `${(bytes / 1024).toFixed(0)} KB`;
+// The entries are what every page load pays for; the chunks are only fetched by
+// whoever opens that page or presses that button, so they are summarised rather
+// than listed one per line.
+for (const { file, bytes } of bundles.filter((b) => b.entry)) console.log(`  bundled ${file} (${kb(bytes)})`);
+const chunks = bundles.filter((b) => !b.entry);
+if (chunks.length) {
+  const total = chunks.reduce((sum, c) => sum + c.bytes, 0);
+  const biggest = [...chunks].sort((a, b) => b.bytes - a.bytes).slice(0, 3);
+  console.log(`  ${chunks.length} on-demand chunks, ${kb(total)} total`);
+  console.log(`    largest: ${biggest.map((c) => `${path.basename(c.file)} ${kb(c.bytes)}`).join(", ")}`);
+}
 if (stableId) console.log(`  extension id: ${stableId} (pinned by .local-extension-key.pem)`);
 console.log(`  ${loadHint}`);

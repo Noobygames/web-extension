@@ -331,14 +331,11 @@ export function stalk(sender, player, delay = undefined) {
     const actBtn = actions.appendChild(createDOM("a", { style: "margin-left: 10px", class: "ogl-text-btn" }, "⚠"));
     let first = false;
     actBtn.addEventListener("click", (e) => {
-      const searchHistory = OGBIData.searchHistory;
-
-      // Add player to History in order to send his activities
-      searchHistory.forEach((elem, i) => {
-        if (elem.id === p.id) {
-          searchHistory.splice(i, 1);
-        }
-      });
+      // Add player to History in order to send his activities. filter(), not
+      // forEach()+splice(): splice()-while-iterating skips the element right after
+      // whatever it just removed, so a duplicate entry (should not happen, but
+      // nothing enforced it) would leave one copy behind. refactoring-new.md A.4 #8.
+      const searchHistory = OGBIData.searchHistory.filter((elem) => elem.id !== p.id);
       searchHistory.push(p);
       if (searchHistory.length > 5) {
         searchHistory.shift();
@@ -682,13 +679,15 @@ function observeSideStalkPlayerTitle(playerTitle, playerName, container) {
 }
 
 export function side(playerId) {
-  const sideStalk = OGBIData.sideStalk;
+  let sideStalk = OGBIData.sideStalk;
   if (playerId) {
     playerId = parseInt(playerId);
 
-    sideStalk.forEach((e, i, o) => {
-      if (e === playerId) o.splice(i, 1);
-    });
+    // filter(), not forEach()+splice(): splice()-while-iterating skips the element
+    // right after whatever it just removed. Harmless here in practice (a player id
+    // appears at most once), but the pattern is the same class of bug as the
+    // duplicate-entry case in stalk() above - refactoring-new.md A.4 #8.
+    sideStalk = sideStalk.filter((id) => id !== playerId);
 
     sideStalk.push(playerId);
 

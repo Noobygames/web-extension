@@ -1,11 +1,19 @@
 import { getLogger } from "../../../util/logger.js";
-import { messagesTabs } from "../../../ctxpage/messages/index.js";
-import OGBIData from "../../../util/OGBIData.js";
+import { messagesTabs } from "../index.js";
 import MessageType from "../../../util/enum/messageType.js";
 import { toFormattedNumber } from "../../../util/numbers.js";
 import { createDOM } from "../../../util/dom.js";
 import * as standardUnit from "../../../util/standardUnit.js";
 
+/**
+ * Trade messages get one label appended - the net standard-unit gain or loss of the
+ * transport - and nothing else. `OGBIData.trades` / `.tradesSums` used to exist for
+ * a trade statistics tab that was never built: both writes were commented out from
+ * the commit that introduced this file (2319fe5, 2024-07-30) onward, `tradesSums`
+ * was a copy of the combat-sums shape (`losses`, `wins`, `topCombats`, ...) that
+ * never actually accumulated anything, and nothing anywhere in `src/` ever read
+ * either field. Removed rather than turned on - refactoring-new.md Phase A.1 #3.
+ */
 class TradeMessagesAnalyzer {
   #logger;
   #messages;
@@ -42,9 +50,9 @@ class TradeMessagesAnalyzer {
   }
 
   #parseTradeMessages() {
-    const addStandardUnit = (trade, message) => {
+    const addStandardUnit = (loot, message) => {
       const msgTitle = message.querySelector(".msgHeadItem .msgTitle");
-      const standardUnitSum = standardUnit.standardUnit(trade.loot || [0, 0, 0]);
+      const standardUnitSum = standardUnit.standardUnit(loot);
       const amountDisplay = `${toFormattedNumber(standardUnitSum, [0, 1], true)} ${standardUnit.unitType()}`;
 
       msgTitle.appendChild(
@@ -53,54 +61,16 @@ class TradeMessagesAnalyzer {
     };
 
     this.#getTradesMessages().forEach((message) => {
-      const trades = { ...OGBIData.trades };
-      const msgId = message.getAttribute("data-msg-id");
-
-      if (trades[msgId]) {
-        addStandardUnit(trades[msgId], message);
-        return;
-      }
-
       const rawMessageData = message.querySelector(".rawMessageData");
       const isIncomingRessources = parseInt(rawMessageData.getAttribute("data-raw-sourceplayerid")) !== playerId;
       const cargo = JSON.parse(rawMessageData.getAttribute("data-raw-cargo"));
-      const newDate = new Date(rawMessageData.getAttribute("data-raw-date"));
-      const datePoint = `${newDate.getDate().toString().padStart(2, "0")}.${(newDate.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}.${newDate.getFullYear().toString().slice(2)}`;
+      const loot = [
+        cargo.metal * (isIncomingRessources ? 1 : -1),
+        cargo.crystal * (isIncomingRessources ? 1 : -1),
+        cargo.deuterium * (isIncomingRessources ? 1 : -1),
+      ];
 
-      const tradesSums = { ...OGBIData.tradesSums };
-
-      if (!tradesSums[datePoint]) {
-        tradesSums[datePoint] = {
-          loot: [0, 0, 0],
-          losses: {},
-          harvest: [0, 0, 0],
-          adjust: [0, 0, 0],
-          fuel: 0,
-          topCombats: [],
-          count: 0,
-          wins: 0,
-          draws: 0,
-        };
-      }
-
-      /*OGBIData.tradesSums = tradesSums;*/
-
-      trades[msgId] = {
-        date: newDate,
-        loot: [
-          cargo.metal * (isIncomingRessources ? 1 : -1),
-          cargo.crystal * (isIncomingRessources ? 1 : -1),
-          cargo.deuterium * (isIncomingRessources ? 1 : -1),
-        ],
-        sourceplayerid: parseInt(rawMessageData.getAttribute("data-raw-sourceplayerid")),
-        targetplayerid: parseInt(rawMessageData.getAttribute("data-raw-targetplayerid")),
-      };
-
-      addStandardUnit(trades[msgId], message);
-
-      /*OGBIData.trades = trades;*/
+      addStandardUnit(loot, message);
     });
   }
 }

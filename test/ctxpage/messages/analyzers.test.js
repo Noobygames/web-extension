@@ -2,9 +2,11 @@
  * The five message analyzers.
  *
  * `docs/testing.md` calls these "the highest-value gap, since these are where most
- * bug reports land". They are page-context classes despite living under
- * `ctxcontent/` (see the directory-name note in refactoring.md Phase 6), so
- * `setupBrowser()` is called WITHOUT `chrome: true`.
+ * bug reports land". They are page-context classes, and Phase 6 of refactoring.md
+ * moved them (and this file) out from under `ctxcontent/` for exactly that reason -
+ * that directory otherwise reads as content-context, the one place `chrome.*` is
+ * safe to use, and these classes never see it. `setupBrowser()` is called WITHOUT
+ * `chrome: true`.
  *
  * Each one implements the same informal interface - `support(tabId)`,
  * optional `clean(force)`, `analyze(messageCallable, tabId)` - and `Messages`
@@ -14,7 +16,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { setupBrowser } from "../helpers/globals.js";
+import { setupBrowser } from "../../helpers/globals.js";
 
 const browser = setupBrowser({ url: "https://s1-en.ogame.gameforge.com/game/index.php?page=messages" });
 
@@ -22,16 +24,16 @@ const browser = setupBrowser({ url: "https://s1-en.ogame.gameforge.com/game/inde
 // transport from an outgoing one, and to find their own combat report.
 globalThis.playerId = 12345;
 
-const { messagesTabs } = await import("../../src/ctxpage/messages/index.js");
-const OGBIData = (await import("../../src/util/OGBIData.js")).default;
-const SpyMessagesAnalyzer = (await import("../../src/ctxcontent/services/analyzer/SpyMessagesAnalyzer.js")).default;
+const { messagesTabs } = await import("../../../src/ctxpage/messages/index.js");
+const OGBIData = (await import("../../../src/util/OGBIData.js")).default;
+const SpyMessagesAnalyzer = (await import("../../../src/ctxpage/messages/analyzer/SpyMessagesAnalyzer.js")).default;
 const ExpeditionMessagesAnalyzer = (
-  await import("../../src/ctxcontent/services/analyzer/ExpeditionMessagesAnalyzer.js")
+  await import("../../../src/ctxpage/messages/analyzer/ExpeditionMessagesAnalyzer.js")
 ).default;
-const FightMessagesAnalyzer = (await import("../../src/ctxcontent/services/analyzer/FightMessagesAnalyzer.js")).default;
-const HarvestMessagesAnalyzer = (await import("../../src/ctxcontent/services/analyzer/HarvestMessagesAnalyzer.js"))
+const FightMessagesAnalyzer = (await import("../../../src/ctxpage/messages/analyzer/FightMessagesAnalyzer.js")).default;
+const HarvestMessagesAnalyzer = (await import("../../../src/ctxpage/messages/analyzer/HarvestMessagesAnalyzer.js"))
   .default;
-const TradeMessagesAnalyzer = (await import("../../src/ctxcontent/services/analyzer/TradeMessagesAnalyzer.js")).default;
+const TradeMessagesAnalyzer = (await import("../../../src/ctxpage/messages/analyzer/TradeMessagesAnalyzer.js")).default;
 
 test.after(() => {
   delete globalThis.playerId;
@@ -43,12 +45,10 @@ function resetStore(options = {}) {
   OGBIData.json = {
     options: { standardUnitBase: 0, tradeRate: [2.5, 1.5, 1], ...options },
     harvests: {},
-    trades: {},
     expeditions: {},
     combats: {},
     expeditionSums: {},
     combatsSums: {},
-    tradesSums: {},
     discoveries: {},
     discoveriesSums: {},
     ships: { 218: { cargoCapacity: 20000 } },
@@ -274,12 +274,14 @@ test("a transport between two of your own planets is skipped", () => {
   assert.equal(row.querySelector(".msgTitle .ogk-label"), null, "moving your own resources is not a trade");
 });
 
-test("KNOWN BUG: TradeMessagesAnalyzer computes trades and then throws them away", () => {
-  // Both writes back to the store are commented out (`/*OGBIData.trades = trades;*/`
-  // and the same for `tradesSums`), and no other module writes either key - the
-  // legacy analyzer does not handle transports at all. So `OGBIData.trades` stays
-  // empty forever, the msgId cache one line above it can never hit, and the label
-  // is recomputed on every render. The trade statistics have no source of data.
+test("a trade message needs no store round-trip to get its label", () => {
+  // Fixed in refactoring-new.md Phase A.1 #3: this used to compute a `trades` /
+  // `tradesSums` pair, then throw both away behind a commented-out write - dead
+  // since the commit that introduced this file, `tradesSums` copied the combat-sums
+  // shape (`losses`, `wins`, `topCombats`, ...) and never accumulated anything, and
+  // nothing anywhere ever read either field. Removed rather than turned on: there
+  // was no consumer to turn on for. The visible feature - the standard-unit label -
+  // never depended on the store round-trip and is unaffected.
   resetStore();
   document.body.innerHTML = "";
   const row = messageRow(2004, {
@@ -292,8 +294,9 @@ test("KNOWN BUG: TradeMessagesAnalyzer computes trades and then throws them away
 
   new TradeMessagesAnalyzer().analyze(callableOf(row), messagesTabs.GROUP_SHIPPING);
 
-  assert.deepEqual(OGBIData.trades, {}, "nothing was persisted");
-  assert.deepEqual(OGBIData.tradesSums, {});
+  assert.ok(row.querySelector(".msgTitle .ogk-label"), "the label is still appended");
+  assert.equal(OGBIData.json.trades, undefined, "the field is gone, not just empty");
+  assert.equal(OGBIData.json.tradesSums, undefined);
 });
 
 // --------------------------------------------------------------------------
@@ -367,28 +370,34 @@ test("an already-known expedition fight is re-labelled without being counted aga
   assert.deepEqual(OGBIData.expeditionSums["27.08.26"].losses, { 204: 3 }, "losses were not doubled");
 });
 
-test("KNOWN BUG: one message without combat data aborts the whole battle-report pass", () => {
-  // Neither `#getExpeditionFight()` nor `#getFight()` filters on
-  // `data-raw-messagetype` - they look only at the coordinates and the hashcode. So
-  // anything else on that tab reaches a parser that does `JSON.parse(null).owner` or
-  // `JSON.parse(null).pop()`, and the TypeError escapes `analyze()`. Every message
-  // after it in the same pass is skipped, so one odd row blanks the whole tab.
-  // The harvest and trade analyzers both filter on the message type first.
+test("a message without combat data no longer blanks the rest of the battle-report tab", () => {
+  // Fixed in refactoring-new.md Phase A.2 #5: neither `#getExpeditionFight()` nor
+  // `#getFight()` filters on `data-raw-messagetype` - both look only at coordinates
+  // and hashcode - so anything else on that tab used to reach a parser that did
+  // `JSON.parse(null).owner`, and the TypeError escaped `analyze()`. Every message
+  // after the odd one in the same pass was silently skipped, so one odd row blanked
+  // the whole tab. The real fix (a `data-raw-messagetype` filter, like harvest and
+  // trade both have) needs OGame's actual combat-report type id, which is not
+  // available here; the safe fix that does not require guessing it is to isolate
+  // each message's parse, so one failure cannot take its neighbours down with it.
   resetStore();
   document.body.innerHTML = "";
-  const odd = messageRow(4004, { coords: "1:2:8", hashcode: "abc" });
+  const odd1 = messageRow(4004, { coords: "1:2:8", hashcode: "abc" });
   const good = expeditionFightRow(4005);
+  const odd2 = messageRow(4006, { coords: "1:2:9", hashcode: "def" });
 
-  assert.throws(
-    () => new FightMessagesAnalyzer().analyze(callableOf(odd, good), messagesTabs.BATTLE_REPORT),
-    TypeError
+  assert.doesNotThrow(() =>
+    new FightMessagesAnalyzer().analyze(callableOf(odd1, good, odd2), messagesTabs.BATTLE_REPORT)
   );
 
-  // analyze() runs the expedition pass first and the ordinary-combat pass second, so
-  // the damage is order-dependent: the expedition report was already booked, and
-  // everything the second pass would have done is lost without a trace.
-  assert.ok(OGBIData.combats["4005"], "the expedition pass had already finished");
-  assert.equal(OGBIData.combats["4004"], undefined, "the pass that threw booked nothing");
+  // The expedition pass runs first and books its report regardless of what happens
+  // later. The point of this test is odd2: if the first bad message still aborted
+  // the loop, odd2 would never even be attempted, and there would be no way to tell
+  // the difference from here - so both odd messages having been skipped, rather than
+  // just the first, is what proves the pass kept going.
+  assert.ok(OGBIData.combats["4005"], "the expedition report was booked");
+  assert.equal(OGBIData.combats["4004"], undefined, "the first odd message could not be parsed");
+  assert.equal(OGBIData.combats["4006"], undefined, "the second odd message was still reached and also skipped");
 });
 
 test("a spy flight that never came back carries no report and is skipped", () => {

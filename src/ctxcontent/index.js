@@ -4,6 +4,7 @@ import { contentContextInit } from "../util/service.callbackEvent.js";
 import { suppressAbortRejections } from "../util/abort.js";
 import * as wait from "../util/wait.js";
 import { getExpeditionType } from "./callbacks/expedition-type.js";
+import { getServerDataXml } from "./helpers/universe.data.js";
 import { DataHelper } from "./data-helper.js";
 
 const mainLogger = getLogger();
@@ -203,6 +204,17 @@ export function main(callbackToken) {
       },
       messages: {
         expeditionType: getExpeditionType,
+      },
+      serverData: {
+        // `updateServerSettings()` (ogCore.js) fetched serverData.xml directly on
+        // every page load past its own 24h throttle; this reroutes the same fetch
+        // through the content context's chrome.storage.local cache instead, so a
+        // second tab within the TTL costs nothing. The page context still parses
+        // the returned XML text itself - see the `serverData` doc comment on
+        // updateServerSettings() for why the parsing stayed there.
+        get: function (force = false) {
+          return getServerDataXml(UNIVERSE, force);
+        },
       },
     },
     callbackToken

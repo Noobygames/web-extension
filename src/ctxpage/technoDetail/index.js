@@ -26,6 +26,7 @@ import {
   roiMine,
   roiPlasmatechnology,
 } from "../../util/gameFormulas.js";
+import { isBuildPage, isLeveledBuildingPage, isResearchPage } from "../../util/enum/gamePages.js";
 
 /**
  * The detail panel OGame opens for a building or a technology, with OGI's additions:
@@ -37,15 +38,10 @@ import {
  */
 
 function technoDetail(context) {
-  if (
-    context.page == "research" ||
-    context.page == "supplies" ||
-    context.page == "facilities" ||
-    context.page == "shipyard" ||
-    context.page == "defenses" ||
-    context.page == "lfbuildings" ||
-    context.page == "lfresearch"
-  ) {
+  // Kept even though `ogCore.js` checks the same list before loading this chunk:
+  // the guard is what makes the function safe to call from anywhere, and both
+  // sides read `BUILD_PAGES` so they cannot disagree.
+  if (isBuildPage(context.page)) {
     let lock;
     let lockListener;
     let currentEnergy = resourcesBar.resources.energy.amount;
@@ -73,9 +69,9 @@ function technoDetail(context) {
       let timeSum = 0;
       let techno;
       for (let i = baselvl; i < tolvl; i++) {
-        if (context.page == "research" || context.page == "lfresearch") {
+        if (isResearchPage(context.page)) {
           techno = research(technoId, i, technocrat, context.playerClass == PlayerClass.EXPLORER, acceleration, object);
-        } else if (context.page == "supplies" || context.page == "facilities" || context.page == "lfbuildings") {
+        } else if (isLeveledBuildingPage(context.page)) {
           techno = building(technoId, i, object);
         }
         resSum[0] += techno.cost[0];
@@ -84,7 +80,7 @@ function technoDetail(context) {
         resSum[3] = techno.cost[3];
         timeSum += techno.time;
       }
-      if (context.page == "research" || context.page == "lfresearch") {
+      if (isResearchPage(context.page)) {
         if ((technoId == 124 || technoId == 122) && baselvl <= tolvl) {
           let roi =
             technoId == 124 ? roiAstrophysics(baselvl, tolvl, context.playerBonuses) : roiPlasmatechnology(tolvl);
@@ -145,7 +141,7 @@ function technoDetail(context) {
           acceleration,
           object
         );
-      } else if (context.page == "supplies" || context.page == "facilities" || context.page == "lfbuildings") {
+      } else if (isLeveledBuildingPage(context.page)) {
         techno = building(technoId, tolvl, object);
       }
       resSum[0] += techno.cost[0];
@@ -378,11 +374,7 @@ function technoDetail(context) {
         let metal = document.querySelector(".costs .metal");
         metal.textContent = tolvl != 0 ? toFormattedNumber(techno.cost[0], null, true) : "";
         if (tolvl != 0) metal.setAttribute("data-title", toFormattedNumber(parseInt(techno.cost[0])));
-        if (
-          baselvl != tolvl &&
-          baselvl - 1 != tolvl &&
-          !(baselvl > tolvl && (context.page == "research" || context.page == "lfresearch"))
-        ) {
+        if (baselvl != tolvl && baselvl - 1 != tolvl && !(baselvl > tolvl && isResearchPage(context.page))) {
           metal.appendChild(
             createDOM(
               "li",
@@ -395,7 +387,7 @@ function technoDetail(context) {
           );
         }
         missing[0] = Math.min(0, currentRes[0] - (baselvl - 1 > tolvl ? demolish[0] : resSum[0]));
-        if (baselvl - 1 != tolvl && !(baselvl > tolvl && (context.page == "research" || context.page == "lfresearch")))
+        if (baselvl - 1 != tolvl && !(baselvl > tolvl && isResearchPage(context.page)))
           metal.appendChild(
             createDOM(
               "li",
@@ -411,11 +403,7 @@ function technoDetail(context) {
         let crystal = document.querySelector(".costs .crystal");
         crystal.textContent = tolvl != 0 ? toFormattedNumber(techno.cost[1], null, true) : "";
         if (tolvl != 0) crystal.setAttribute("data-title", toFormattedNumber(parseInt(techno.cost[1])));
-        if (
-          baselvl != tolvl &&
-          baselvl - 1 != tolvl &&
-          !(baselvl > tolvl && (context.page == "research" || context.page == "lfresearch"))
-        ) {
+        if (baselvl != tolvl && baselvl - 1 != tolvl && !(baselvl > tolvl && isResearchPage(context.page))) {
           crystal.appendChild(
             createDOM(
               "li",
@@ -428,7 +416,7 @@ function technoDetail(context) {
           );
         }
         missing[1] = Math.min(0, currentRes[1] - (baselvl - 1 > tolvl ? demolish[1] : resSum[1]));
-        if (baselvl - 1 != tolvl && !(baselvl > tolvl && (context.page == "research" || context.page == "lfresearch")))
+        if (baselvl - 1 != tolvl && !(baselvl > tolvl && isResearchPage(context.page)))
           crystal.appendChild(
             createDOM(
               "li",
@@ -444,11 +432,7 @@ function technoDetail(context) {
         let deuterium = document.querySelector(".costs .deuterium");
         deuterium.textContent = tolvl != 0 ? toFormattedNumber(techno.cost[2], null, true) : "";
         if (tolvl != 0) deuterium.setAttribute("data-title", toFormattedNumber(parseInt(techno.cost[2])));
-        if (
-          baselvl != tolvl &&
-          baselvl - 1 != tolvl &&
-          !(baselvl > tolvl && (context.page == "research" || context.page == "lfresearch"))
-        ) {
+        if (baselvl != tolvl && baselvl - 1 != tolvl && !(baselvl > tolvl && isResearchPage(context.page))) {
           deuterium.appendChild(
             createDOM(
               "li",
@@ -461,7 +445,7 @@ function technoDetail(context) {
           );
         }
         missing[2] = Math.min(0, currentRes[2] - (baselvl - 1 > tolvl ? demolish[2] : resSum[2]));
-        if (baselvl - 1 != tolvl && !(baselvl > tolvl && (context.page == "research" || context.page == "lfresearch")))
+        if (baselvl - 1 != tolvl && !(baselvl > tolvl && isResearchPage(context.page)))
           deuterium.appendChild(
             createDOM(
               "li",
@@ -478,11 +462,7 @@ function technoDetail(context) {
         if (energy) {
           energy.textContent = tolvl != 0 ? toFormattedNumber(techno.cost[3], null, true) : "";
           if (tolvl != 0) energy.setAttribute("data-title", toFormattedNumber(parseInt(techno.cost[3])));
-          if (
-            baselvl != tolvl &&
-            baselvl - 1 != tolvl &&
-            !(baselvl > tolvl && (context.page == "research" || context.page == "lfresearch"))
-          ) {
+          if (baselvl != tolvl && baselvl - 1 != tolvl && !(baselvl > tolvl && isResearchPage(context.page))) {
             energy.appendChild(
               createDOM(
                 "li",
@@ -502,10 +482,7 @@ function technoDetail(context) {
           div.html(tooltip);
           let prod = div.querySelectorAll("span")[1].textContent.substring(1);
           missing[3] = Math.min(0, fromFormattedNumber(prod, true) - (baselvl - 1 > tolvl ? demolish[3] : resSum[3]));
-          if (
-            baselvl - 1 != tolvl &&
-            !(baselvl > tolvl && (context.page == "research" || context.page == "lfresearch"))
-          )
+          if (baselvl - 1 != tolvl && !(baselvl > tolvl && isResearchPage(context.page)))
             energy.appendChild(
               createDOM(
                 "li",
@@ -545,11 +522,7 @@ function technoDetail(context) {
         population.textContent = tolvl != 0 ? toFormattedNumber(techno.pop, null, true) : "";
         if (tolvl != 0) population.setAttribute("data-title", toFormattedNumber(parseInt(techno.pop)));
         let missingPop = Math.min(0, resourcesBar.resources.population.amount - techno.pop);
-        if (
-          baselvl != tolvl &&
-          baselvl - 1 != tolvl &&
-          !(baselvl > tolvl && (context.page == "research" || context.page == "lfresearch"))
-        ) {
+        if (baselvl != tolvl && baselvl - 1 != tolvl && !(baselvl > tolvl && isResearchPage(context.page))) {
           population.appendChild(
             createDOM(
               "li",
@@ -561,7 +534,7 @@ function technoDetail(context) {
             )
           );
         }
-        if (baselvl - 1 != tolvl && !(baselvl > tolvl && (context.page == "research" || context.page == "lfresearch")))
+        if (baselvl - 1 != tolvl && !(baselvl > tolvl && isResearchPage(context.page)))
           population.appendChild(
             createDOM(
               "li",
@@ -573,7 +546,7 @@ function technoDetail(context) {
             )
           );
       }
-      if (baselvl - 1 == tolvl || (baselvl > tolvl && (context.page == "research" || context.page == "lfresearch"))) {
+      if (baselvl - 1 == tolvl || (baselvl > tolvl && isResearchPage(context.page))) {
         document.querySelector(".ogk-titles").children[2].replaceChildren();
       } else {
         document.querySelector(".ogk-titles").children[2].textContent = Translator.translate(39);
@@ -839,7 +812,7 @@ function technoDetail(context) {
           let object = context.current.isMoon
             ? OGBIData.json.empire[context.current.index].moon
             : OGBIData.json.empire[context.current.index];
-          if (context.page == "research" || context.page == "lfresearch") {
+          if (isResearchPage(context.page)) {
             baseTechno = research(
               technologyId,
               baseLvl,
@@ -849,9 +822,10 @@ function technoDetail(context) {
               object
             );
           } else if (
-            (OGBIData.json.empire[context.current.index] && context.page == "supplies") ||
-            context.page == "facilities" ||
-            context.page == "lfbuildings"
+            // `supplies` alone waits for the planet's empire entry: it is the only
+            // one of the three whose panel is drawn before the empire data lands.
+            isLeveledBuildingPage(context.page) &&
+            (context.page != "supplies" || OGBIData.json.empire[context.current.index])
           ) {
             baseTechno = building(technologyId, baseLvl, object);
           }
@@ -891,7 +865,7 @@ function technoDetail(context) {
             }
           });
           previous.addEventListener("click", () => {
-            if ((context.page == "research" || context.page == "lfresearch") && tolvl == 1) return;
+            if (isResearchPage(context.page) && tolvl == 1) return;
             if (tolvl == 0) return;
             tolvl -= 1;
             updateResearchDetails(technologyId, baseLvl, tolvl);

@@ -546,7 +546,7 @@ export function roiMine(technoId, tolvl, object, player) {
   let prodDiffMSE = prodDiff.map((x, n) => (x * tradeRate[0]) / tradeRate[n]).reduce((sum, cur) => sum + cur, 0);
   let buildingCostMSE = 0;
   for (let lvl = currentMineLvls[technoId - 1] + 1; lvl <= tolvl; lvl++) {
-    buildingCostMSE += building(technoId, tolvl, object)
+    buildingCostMSE += building(technoId, lvl, object)
       .cost.map((x, n) => (x * tradeRate[0]) / tradeRate[n])
       .reduce((sum, cur) => sum + cur, 0);
   }

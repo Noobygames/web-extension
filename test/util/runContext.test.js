@@ -100,16 +100,21 @@ test("injectScript refuses to run from the page context", async () => {
   });
 });
 
-test("KNOWN BUG: an unrecognised browser throws instead of reporting a context", async () => {
-  // isPluginContext() has no fallback branch: a user agent that matches neither
-  // "Chrome" nor "Firefox" (Safari, a privacy-hardened UA, a headless runner)
-  // hits `throw Error("It is not possible to identify the execution context")`,
-  // which takes injectScript() - and therefore the whole boot - down with it.
+test("an unrecognised browser reports false rather than throwing", async () => {
+  // Fixed in refactoring-new.md Phase A.5: isPluginContext() had no fallback
+  // branch, so a user agent that matched neither "Chrome" nor "Firefox" (Safari, a
+  // privacy-hardened UA, a headless runner) threw
+  // `Error("It is not possible to identify the execution context")` - which took
+  // injectScript(), and therefore the whole boot IIFE, down with it. The function's
+  // own JSDoc already promised a boolean ("false: page context"); an unsupported
+  // browser is simply not a plugin context.
   const safariUA =
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
 
   await withContext({ userAgent: safariUA, chrome: true }, ({ isPluginContext, injectScript }) => {
-    assert.throws(() => isPluginContext(), /not possible to identify the execution context/);
-    assert.throws(() => injectScript("ogCore.js"), /not possible to identify the execution context/);
+    assert.equal(isPluginContext(), false);
+    // injectScript() still refuses to run - correctly, now via its existing
+    // "Invalid execution context" guard rather than a context-detection crash.
+    assert.throws(() => injectScript("ogCore.js"), /Invalid execution context/);
   });
 });

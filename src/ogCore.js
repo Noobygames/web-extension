@@ -8,12 +8,10 @@ import {
   updateLifeform,
   updateProductionProgress,
 } from "./ctxpage/empire/index.js";
-import { overview, resourceDetail } from "./ctxpage/empireOverview/index.js";
-import { settings, welcome } from "./ctxpage/settings/index.js";
+import { resourceDetail } from "./ctxpage/empireOverview/index.js";
 import { keyboardActions, listenKeyboard } from "./ctxpage/keyboard/index.js";
 import { eventBox } from "./ctxpage/eventbox/index.js";
 import { betterHighscore, playerSearch, sideStalk } from "./ctxpage/stalk/index.js";
-import { checkPantrySync } from "./ctxpage/pantry/index.js";
 import {
   checkDebris,
   cleanupMessages,
@@ -23,8 +21,7 @@ import {
   utilities,
   uvlinks,
 } from "./ctxpage/pageTweaks/index.js";
-import { technoDetail } from "./ctxpage/technoDetail/index.js";
-import { getMarkedPlayers, onGalaxyUpdate, targetList } from "./ctxpage/galaxy/index.js";
+import { getMarkedPlayers, targetList } from "./ctxpage/galaxy/index.js";
 import {
   activitytimers,
   flyingFleet,
@@ -37,19 +34,7 @@ import {
   updatePlanets_IncomingHostileFleet,
   updateSpaceShipsPresence,
 } from "./ctxpage/planetbar/index.js";
-import {
-  betterFleetDispatcher,
-  cacheShipData,
-  collect,
-  customMissions,
-  expedition,
-  initFleetDispatcher,
-  neededCargo,
-  preselectShips,
-} from "./ctxpage/fleetdispatch/index.js";
 import { getLocalStorageSize, purgeLocalStorage } from "./util/localStorageUsage.js";
-import { statistics } from "./ctxpage/stats/index.js";
-import ctxMessageAnalyzer from "./ctxpage/messages-analyzer/index.js";
 import * as DOM from "./util/dom.js";
 import { getLogger } from "./util/logger.js";
 import * as Numbers from "./util/numbers.js";
@@ -59,7 +44,6 @@ import * as time from "./util/time.js";
 import VERSION from "./util/version.js";
 import * as wait from "./util/wait.js";
 import OGBIObserver from "./util/observer.js";
-import Messages from "./ctxpage/messages/index.js";
 import * as popupUtil from "./util/popup.js";
 import OgamePageData from "./util/OgamePageData.js";
 import OGBIData from "./util/OGBIData.js";
@@ -68,6 +52,8 @@ import * as needsUtil from "./util/needs.js";
 import Translator from "./util/translate.js";
 import * as loadingUtil from "./util/loading.js";
 import ogiMode from "./util/enum/ogiMode.js";
+import { isBuildPage } from "./util/enum/gamePages.js";
+import { loadChunk } from "./util/loadChunk.js";
 import AllianceClass from "./util/enum/allianceClass.js";
 import { PLASMATECH_BONUS } from "./util/gameConstants.js";
 import { readPageContext, stripCoordinateBrackets } from "./util/pageContext.js";
@@ -202,12 +188,10 @@ class OGBeyondInfinity {
     OGBIData.json.spies = OGBIData.json.spies || {};
     OGBIData.json.combats = OGBIData.json.combats || {};
     OGBIData.json.harvests = OGBIData.json.harvests || {};
-    OGBIData.json.trades = OGBIData.json.trades || {};
     OGBIData.json.evolution = OGBIData.json.evolution || {};
     OGBIData.json.playerSearch = OGBIData.json.playerSearch || "";
     OGBIData.json.currentExpes = OGBIData.json.currentExpes || [];
     OGBIData.json.combatsSums = OGBIData.json.combatsSums || {};
-    OGBIData.json.tradesSums = OGBIData.json.tradesSums || {};
     OGBIData.json.expeditionSums = OGBIData.json.expeditionSums || {};
     OGBIData.json.discoveriesSums = OGBIData.json.discoveriesSums || {};
     OGBIData.json.discoveries = OGBIData.json.discoveries || {};
@@ -316,15 +300,6 @@ class OGBeyondInfinity {
       }
     } catch (e) {}
 
-    if (this.page == "fleetdispatch") {
-      // OGame's ship table and technology list, taken off the dispatcher the game
-      // builds. Deliberately not awaited: `fleetHelper` is put on `fleetDispatcher`
-      // after this point in the page's own start-up, so reading it here found nothing
-      // and warned on every load. `cacheShipData()` takes the table the moment it
-      // exists - synchronously when it already does - and keeps the previous visit's
-      // copy until then. See ctxpage/fleetdispatch/shipData.js.
-      cacheShipData();
-    }
     document.querySelectorAll(".moonlink").forEach((elem) => {
       elem.classList.add("tooltipRight");
       elem.classList.remove("tooltipLeft");
@@ -371,11 +346,7 @@ class OGBeyondInfinity {
       updatePlanets_IncomingHostileFleet(this.planetBarContext());
       updatePlanets_FleetActivity(this.planetBarContext());
     });
-    neededCargo(this.fleetContext());
-    preselectShips(this.fleetContext());
-    expedition(this.fleetContext());
-    collect(this.fleetContext());
-    customMissions(this.fleetContext());
+    this.#startFleetDispatchPage();
     this.messagesAnalyzer();
     cleanupMessages(this.pageContext());
     quickPlanetList(this.pageContext());
@@ -393,10 +364,21 @@ class OGBeyondInfinity {
     betterHighscore(this.pageContext());
     this.overviewDates();
     topBarUtilities(this.pageContext());
-    initFleetDispatcher(this.fleetContext());
-    betterFleetDispatcher(this.fleetContext());
-    technoDetail(this.technoContext());
-    onGalaxyUpdate(this.galaxyContext());
+    // The building and research detail panel is a seventh of the page bundle and is
+    // reachable from seven of ~twenty pages. Fetched there, nowhere else.
+    if (isBuildPage(this.page)) {
+      loadChunk("technoDetail", () => import("./ctxpage/technoDetail/index.js")).then((module) =>
+        module?.technoDetail(this.technoContext())
+      );
+    }
+    // 27 KB of galaxy-row rendering for one of roughly twenty pages. `onGalaxyUpdate()`
+    // opened with this same comparison and returned; now the comparison decides whether
+    // to fetch it at all. Phase 5 of refactoring.md.
+    if (this.page === "galaxy") {
+      loadChunk("galaxyView", () => import("./ctxpage/galaxy/galaxyView.js")).then((module) =>
+        module?.onGalaxyUpdate(this.galaxyContext())
+      );
+    }
     this.timeZone();
     this.checkRedirect();
     this.showStorageTimers();
@@ -416,7 +398,8 @@ class OGBeyondInfinity {
             this.getAllianceClass();
             Translator.InitializeLFNames(this.current, this.hasLifeforms);
             await updateLifeform(this.empireContext());
-            welcome(this.settingsContext());
+            const module = await loadChunk("settings", () => import("./ctxpage/settings/index.js"));
+            module?.welcome(this.settingsContext());
           });
       } else {
         window.location.href = "?page=ingame&component=fleetdispatch";
@@ -424,7 +407,11 @@ class OGBeyondInfinity {
     }
     this.markedPlayers = getMarkedPlayers(this.galaxyContext(), OGBIData.json.markers);
     if (OGBIData.json.options.pantryKey) {
-      checkPantrySync(this.pageContext(), OGBIData.json.options.pantryKey);
+      // Only players who configured a Pantry bucket ever need this, and it pulls
+      // LZString's loader with it. Phase 5 of refactoring.md.
+      loadChunk("pantry", () => import("./ctxpage/pantry/index.js")).then((module) =>
+        module?.checkPantrySync(this.pageContext(), OGBIData.json.options.pantryKey)
+      );
     }
 
     /*Fix banner styles for messages, premium and shop page*/
@@ -535,13 +522,20 @@ class OGBeyondInfinity {
     });
   }
 
+  // `serverData.get` (refactoring-new.md Phase A.3) fetches through the content
+  // context's chrome.storage.local cache instead of straight off the network - a
+  // second tab, or a second universe switch, within the 24h TTL below costs nothing.
+  // Content context returns XML text rather than a parsed Document because a
+  // Document cannot cross service.callbackEvent.js's bridge; everything from
+  // `.then((str) => ...)` down is unchanged from when this fetched directly, on
+  // purpose - it is ~150 lines of proven `Number()` / `== 1` field extraction that
+  // moving the fetch has no reason to touch.
   async updateServerSettings(force = false) {
     const timeSinceServerTimeStamp =
       document.querySelector("[name='ogame-timestamp']").content - OGBIData.json?.serverSettingsTimeStamp;
     if (timeSinceServerTimeStamp < 24 * 3600 && !force) return;
-    let settingsUrl = `https://s${this.universe}-${OgamePageData.gameLang}.ogame.gameforge.com/api/serverData.xml`;
-    return fetch(settingsUrl)
-      .then((rep) => rep.text())
+    return pageContextRequest("serverData", "get", force)
+      .then((response) => response.response)
       .then((str) => new window.DOMParser().parseFromString(str, "text/xml"))
       .then((xml) => {
         OGBIData.json.serverSettingsTimeStamp = xml.querySelector("serverData").getAttribute("timestamp");
@@ -586,7 +580,7 @@ class OGBeyondInfinity {
           bonusFields: Number(xml.querySelector("bonusFields").innerHTML),
           debrisFactor: Number(xml.querySelector("debrisFactor").innerHTML),
           debrisFactorDef: Number(xml.querySelector("debrisFactorDef").innerHTML),
-          deuteriumInDebris: Boolean(xml.querySelector("deuteriumInDebris").innerHTML),
+          deuteriumInDebris: xml.querySelector("deuteriumInDebris").innerHTML == 1,
           repairFactor: Number(xml.querySelector("repairFactor").innerHTML),
           fuelConsumption: Number(xml.querySelector("globalDeuteriumSaveFactor").innerHTML),
           probeCargo: Number(xml.querySelector("probeCargo").innerHTML),
@@ -612,68 +606,12 @@ class OGBeyondInfinity {
         OGBIData.json.explorerBonusIncreasedExpeditionOutcome = Number(
           xml.querySelector("explorerBonusIncreasedExpeditionOutcome").innerHTML
         );
-        OGBIData.json.lifeFormResearchSpeed = {};
-        xml.querySelectorAll("generalBase").forEach((elem) => {
-          let research = elem.parentNode.parentNode;
-          let id = research.getAttribute("technologyId");
-          OGBIData.json.lifeFormResearchSpeed[id] = {};
-          research.querySelector("factors").childNodes.forEach((factor) => {
-            OGBIData.json.lifeFormResearchSpeed[id][factor.nodeName] = factor.innerHTML;
-          });
-        });
-        OGBIData.json.lifeFormCostReductionFromBuilding = {};
-        OGBIData.json.lifeFormCostReductionFromResearch = {};
-        xml.querySelectorAll("technologyBase").forEach((elem) => {
-          if (elem.parentNode.parentNode.parentNode.nodeName == "building") {
-            let bonusTo = elem.parentNode.querySelector("techId").innerHTML;
-            let bonusFrom = elem.parentNode.parentNode.parentNode.getAttribute("technologyId");
-            OGBIData.json.lifeFormCostReductionFromBuilding[bonusTo] =
-              OGBIData.json.lifeFormCostReductionFromBuilding[bonusTo] || {};
-            OGBIData.json.lifeFormCostReductionFromBuilding[bonusTo][bonusFrom] = {
-              base: elem.parentNode.querySelector("technologyBase").innerHTML,
-              factor: elem.parentNode.querySelector("technologyFactor").innerHTML,
-              max: elem.parentNode.querySelector("technologyMax").innerHTML,
-            };
-          }
-          if (elem.parentNode.parentNode.parentNode.nodeName == "research") {
-            let bonusTo = elem.parentNode.querySelector("techId").innerHTML;
-            let bonusFrom = elem.parentNode.parentNode.parentNode.getAttribute("technologyId");
-            OGBIData.json.lifeFormCostReductionFromResearch[bonusTo] =
-              OGBIData.json.lifeFormCostReductionFromResearch[bonusTo] || {};
-            OGBIData.json.lifeFormCostReductionFromResearch[bonusTo][bonusFrom] = {
-              base: elem.parentNode.querySelector("technologyBase").innerHTML,
-              factor: elem.parentNode.querySelector("technologyFactor").innerHTML,
-              max: elem.parentNode.querySelector("technologyMax").innerHTML,
-            };
-          }
-        });
-        OGBIData.json.lifeFormTimeReductionFromBuilding = {};
-        OGBIData.json.lifeFormTimeReductionFromResearch = {};
-        xml.querySelectorAll("timeTechnologyBase").forEach((elem) => {
-          if (elem.parentNode.parentNode.parentNode.nodeName == "building") {
-            let bonusTo = elem.parentNode.querySelector("techId").innerHTML;
-            let bonusFrom = elem.parentNode.parentNode.parentNode.getAttribute("technologyId");
-            OGBIData.json.lifeFormTimeReductionFromBuilding[bonusTo] =
-              OGBIData.json.lifeFormTimeReductionFromBuilding[bonusTo] || {};
-            OGBIData.json.lifeFormTimeReductionFromBuilding[bonusTo][bonusFrom] = {
-              base: elem.parentNode.querySelector("timeTechnologyBase").innerHTML,
-              factor: elem.parentNode.querySelector("timeTechnologyFactor").innerHTML,
-              max: elem.parentNode.querySelector("timeTechnologyMax").innerHTML,
-            };
-          }
-          if (elem.parentNode.parentNode.parentNode.nodeName == "research") {
-            let bonusTo = elem.parentNode.querySelector("techId").innerHTML;
-            let bonusFrom = elem.parentNode.parentNode.parentNode.getAttribute("technologyId");
-            OGBIData.json.lifeFormTimeReductionFromResearch[bonusTo] =
-              OGBIData.json.lifeFormTimeReductionFromResearch[bonusTo] || {};
-            OGBIData.json.lifeFormTimeReductionFromResearch[bonusTo][bonusFrom] = {
-              base: elem.parentNode.querySelector("timeTechnologyBase").innerHTML,
-              factor: elem.parentNode.querySelector("timeTechnologyFactor").innerHTML,
-              max: elem.parentNode.querySelector("timeTechnologyMax").innerHTML,
-            };
-          }
-        });
-
+        // lifeFormResearchSpeed, lifeFormCostReductionFrom{Building,Research} and
+        // lifeFormTimeReductionFrom{Building,Research} used to be parsed here too -
+        // ~60 lines of nested serverData.xml navigation writing five OGBIData.json
+        // fields nothing in src/ ever read. Removed rather than kept "for later":
+        // refactoring-new.md Phase A.3. lifeFormProductionBoostFrom{Buildings,Research}
+        // below are the ones that are actually live.
         OGBIData.json.lifeFormProductionBoostFromBuildings = {};
         OGBIData.json.lifeFormProductionBoostFromResearch = {};
         xml.querySelectorAll("metalBase, crystalBase, deuteriumBase").forEach((elem) => {
@@ -724,8 +662,14 @@ class OGBeyondInfinity {
    */
 
   chat() {
-    OGBIData.json.tchat = !!document.querySelector("#chatBar");
-    if (!OGBIData.json.tchat) {
+    // Whether this page has a chat bar at all - not persisted. Phase 6 of
+    // refactoring.md: this used to write straight into `OGBIData.json.tchat`,
+    // the same field the toggle button below reads and writes, so a hidden chat
+    // bar came back on every single navigation - `#chatBar` exists in the DOM
+    // whether or not it is display:none, so the old check was true on almost
+    // every page load regardless of what the player last chose. `tchat` is now
+    // only ever the player's own choice.
+    if (!document.querySelector("#chatBar")) {
       return;
     }
     let toggleChat = () => {
@@ -755,7 +699,10 @@ class OGBeyondInfinity {
     let syncOption = harvestOptions.appendChild(
       DOM.createDOM("div", { class: "ogl-option ogl-syncOption tooltip", title: Translator.translate(0) })
     );
-    syncOption.addEventListener("click", () => settings(this.settingsContext()));
+    syncOption.addEventListener("click", async () => {
+      const module = await loadChunk("settings", () => import("./ctxpage/settings/index.js"));
+      module?.settings(this.settingsContext());
+    });
     // Named for the button, not the feature: `targetList` itself is the function in
     // ctxpage/galaxy that draws the overlay, and a local of that name shadows it.
     let targetListButton = harvestOptions.appendChild(
@@ -806,18 +753,24 @@ class OGBeyondInfinity {
       playerSearch(this.pageContext(), !this.searchOpened);
       this.searchOpened = !this.searchOpened;
     });
-    empireBtn.addEventListener("click", (e) => {
-      updateEmpireData(this.empireContext(), e.ctrlKey);
+    empireBtn.addEventListener("click", async (e) => {
+      // Kept as a promise, not awaited yet: the chunk download below overlaps the
+      // empire refresh instead of queueing behind it. Phase 6 of refactoring.md -
+      // this used to poll `this.isLoading` on a 20ms setInterval for a promise that
+      // was sitting right here, discarded.
+      const dataReady = updateEmpireData(this.empireContext(), e.ctrlKey);
       this.loading();
-      let inter = setInterval(() => {
-        if (!this.isLoading) {
-          clearInterval(inter);
-          overview(this.overviewContext());
-        }
-      }, 20);
+      const module = await loadChunk("empire-overview", () => import("./ctxpage/empireOverview/overview.js"));
+      if (!module) return;
+      await dataReady;
+      module.overview(this.overviewContext());
     });
     overViewBtn.addEventListener("click", (e) => {
-      updateEmpireData(this.empireContext(), e.ctrlKey);
+      // Not awaited on purpose - the toggle below reads cached OGBIData.empire and
+      // is meant to react immediately - but a rejection needs somewhere to go
+      // rather than becoming an unobserved promise rejection. refactoring-new.md
+      // Phase A.4 #11.
+      updateEmpireData(this.empireContext(), e.ctrlKey).catch((err) => logger.error("updateEmpireData failed", err));
       let active = document.querySelector(".ogl-option.ogl-active:not(.ogl-overview-icon)");
       if (active) {
         active.click();
@@ -834,20 +787,21 @@ class OGBeyondInfinity {
       }
       OGBIData.Save();
     });
-    statsBtn.addEventListener("click", (e) => {
-      updateEmpireData(this.empireContext(), e.ctrlKey);
+    statsBtn.addEventListener("click", async (e) => {
+      // Same overlap as empireBtn above: the chunk downloads while the empire
+      // refresh is still running, so the fetch costs nothing the user waits for
+      // on top of what they already do.
+      const dataReady = updateEmpireData(this.empireContext(), e.ctrlKey);
       this.loading();
-      let inter = setInterval(() => {
-        if (!this.isLoading) {
-          clearInterval(inter);
-          statistics({
-            playerClass: this.playerClass,
-            hasLifeforms: this.hasLifeforms,
-            universe: this.universe,
-            playerBonuses: this.playerBonuses(),
-          });
-        }
-      }, 20);
+      const module = await loadChunk("stats", () => import("./ctxpage/stats/index.js"));
+      if (!module) return;
+      await dataReady;
+      module.statistics({
+        playerClass: this.playerClass,
+        hasLifeforms: this.hasLifeforms,
+        universe: this.universe,
+        playerBonuses: this.playerBonuses(),
+      });
     });
   }
 
@@ -983,8 +937,44 @@ class OGBeyondInfinity {
    * It is used to analyze the messages viewed on the "messages" page.
    * @supported page=messages
    */
+  /**
+   * Everything the fleet-dispatch page adds, in one chunk loaded only there.
+   *
+   * 185 KB - the rebuilt dispatcher, the expedition and collect shortcuts, the
+   * five custom missions - for one of roughly twenty pages. Phase 5 of
+   * refactoring.md; before it, every galaxy and overview load parsed all of it.
+   *
+   * The order inside is the order these ran in `start()`, and it is load-bearing:
+   * `initFleetDispatcher()` replaces methods on `FleetDispatcher.prototype` that
+   * `betterFleetDispatcher()` then relies on. Awaiting the import moves the whole
+   * group one task later than it used to run, which is the same side of
+   * `nextPaint()` it was already on.
+   *
+   * `cacheShipData()` goes first because the rest reads the ship table it stores.
+   *
+   * @returns {Promise<void>}
+   */
+  async #startFleetDispatchPage() {
+    if (this.page !== "fleetdispatch") return;
+
+    const module = await loadChunk("fleetdispatch", () => import("./ctxpage/fleetdispatch/index.js"));
+    if (!module) return;
+
+    module.cacheShipData();
+    module.neededCargo(this.fleetContext());
+    module.preselectShips(this.fleetContext());
+    module.expedition(this.fleetContext());
+    module.collect(this.fleetContext());
+    module.customMissions(this.fleetContext());
+    module.initFleetDispatcher(this.fleetContext());
+    module.betterFleetDispatcher(this.fleetContext());
+  }
+
   messagesAnalyzer() {
-    ctxMessageAnalyzer.call(this);
+    if (this.page !== "messages") return;
+    loadChunk("messages-analyzer", () => import("./ctxpage/messages-analyzer/index.js")).then((module) =>
+      module?.default.call(this)
+    );
   }
 
   loading() {
@@ -1698,6 +1688,13 @@ function nextPaint() {
     await domReady();
     perf.mark("DOM ready");
 
+    // Started here and awaited below, not awaited here: the player's language table
+    // is a chunk since Phase 5 of refactoring.md, and nothing between this line and
+    // `start()` translates, so the fetch overlaps the construction and the DOMPurify
+    // wait instead of adding to them. An English player fetches nothing - `en` is the
+    // fallback table and is in this bundle already.
+    const languageReady = Translator.load();
+
     // OGI targets OGame 13 and later. The v12 selector branches were removed, so on
     // an older server the extension does not misbehave subtly - it simply finds
     // nothing. Say so once instead of leaving the user with a silently empty UI.
@@ -1727,10 +1724,23 @@ function nextPaint() {
     perf.time("OGBeyondInfinity.init()", () => ogCore.init());
     perf.time("versionInStatusBar()", () => versionInStatusBar());
 
-    perf.time("new Messages()", () => new Messages());
+    // The five message analyzers are 73 KB of parsing - spy reports, expedition
+    // results, battle reports - and they are inert anywhere but the messages page:
+    // `Messages` looks for `#messagescomponent` and finds nothing. Loaded there only
+    // (Phase 5 of refactoring.md). Awaited so `perf.report()` still sees the step.
+    if (page === "messages") {
+      await perf.timeAsync("new Messages()", async () => {
+        const module = await loadChunk("messages", () => import("./ctxpage/messages/index.js"));
+        if (module) new module.default();
+      });
+    }
 
     // workaround for "DOMPurify not defined" issue
     await perf.timeAsync("wait for DOMPurify", () => wait.waitForDefinition(window, "DOMPurify"));
+
+    // Everything from `start()` on translates, so this is the last moment it can be
+    // let through. Usually already resolved by now.
+    await perf.timeAsync("wait for language table", () => languageReady);
 
     Element.prototype.html = function (html) {
       this.innerHTML = DOMPurify.sanitize(html);

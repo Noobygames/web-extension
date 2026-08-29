@@ -2,6 +2,7 @@ import { tabs } from "../../util/tabs.js";
 import * as popupUtil from "../../util/popup.js";
 import Translator from "../../util/translate.js";
 import dataHelper from "../../util/dataHelper.js";
+import * as wait from "../../util/wait.js";
 
 import { statsState } from "./state.js";
 import { generalStats } from "./generalStats.js";
@@ -46,13 +47,13 @@ async function statistics(context) {
     popupUtil.popup(null, body);
   };
   if (typeof Chart === "undefined") {
+    // Fire-and-forget event asks main.js to inject chart.min.js as a classic
+    // script; there is no promise back from that, only the global it defines.
+    // Phase 6 of refactoring.md replaced the hand-rolled setInterval poll with
+    // the same waitForDefinition() the boot path already uses for DOMPurify.
     document.dispatchEvent(new CustomEvent("ogi-chart", {}), true, true);
-    let inter = setInterval(async () => {
-      if (typeof Chart !== "undefined") {
-        clearInterval(inter);
-        showStats();
-      }
-    }, 50);
+    await wait.waitForDefinition(window, "Chart");
+    showStats();
   } else {
     showStats();
   }

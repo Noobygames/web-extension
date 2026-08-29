@@ -15,6 +15,9 @@ Declaration `callbackEvents.contentContextInit(callbackCommandMap)`
   },
   "messages": {
     "expeditionType": "GetExpeditionTypeFunction"
+  },
+  "serverData": {
+    "get": "GetServerDataXmlFunction"
   }
 }
 ```
@@ -65,6 +68,30 @@ How to call from the page context.
 
 ```js
 callbackEvents.pageContextRequest("messages", "expeditionType", rawMessage);
+```
+
+### GetServerDataXmlFunction (serverData.get)
+
+Fetches `serverData.xml` for the current universe, cached in `chrome.storage.local`
+with a 24h TTL (`src/ctxcontent/helpers/universe.data.js`). Returns the raw XML
+**text**, not a parsed `Document` - a `Document` cannot cross this bridge, only
+structured-cloneable values can. `OGBeyondInfinity.updateServerSettings()`
+(`src/ogCore.js`) is the one caller; it parses the text itself with `DOMParser` on
+the page side, exactly as it did before this command existed.
+
+**Arguments**
+
+- _force_ (optional, default `false`): bypasses the cache and re-fetches.
+
+**Result**
+
+The XML text (`string`).
+
+How to call from the page context.
+
+```js
+const { response } = await callbackEvents.pageContextRequest("serverData", "get", force);
+const xml = new DOMParser().parseFromString(response, "text/xml");
 ```
 
 ---

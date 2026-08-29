@@ -3,6 +3,7 @@ import { fleetState } from "./state.js";
 // Re-exported so ogCore.js keeps one import path for the whole page, and so the
 // split parts stay reachable from the module graph.
 export { betterFleetDispatcher } from "./betterFleetDispatcher.js";
+export { openPlanetList } from "./planetList.js";
 export { expedition } from "./expedition.js";
 export { collect, customMissions } from "./customMissions.js";
 export { cacheShipData } from "./shipData.js";
@@ -403,65 +404,6 @@ function neededCargo(context) {
   }
 }
 
-function openPlanetList(context, callcback, target = fleetDispatcher.targetPlanet, mission = fleetDispatcher.mission) {
-  let container = createDOM("div", { class: "ogl-dialogContainer ogl-quickLinks" });
-  let buildButton = (planet, id, galaxy, system, position, type) => {
-    let data = {
-      id: id,
-      galaxy: galaxy,
-      system: system,
-      position: position,
-      type: type,
-    };
-    let div = container.appendChild(createDOM("div"));
-    if (type == 1) div.classList.add("ogl-quickPlanet");
-    else div.classList.add("ogl-quickMoon");
-    div.addEventListener("click", () => callcback(data));
-    if (
-      (planet == context.current.planet && !context.current.isMoon && type == 1) ||
-      (planet == context.current.planet && context.current.isMoon && type == 3)
-    ) {
-      div.classList.add("ogl-current");
-      div.classList.add(`mission-${mission}`);
-    }
-    if (
-      target &&
-      galaxy == target.galaxy &&
-      system == target.system &&
-      position == target.position &&
-      type == target.type
-    ) {
-      div.classList.add("ogl-target");
-      div.classList.add(`mission-${mission}`);
-    }
-    return div;
-  };
-  context.planetList.forEach((planet) => {
-    let coords = planet.querySelector(".planet-koords").textContent.split(":");
-    let btn = buildButton(
-      planet,
-      new URL(planet.querySelector(".planetlink").href).searchParams.get("cp"),
-      coords[0],
-      coords[1],
-      coords[2],
-      1
-    );
-    btn.textContent = `[${coords.join(":")}] ${planet.querySelector(".planet-name").textContent}`;
-    if (planet.querySelector(".moonlink")) {
-      let btn = buildButton(
-        planet,
-        new URL(planet.querySelector(".moonlink").href).searchParams.get("cp"),
-        coords[0],
-        coords[1],
-        coords[2],
-        3
-      );
-      btn.appendChild(createDOM("figure", { class: "planetIcon moon" }));
-    } else container.appendChild(createDOM("div"));
-  });
-  return container;
-}
-
 function selectMostShips(context, reclickSelectedTargetType = true) {
   fleetDispatcher.shipsOnPlanet.forEach((ship) => {
     const defaultKept = context.current.isMoon
@@ -614,7 +556,6 @@ export {
   preselectShips,
   calcNeededShips,
   selectShips,
-  openPlanetList,
   selectBestCargoShip,
   onFleetSent,
   initUnionCombat,

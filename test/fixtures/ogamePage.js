@@ -21,11 +21,13 @@ export function metaTags({
   playerId = 12345,
   universeDomain = "s1-en.ogame.gameforge.com",
   universeName = "Quantum",
+  timestamp = 1700000000,
 } = {}) {
   return `
     <meta name="ogame-player-id" content="${playerId}">
     <meta name="ogame-universe" content="${universeDomain}">
     <meta name="ogame-universe-name" content="${universeName}">
+    <meta name="ogame-timestamp" content="${timestamp}">
   `;
 }
 
