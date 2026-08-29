@@ -1,5 +1,5 @@
-import * as perf from "./perf.js";
-import { getLogger } from "./logger.js";
+import * as perf from "../platform/perf.js";
+import { getLogger } from "../platform/logger.js";
 
 const localStorageKey = "ogk-data";
 /** Where an unparseable ogk-data is moved so it is not lost when the store is reset. */

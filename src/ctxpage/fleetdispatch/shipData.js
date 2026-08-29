@@ -30,10 +30,10 @@
  * player opened. No request, no `cp`, no activity signal, and the poll below watches a
  * local object rather than the server.
  */
-import OGBIData from "../../util/OGBIData.js";
-import { getShipsData } from "../../util/shipsData.js";
-import { getLogger } from "../../util/logger.js";
-import * as wait from "../../util/wait.js";
+import OGBIData from "../../store/OGBIData.js";
+import { getShipsData } from "../../game/shipsData.js";
+import { getLogger } from "../../platform/logger.js";
+import * as wait from "../../platform/wait.js";
 
 const logger = getLogger("fleetdispatch");
 

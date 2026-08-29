@@ -11,7 +11,7 @@ echo "Build version $VERSION"
 MANIFEST_FILE_NAME="manifest.json"
 MANIFEST_FIREFOX_NAME="manifest-firefox.json"
 CSS_BUNDLE_FILE="global.css"
-VERSION_JS_FILE_NAME="util/version.js"
+VERSION_JS_FILE_NAME="platform/version.js"
 
 ##
 ## $1: string version in format x.x.x
@@ -25,7 +25,7 @@ function sed_version {
 ##
 ## Collapses the ES module graph into one file per context (rollup, no
 ## minification - see scripts/bundle.mjs). Must run after sed_version, or the
-## stamped util/version.js is not the one that ends up in the bundle.
+## stamped platform/version.js is not the one that ends up in the bundle.
 ##
 function bundle_modules {
   echo "Bundling modules"

@@ -1,38 +1,38 @@
-import * as DOM from "../../util/dom.js";
-import debounce from "../../util/debounce.js";
+import * as DOM from "../../ui/dom.js";
+import debounce from "../../platform/debounce.js";
 import { fleetState } from "./state.js";
-import { getLogger } from "../../util/logger.js";
-import { createDOM, createSVG, createDOMSanitized, changeOGSelect } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as utilTooltip from "../../util/tooltip.js";
-import * as wait from "../../util/wait.js";
-import * as time from "../../util/time.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import dataHelper from "../../util/dataHelper.js";
-import shipEnum from "../../util/enum/ship.js";
-import missionType from "../../util/enum/missionType.js";
-import planetType from "../../util/enum/planetType.js";
-import ogiMode from "../../util/enum/ogiMode.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import { pageSignal } from "../../util/abort.js";
-import { fleetCost } from "../../util/fleetCost.js";
-import { calcNeededShips as calcNeededShipsUtil } from "../../util/calcNeededShips.js";
-import highlight, { setHighlightCoords } from "../../util/highlightTarget.js";
+import { getLogger } from "../../platform/logger.js";
+import { createDOM, createSVG, createDOMSanitized, changeOGSelect } from "../../ui/dom.js";
+import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
+import * as Numbers from "../../format/numbers.js";
+import * as popupUtil from "../../ui/popup.js";
+import * as utilTooltip from "../../ui/tooltip.js";
+import * as wait from "../../platform/wait.js";
+import * as time from "../../format/time.js";
+import * as standardUnit from "../../game/standardUnit.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import OgamePageData from "../../ogame/pageData.js";
+import dataHelper from "../../integrations/dataHelper.js";
+import shipEnum from "../../game/ship.js";
+import missionType from "../../game/missionType.js";
+import planetType from "../../game/planetType.js";
+import ogiMode from "../../ogame/ogiMode.js";
+import PlayerClass from "../../game/playerClass.js";
+import { pageSignal } from "../../platform/abort.js";
+import { fleetCost } from "../../game/fleetCost.js";
+import { calcNeededShips as calcNeededShipsUtil } from "../../game/calcNeededShips.js";
+import highlight, { setHighlightCoords } from "../../ui/highlight.js";
 import { getOption } from "../conf-options.js";
 import { keepOnPlanetDialog } from "./keepOnPlanet.js";
-import { tabs } from "../../util/tabs.js";
+import { tabs } from "../../ui/tabs.js";
 import {
   SHIP_EXPEDITION_POINTS,
   EXPEDITION_EXPEDITION_POINTS,
   EXPEDITION_MAX_RESOURCES,
   EXPEDITION_TOP1_POINTS,
-} from "../../util/gameConstants.js";
-import { building, research } from "../../util/gameFormulas.js";
+} from "../../game/gameConstants.js";
+import { building, research } from "../../game/gameFormulas.js";
 import { selectAllShips, selectBestCargoShip, selectMostShips, selectShips } from "./index.js";
 import { openPlanetList } from "./planetList.js";
 

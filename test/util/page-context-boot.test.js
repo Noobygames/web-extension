@@ -26,11 +26,11 @@ function bareDocument() {
 }
 
 const PAGE_CONTEXT_MODULES = [
-  "src/util/OgamePageData.js",
-  "src/util/translate.js",
-  "src/util/popup.js",
-  "src/util/needs.js",
-  "src/util/flying.js",
+  "src/ogame/pageData.js",
+  "src/format/i18n/translate.js",
+  "src/ui/popup.js",
+  "src/ctxpage/planetbar/needs.js",
+  "src/ogame/fleetMovements.js",
 ];
 
 for (const path of PAGE_CONTEXT_MODULES) {
@@ -51,7 +51,7 @@ test("OgamePageData reads the meta tags on first access, not on construction", a
   const browser = bareDocument();
   try {
     // Constructed while <head> is still empty, exactly as at document_start.
-    const data = (await importFresh("src/util/OgamePageData.js")).default;
+    const data = (await importFresh("src/ogame/pageData.js")).default;
 
     // The game finishes parsing its head.
     const version = document.createElement("meta");
@@ -74,7 +74,7 @@ test("OgamePageData reads the meta tags on first access, not on construction", a
 test("the meta tags are read once and then cached", async () => {
   const browser = setupBrowser({ ogameVersion: "12.0.36", gameLang: "en" });
   try {
-    const data = (await importFresh("src/util/OgamePageData.js")).default;
+    const data = (await importFresh("src/ogame/pageData.js")).default;
     assert.equal(data.version, "12.0.36");
 
     document.querySelector("meta[name='ogame-version']").setAttribute("content", "13.0.0");

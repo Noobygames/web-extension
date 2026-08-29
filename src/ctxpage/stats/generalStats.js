@@ -1,13 +1,13 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM } from "../../util/dom.js";
-import { toFormattedNumber } from "../../util/numbers.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import shipEnum from "../../util/enum/ship.js";
-import AllianceClass from "../../util/enum/allianceClass.js";
-import { generateMMORPGLink } from "../../util/mmorpgStats.js";
-import flying from "../../util/flying.js";
+import * as DOM from "../../ui/dom.js";
+import { createDOM } from "../../ui/dom.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import PlayerClass from "../../game/playerClass.js";
+import shipEnum from "../../game/ship.js";
+import AllianceClass from "../../game/allianceClass.js";
+import { generateMMORPGLink } from "../../integrations/mmorpgStats.js";
+import flying from "../../ogame/fleetMovements.js";
 
 import { statsState } from "./state.js";
 import { APIStringToClipboard } from "./boxes.js";

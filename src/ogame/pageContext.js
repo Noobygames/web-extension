@@ -1,6 +1,6 @@
-import planetType from "./enum/planetType.js";
-import PlayerClass from "./enum/playerClass.js";
-import ogiMode from "./enum/ogiMode.js";
+import planetType from "../game/planetType.js";
+import PlayerClass from "../game/playerClass.js";
+import ogiMode from "./ogiMode.js";
 
 /**
  * Everything `OGBeyondInfinity` used to read out of the DOM inside its own constructor,

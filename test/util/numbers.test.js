@@ -19,10 +19,10 @@ import { setupBrowser, LOCALIZATION_DE, LOCALIZATION_EN } from "../helpers/globa
  * `playerLang` on every call, so flipping the field per test is enough.
  */
 const pageData = { playerLang: "de", gameLang: "de" };
-mock.module(new URL("../../src/util/OgamePageData.js", import.meta.url).href, { defaultExport: pageData });
+mock.module(new URL("../../src/ogame/pageData.js", import.meta.url).href, { defaultExport: pageData });
 
-const numbers = await import("../../src/util/numbers.js");
-const cleanValueModule = await import("../../src/util/cleanValue.js");
+const numbers = await import("../../src/format/numbers.js");
+const cleanValueModule = await import("../../src/format/text.js");
 
 async function withNumbers(options, run) {
   const browser = setupBrowser(options);

@@ -38,7 +38,7 @@ async function withUniverse(run) {
     });
   };
   try {
-    const { getServerDataXml } = await import("../../src/ctxcontent/helpers/universe.data.js");
+    const { getServerDataXml } = await import("../../src/ctxcontent/parsers/universe.data.js");
     await run(getServerDataXml, requests);
   } finally {
     globalThis.fetch = savedFetch;

@@ -65,7 +65,7 @@ const ALLIANCES_XML =
 
 test("planets are grouped by player id", async () => {
   await withUniverse(PLANETS_XML, async () => {
-    const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+    const { getPlanets } = await importFresh("src/ctxcontent/parsers/universe.planets.js");
     const snapshot = await getPlanets("s101-en");
     const planets = snapshot.planets;
 
@@ -78,7 +78,7 @@ test("planets are grouped by player id", async () => {
 
 test("planet fields are parsed with the right types", async () => {
   await withUniverse(PLANETS_XML, async () => {
-    const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+    const { getPlanets } = await importFresh("src/ctxcontent/parsers/universe.planets.js");
     const [homeworld, colony] = (await getPlanets("s101-en")).planets.get(101);
 
     assert.deepEqual(homeworld, {
@@ -95,7 +95,7 @@ test("planet fields are parsed with the right types", async () => {
 
 test("the planets request targets the universe API of the right universe", async () => {
   await withUniverse(PLANETS_XML, async (requests) => {
-    const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+    const { getPlanets } = await importFresh("src/ctxcontent/parsers/universe.planets.js");
     await getPlanets("s205-de");
 
     assert.equal(requests.length, 1);
@@ -107,14 +107,14 @@ test("the planets request targets the universe API of the right universe", async
 
 test("an empty universe yields an empty map", async () => {
   await withUniverse('<?xml version="1.0"?><universe timestamp="1"/>', async () => {
-    const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+    const { getPlanets } = await importFresh("src/ctxcontent/parsers/universe.planets.js");
     assert.equal((await getPlanets("s101-en")).planets.size, 0);
   });
 });
 
 test("the snapshot exposes a flat planet list and the universe.xml timestamp", async () => {
   await withUniverse(PLANETS_XML, async () => {
-    const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+    const { getPlanets } = await importFresh("src/ctxcontent/parsers/universe.planets.js");
     const snapshot = await getPlanets("s101-en");
 
     // galaxyStorage is built from the flat list, not from the per-player map
@@ -131,7 +131,7 @@ test("the snapshot exposes a flat planet list and the universe.xml timestamp", a
 
 test("a universe.xml without a timestamp reports -1 rather than NaN", async () => {
   await withUniverse('<?xml version="1.0"?><universe/>', async () => {
-    const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+    const { getPlanets } = await importFresh("src/ctxcontent/parsers/universe.planets.js");
     const snapshot = await getPlanets("s101-en");
 
     // -1 keeps the `newTs <= previousTs` guard in rebuildGalaxyStorage() meaningful
@@ -145,7 +145,7 @@ test("a universe.xml without a timestamp reports -1 rather than NaN", async () =
 
 test("players are indexed by id", async () => {
   await withUniverse(PLAYERS_XML, async () => {
-    const { getPlayers } = await importFresh("src/ctxcontent/helpers/universe.players.js");
+    const { getPlayers } = await importFresh("src/ctxcontent/parsers/universe.players.js");
     const players = await getPlayers("s101-en");
 
     assert.deepEqual([...players.keys()], [101, 102, 103]);
@@ -155,7 +155,7 @@ test("players are indexed by id", async () => {
 
 test("a player without an alliance attribute gets null, not NaN", async () => {
   await withUniverse(PLAYERS_XML, async () => {
-    const { getPlayers } = await importFresh("src/ctxcontent/helpers/universe.players.js");
+    const { getPlayers } = await importFresh("src/ctxcontent/parsers/universe.players.js");
     const players = await getPlayers("s101-en");
 
     assert.equal(players.get(101).alliance, 7);
@@ -165,7 +165,7 @@ test("a player without an alliance attribute gets null, not NaN", async () => {
 
 test("player status is preserved verbatim", async () => {
   await withUniverse(PLAYERS_XML, async () => {
-    const { getPlayers } = await importFresh("src/ctxcontent/helpers/universe.players.js");
+    const { getPlayers } = await importFresh("src/ctxcontent/parsers/universe.players.js");
     const players = await getPlayers("s101-en");
 
     assert.equal(players.get(101).status, "", "active player");
@@ -177,7 +177,7 @@ test("player status is preserved verbatim", async () => {
 test("DEFAULT_PLAYER is the placeholder used for unknown players", async () => {
   const browser = setupBrowser({ chrome: true });
   try {
-    const { DEFAULT_PLAYER } = await importFresh("src/ctxcontent/helpers/universe.players.js");
+    const { DEFAULT_PLAYER } = await importFresh("src/ctxcontent/parsers/universe.players.js");
     assert.deepEqual(DEFAULT_PLAYER, { name: "<?>", alliance: null, status: "", id: -1 });
   } finally {
     browser.cleanup();
@@ -190,7 +190,7 @@ test("DEFAULT_PLAYER is the placeholder used for unknown players", async () => {
 
 test("alliances are indexed by id and carry their member list", async () => {
   await withUniverse(ALLIANCES_XML, async () => {
-    const { getAlliances } = await importFresh("src/ctxcontent/helpers/universe.alliances.js");
+    const { getAlliances } = await importFresh("src/ctxcontent/parsers/universe.alliances.js");
     const { alliances } = await getAlliances("s101-en");
 
     assert.deepEqual(alliances.get(7), {
@@ -205,7 +205,7 @@ test("alliances are indexed by id and carry their member list", async () => {
 
 test("the reverse player -> alliance index is built", async () => {
   await withUniverse(ALLIANCES_XML, async () => {
-    const { getAlliances } = await importFresh("src/ctxcontent/helpers/universe.alliances.js");
+    const { getAlliances } = await importFresh("src/ctxcontent/parsers/universe.alliances.js");
     const { players } = await getAlliances("s101-en");
 
     assert.equal(players.get(101), 7);
@@ -235,7 +235,7 @@ test("pretty-printed XML no longer breaks the parsers", async () => {
 </universe>`;
 
   await withUniverse(prettyXml, async () => {
-    const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+    const { getPlanets } = await importFresh("src/ctxcontent/parsers/universe.planets.js");
     const { planetList } = await getPlanets("s101-en");
 
     assert.equal(planetList.length, 2);
@@ -256,7 +256,7 @@ test("an HTTP error response rejects instead of being parsed as if it were XML",
   await withUniverse(
     "<html><body>Service Unavailable</body></html>",
     async () => {
-      const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+      const { getPlanets } = await importFresh("src/ctxcontent/parsers/universe.planets.js");
 
       await assert.rejects(
         () => getPlanets("s101-en"),
@@ -270,7 +270,7 @@ test("an HTTP error response rejects instead of being parsed as if it were XML",
 
 test("a 200 response that is not valid XML rejects instead of being parsed anyway", async () => {
   await withUniverse("<<<not xml", async () => {
-    const { getPlanets } = await importFresh("src/ctxcontent/helpers/universe.planets.js");
+    const { getPlanets } = await importFresh("src/ctxcontent/parsers/universe.planets.js");
 
     await assert.rejects(
       () => getPlanets("s101-en"),

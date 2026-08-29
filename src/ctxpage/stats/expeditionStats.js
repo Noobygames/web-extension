@@ -1,12 +1,12 @@
-import { createDOM } from "../../util/dom.js";
-import { tabs } from "../../util/tabs.js";
-import { toFormattedNumber } from "../../util/numbers.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import DateTime from "../../util/dateTime.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import shipEnum from "../../util/enum/ship.js";
-import { fleetCost } from "../../util/fleetCost.js";
+import { createDOM } from "../../ui/dom.js";
+import { tabs } from "../../ui/tabs.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import * as standardUnit from "../../game/standardUnit.js";
+import DateTime from "../../format/dateTime.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import shipEnum from "../../game/ship.js";
+import { fleetCost } from "../../game/fleetCost.js";
 
 import { statsState } from "./state.js";
 import { expeditionGraph, profitGraph } from "./graphs.js";

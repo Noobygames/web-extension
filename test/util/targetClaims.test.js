@@ -15,7 +15,7 @@ import {
   CLAIM_TAKEN,
   CLAIM_STALE,
   DEFAULT_CLAIM_TTL_MINUTES,
-} from "../../src/util/targetClaims.js";
+} from "../../src/ctxpage/galaxy/targetClaims.js";
 
 const NOW = Date.UTC(2026, 0, 1, 12, 0, 0);
 const minutesAgo = (minutes) => NOW - minutes * 60000;

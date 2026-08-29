@@ -1,8 +1,8 @@
-import * as DOM from "../../util/dom.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import AllianceClass from "../../util/enum/allianceClass.js";
-import PlayerClass from "../../util/enum/playerClass.js";
+import * as DOM from "../../ui/dom.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import AllianceClass from "../../game/allianceClass.js";
+import PlayerClass from "../../game/playerClass.js";
 import {
   CRAWLER_OVERLOAD_MAX,
   CRYSTAL_GENERAL_INCOMING,
@@ -16,12 +16,12 @@ import {
   TRADER_RESOURCE_BONUS,
   SUPPLIES_TECHID,
   FACILITIES_TECHID,
-} from "../../util/gameConstants.js";
-import itemImageID from "../../util/enum/itemImageID.js";
-import itemType from "../../util/enum/itemType.js";
+} from "../../game/gameConstants.js";
+import itemImageID from "../../game/itemImageID.js";
+import itemType from "../../game/itemType.js";
 import { getOption } from "../conf-options.js";
-import { tooltip } from "../../util/tooltip.js";
-import * as iconVisibility from "../../util/iconVisibility.js";
+import { tooltip } from "../../ui/tooltip.js";
+import * as iconVisibility from "../../ui/icons.js";
 
 /**
  * The production numbers derived from the empire snapshot, and the construction

@@ -1,8 +1,8 @@
-import { tabs } from "../../util/tabs.js";
-import * as popupUtil from "../../util/popup.js";
-import Translator from "../../util/translate.js";
-import dataHelper from "../../util/dataHelper.js";
-import * as wait from "../../util/wait.js";
+import { tabs } from "../../ui/tabs.js";
+import * as popupUtil from "../../ui/popup.js";
+import Translator from "../../format/i18n/translate.js";
+import dataHelper from "../../integrations/dataHelper.js";
+import * as wait from "../../platform/wait.js";
 
 import { statsState } from "./state.js";
 import { generalStats } from "./generalStats.js";

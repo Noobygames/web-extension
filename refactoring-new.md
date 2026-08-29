@@ -353,7 +353,25 @@ gepasst". Drei Belege, dass das echte Kosten hat und nicht nur unordentlich auss
    `service.ptre.js`, `ogame.coordinate.js` — Punkt-Präfixe als Ersatz für Ordner. `OGBIData.js`,
    `Notifier.js`, `OgamePageData.js` in PascalCase neben 50 camelCase-Dateien.
 
-### Die Zielstruktur
+### Die Zielstruktur — ERLEDIGT, mit einer bewussten Abweichung
+
+**Abweichung vom ursprünglichen Plan unten: reine 1:1-Verschiebung, kein Zusammenlegen.** Die Tabellen
+in diesem Abschnitt beschreiben den ursprünglichen Entwurf (mehrere alte Dateien zu einer neuen
+zusammengefasst — `game/ships.js`, `game/costs.js`+`game/roi.js` aus `gameFormulas.js`, `format/dates.js`
+aus `dateTime.js`+`time.js`, …). Ausgeführt wurde stattdessen: **jede Datei bekommt einen neuen Ordner,
+behält aber ihre eigene Datei** — `enum/ship.js` wird `game/ship.js`, nicht Teil von `game/ships.js`;
+`gameFormulas.js` wird `game/gameFormulas.js` als Ganzes, nicht in `costs.js`/`roi.js` gesplittet.
+
+Grund: 81 Dateien in sieben Zielordner zu sortieren **und gleichzeitig** mehrere Dateien inhaltlich zu
+verschmelzen (Exporte zusammenführen, alle Aufrufer auf die neuen Namen umstellen) ist in einem Schritt
+ein deutlich größeres Risiko als die reine Verschiebung — und `gameFormulas.js` unterschreitet mit 669
+Zeilen ohnehin das Exit-Kriterium „keine Datei über 700 Zeilen außerhalb `ctxpage/`" schon als Ganzes.
+Das Zusammenlegen bleibt ein echter, eigenständiger Wert (siehe Nebeneffekt-Absatz unten), aber als
+**Folge-PR**, mit eigener Testabdeckung für den Schnitt — nicht vermischt mit 79 Datei-Verschiebungen in
+einem Diff. Die Tabellen unten zeigen die ursprüngliche Absicht; die tatsächlichen 79 Ziele stehen im
+Exit-Kriterium.
+
+### Die Zielstruktur (ursprünglicher Entwurf, siehe Abweichung oben)
 
 Sortiert nach **Fachlichkeit**: wonach würde jemand suchen, der ein Verhalten ändern will.
 
@@ -428,44 +446,82 @@ Rechenlücken aus `refactoring.md` §3.3 bekommen dort ihren Platz.
 | `util/targetClaims.js` |    125 | `ctxpage/galaxy/targetClaims.js` |
 | `util/player.js`       |     30 | `ctxpage/stalk/player.js`        |
 
-`util/stalk.js` und `ctxpage/stalk/index.js` zusammenzuführen ist der einzige Punkt dieser Phase, der
-**kein** reines Verschieben ist: die Fassade verschwindet, und die Aufrufer nehmen die
-Implementierung direkt. Deshalb steht er am Ende der Phase, nach allen mechanischen Umzügen, und
-bekommt vorher Tests — `util/stalk.js` steht bei **7,2 % Abdeckung**.
+`util/stalk.js` und `ctxpage/stalk/index.js` zusammenzuführen wäre der einzige Punkt dieser Phase
+gewesen, der **kein** reines Verschieben ist: die Fassade verschwindet, und die Aufrufer nehmen die
+Implementierung direkt. `util/stalk.js` steht bei **7,2 % Abdeckung** — deutlich zu wenig, um einen
+Facade-Merge ohne Netz zu machen.
 
-### Reihenfolge
+**Entscheidung: verschoben (`ctxpage/stalk/stalkPanel.js`), nicht verschmolzen.** Aus demselben Grund
+wie bei `gameFormulas.js`: erst Testabdeckung, dann die riskante inhaltliche Verschmelzung, in einem
+eigenen Folge-PR. `ctxpage/stalk/index.js` importiert `stalkPanel.js` jetzt als eigenständiges Modul
+(`import * as stalkUtil from "./stalkPanel.js"`) statt aus einem fremden `util/`-Ordner — das allein
+ist schon der Bruch mit „Feature liegt in `util/`, Fassade in `ctxpage/`", auch ohne die Dateien
+inhaltlich zu vereinen.
 
-Ein Ordner pro PR, jeder für sich releasebar. Reihenfolge nach steigendem Risiko:
+### Reihenfolge — tatsächlich ausgeführt
 
-```
-B1  game/          reine Funktionen, kein DOM, beste Abdeckung   -> geringstes Risiko
-B2  format/        + i18n; berührt viele Importe, wenig Logik
-B3  platform/      Infrastruktur; Boot-Pfad, deshalb nach B1/B2
-B4  ui/
-B5  ogame/
-B6  store/         zuletzt, weil 40 Dateien darauf zeigen
-B7  integrations/
-B8  Feature-Umzug nach ctxpage/ + stalk-Fassade auflösen        -> höchstes Risiko
-```
+Nicht acht einzelne PRs wie ursprünglich geplant, sondern **ein automatisiertes Werkzeug, ein Durchlauf**:
+79 Dateiverschiebungen und 571 Importpfad-Korrekturen von Hand zu machen ist genau die Art Arbeit, bei
+der ein Mensch (oder ein Agent) Fehler macht, die kein Test bemerkt. Stattdessen:
+
+1. Vollständige Alt-→-Neu-Zuordnungstabelle für alle 79 Dateien aufgestellt (siehe Tabellen oben),
+   plus zwei Löschungen (`notifications.js`, `enum/resource.js` — beide seit Phase A.3 bestätigt tot,
+   keine Testabdeckung).
+2. Ein Node-Skript verschiebt alle Dateien (`git mv`) und liest danach **jede** `.js`-Datei unter
+   `src/`, `test/`, `scripts/` erneut: jede relative Import-/Export-Spezifikation, jedes dynamische
+   `import()`, jedes `new URL(spec, import.meta.url)` und jedes `importFresh("src/...")` wird gegen
+   die alte Position des lesenden **und** des gelesenen Moduls aufgelöst und auf den neuen Pfad
+   umgeschrieben.
+3. Was das Skript **nicht** sieht — Pfade als getrennte `path.join()`-Segmente (`"util", "OGBIData.js"`),
+   hartkodierte Datei-Listen in Meta-Tests (`test/ctxpage/module-wiring.test.js`,
+   `test/util/page-context-boot.test.js`), Build-Skripte (`scripts/bundle.mjs`s Prune-Liste,
+   `scripts/build-unpacked.mjs`, `packaging.sh`, `Makefile`) — von Hand nachgezogen, gefunden über
+   `npm test` (jeder verwaiste Pfad wirft `ERR_MODULE_NOT_FOUND` oder `ENOENT`) und `grep` über
+   verbliebene `"util/`-Vorkommen.
+4. `src/ctxcontent/helpers/` (fünf `universe.*`-Parser aus Phase A.3) trägt denselben verbotenen Namen
+   wie `util/` — beim Schreiben des Wächtertests aufgefallen, nicht vorher geplant. Mitverschoben nach
+   `src/ctxcontent/parsers/`, gleiches Muster.
 
 ### Wächter gegen Rückfall
 
 - **`test/architecture.test.js`** (neu), liest den Quelltext:
-  - kein Ordner unter `src/` heißt `util`, `helpers`, `common`, `shared`, `misc` (ausgenommen
-    `src/libs/`);
-  - **`game/` importiert nichts aus `ui/`, `store/`, `ogame/`, `ctxpage/`, `ctxcontent/`** — das ist
-    die Regel, die den Regelwerk-Ordner testbar hält;
-  - `platform/` importiert nichts aus `game/` oder `ctxpage/`;
-  - jede Datei unter `src/` ist von einem der vier Einstiegspunkte erreichbar. Das ist der Test, der
-    A.3 gefunden hätte, bevor 513 Zeilen tot herumlagen.
-- `test/ctxpage/module-wiring.test.js` und `test/bundle.test.js` laufen unverändert weiter und fangen
-  eine Datei ab, die beim Verschieben aus dem Graphen fällt.
+  - kein Ordner unter `src/` heißt `util`, `utils`, `helpers`, `common`, `shared`, `misc` oder `lib`
+    (ausgenommen `src/libs/`) — fängt `src/ctxcontent/helpers/` ab, bevor es zurückkommt;
+  - jede Datei unter `src/` ist von einem der vier Einstiegspunkte erreichbar — der Test, der A.3
+    gefunden hätte, bevor 513 Zeilen tot herumlagen;
+  - `platform/` importiert nichts außerhalb von sich selbst.
+- **Bewusst nicht geprüft: „`game/` importiert nichts aus `ui/`/`store/`/`ctxpage/`".** Stimmt nicht
+  — `calcNeededShips.js` und `gameFormulas.js` lesen `OGBIData` direkt, `standardUnit.js` liest
+  `ctxpage/conf-options.js`. Diese Grenze wirklich zu ziehen heißt, die Funktionen zu parametrisieren
+  statt aus dem Singleton zu lesen — ein echter, separater Umbau, keine Nebenwirkung einer
+  Dateiverschiebung. Ein Test, der eine Regel prüft, die der Code nicht einhält, ist am ersten Tag
+  schon falsch; hier als bewusste Lücke dokumentiert statt stillschweigend übergangen.
+- `test/ctxpage/module-wiring.test.js` (hartkodierte Dateiliste, sieben Einträge auf neue Pfade
+  umgestellt) und `test/bundle.test.js` (Prune-/Chunk-Pfade auf `platform/version.js` umgestellt)
+  laufen unverändert weiter und hätten eine beim Verschieben aus dem Graphen gefallene Datei gefangen.
 
-### Exit-Kriterium Phase B
+### Exit-Kriterium Phase B — ERREICHT
 
-Kein Verzeichnis `src/util`. Alle 81 Dateien haben einen Ordner, dessen Name ihren Zweck nennt. Keine
-Datei über 700 Zeilen außerhalb von `ctxpage/`. `test/architecture.test.js` grün und gatend in CI.
-Kern-Bundle unverändert (± 5 KB) — die Phase verschiebt, sie fügt nichts hinzu.
+| Kriterium                               | Ziel                         | Ist                                                               |
+| :-------------------------------------- | :--------------------------- | :---------------------------------------------------------------- |
+| `src/util/`                             | existiert nicht mehr         | **weg** — 79 Dateien verschoben, 2 tote gelöscht, Ordner entfernt |
+| `src/ctxcontent/helpers/`               | (nicht ursprünglich geplant) | **auch weg** — nach `src/ctxcontent/parsers/`, gleicher Fund      |
+| Datei > 700 Zeilen außerhalb `ctxpage/` | keine                        | **keine** — `game/gameFormulas.js` bleibt bei 669                 |
+| `test/architecture.test.js`             | grün, gatend                 | **grün**, 3 Tests                                                 |
+| Tests gesamt                            | —                            | 553 → **556**                                                     |
+| `npm run check`                         | 0 Fehler                     | **0**                                                             |
+| Kern-Bundle                             | unverändert ± 5 KB           | **475 KB** (unverändert — reine Verschiebung, nichts hinzugefügt) |
+
+**Bewusst nicht in dieser Phase erledigt** (jeweils als eigener Folge-PR, mit eigener Testabdeckung
+zuerst):
+
+- `gameFormulas.js` in `costs.js`/`roi.js` teilen.
+- `enum/ship.js` + `shipCosts.js` + `shipsData.js` + `fleetCost.js` zu `game/ships.js` zusammenlegen
+  (analog `defence.js`).
+- `dateTime.js` + `time.js` zu `format/dates.js` zusammenlegen.
+- `util/stalk.js` (jetzt `ctxpage/stalk/stalkPanel.js`) mit `ctxpage/stalk/index.js`s Fassade
+  verschmelzen.
+- Die `game/`-Reinheitsregel (kein `OGBIData`/`ctxpage`-Import) wirklich durchsetzen.
 
 ---
 

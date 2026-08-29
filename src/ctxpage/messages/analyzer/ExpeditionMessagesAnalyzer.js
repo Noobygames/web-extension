@@ -1,11 +1,11 @@
-import { getLogger } from "../../../util/logger.js";
+import { getLogger } from "../../../platform/logger.js";
 import { messagesTabs } from "../index.js";
-import OGBIData from "../../../util/OGBIData.js";
-import { createDOM } from "../../../util/dom.js";
-import { toFormattedNumber } from "../../../util/numbers.js";
-import { fleetCost } from "../../../util/fleetCost.js";
-import * as standardUnit from "../../../util/standardUnit.js";
-import Translator from "../../../util/translate.js";
+import OGBIData from "../../../store/OGBIData.js";
+import { createDOM } from "../../../ui/dom.js";
+import { toFormattedNumber } from "../../../format/numbers.js";
+import { fleetCost } from "../../../game/fleetCost.js";
+import * as standardUnit from "../../../game/standardUnit.js";
+import Translator from "../../../format/i18n/translate.js";
 
 class ExpeditionMessagesAnalyzer {
   #logger;

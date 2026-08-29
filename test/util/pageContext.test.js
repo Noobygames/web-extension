@@ -10,9 +10,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { setupBrowser } from "../helpers/globals.js";
-import { readPageContext, stripCoordinateBrackets } from "../../src/util/pageContext.js";
-import planetType from "../../src/util/enum/planetType.js";
-import PlayerClass from "../../src/util/enum/playerClass.js";
+import { readPageContext, stripCoordinateBrackets } from "../../src/ogame/pageContext.js";
+import planetType from "../../src/game/planetType.js";
+import PlayerClass from "../../src/game/playerClass.js";
 import { overviewPage, planetList, metaTags, officers, characterClass } from "../fixtures/ogamePage.js";
 
 const OVERVIEW_URL = "https://s1-en.ogame.gameforge.com/game/index.php?page=ingame&component=overview";

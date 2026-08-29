@@ -4,7 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { profitPerHour, nearestOrigin, evaluateTarget, byProfitPerHour } from "../../src/util/farmEvaluator.js";
+import { profitPerHour, nearestOrigin, evaluateTarget, byProfitPerHour } from "../../src/game/farmEvaluator.js";
 
 const at = (galaxy, system, position) => ({ galaxy, system, position });
 

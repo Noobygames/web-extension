@@ -31,12 +31,17 @@ Consequences, know before start:
 ```
 test/
   helpers/globals.js          the harness (see below)
-  util/*.test.js              src/util
+  util/*.test.js              src/game, src/ogame, src/store, src/ui, src/format, src/platform, src/integrations
   ctxpage/*.test.js           src/ctxpage
   ctxcontent/*.test.js        src/ctxcontent
 ```
 
 One test file per source module, named after it. Files run in **separate processes** — module-level state never leak between files, only within one.
+
+`test/util/` predates Phase B of `refactoring-new.md`, which dissolved `src/util/` into the seven
+folders above; the test directory kept its name rather than splitting to match, since moving ~30 test
+files bought nothing beyond mirroring a folder name. A test's location still says nothing you can't
+get from its import line.
 
 ## The harness: `test/helpers/globals.js`
 
@@ -60,16 +65,16 @@ Options: `html`, `url`, `userAgent`, `gameLang`, `ogameVersion`, `localization` 
 
 Stub expose `chrome._store` (the Map) and `chrome._calls` (call counters) for assertions.
 
-`setupBrowser()` deliberately **not** call `window.close()`. Modules like `src/util/fetching.js` build `DOMParser` at import time, hold it for process lifetime. Close the window it came from = null-dereference in later suite.
+`setupBrowser()` deliberately **not** call `window.close()`. Modules like `src/platform/fetch.js` build `DOMParser` at import time, hold it for process lifetime. Close the window it came from = null-dereference in later suite.
 
 ### `importFresh(specifier)`
 
-Load module under cache-busting URL so module-level singleton re-evaluate. Needed for `OGBIData`, `OgamePageData`, `service.callbackEvent` — behaviour depend on state captured at import time.
+Load module under cache-busting URL so module-level singleton re-evaluate. Needed for `OGBIData`, `OgamePageData`, `bridge.js` — behaviour depend on state captured at import time.
 
 **Use only when test is about construction.** Two reasons:
 
 1. Defeats point of singleton — everywhere else, shared instance is more faithful model of real page.
-2. Node coverage reporter merge every URL for a path into one row, keep last evaluation seen. One `importFresh()` make whole module look barely covered. `src/util/OGBIData.js` report ~36% for exactly this reason; accessors in fact exercised exhaustively by `test/util/OGBIData.test.js`. Construction tests moved to `OGBIData.construction.test.js` to contain damage, but merged multi-file run still report low number. Treat that row as artefact, not gap.
+2. Node coverage reporter merge every URL for a path into one row, keep last evaluation seen. One `importFresh()` make whole module look barely covered. `src/store/OGBIData.js` report ~36% for exactly this reason; accessors in fact exercised exhaustively by `test/util/OGBIData.test.js`. Construction tests moved to `OGBIData.construction.test.js` to contain damage, but merged multi-file run still report low number. Treat that row as artefact, not gap.
 
 Where singleton can reset through own API, prefer that — `OGBIData.json = {…}` is full reset, keep report honest.
 
@@ -79,25 +84,25 @@ Where singleton can reset through own API, prefer that — `OGBIData.json = {…
 
 | Area              | Module                                                                                 | Notes                                                                                                 |
 | ----------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Serialisation     | `util/json.js`                                                                         | Map/Set encoding, `extractJSON`, native round-trip. 96%                                               |
-| Coordinates       | `util/ogame.coordinate.js`                                                             | Encoding, ordering, type handling. 99%                                                                |
-| Costs             | `util/fleetCost.js`, `defenceCost.js`, `enum/*Costs.js`, `recyclingYieldCalculator.js` | Includes consistency check: every ship/defence has cost entry and vice versa. 100%                    |
-| Numbers           | `util/numbers.js`, `cleanValue.js`                                                     | Both locales, unit suffixes, parse/format round-trip. 83% / 100%                                      |
-| Context bridge    | `util/service.callbackEvent.js`                                                        | Full request/response round-trip across both contexts, error paths, concurrency, Firefox `cloneInto`. |
-| Context detection | `util/runContext.js`                                                                   | Chrome/Edge/Firefox, script injection. 96%                                                            |
-| Page storage      | `util/OGBIData.js`                                                                     | Write-through contract, generic check that **every** setter persists.                                 |
+| Serialisation     | `store/json.js`                                                                         | Map/Set encoding, `extractJSON`, native round-trip. 96%                                               |
+| Coordinates       | `ogame/coordinates.js`                                                             | Encoding, ordering, type handling. 99%                                                                |
+| Costs             | `game/fleetCost.js`, `defenceCost.js`, `shipCosts.js`, `defenceCosts.js`, `recyclingYieldCalculator.js` | Includes consistency check: every ship/defence has cost entry and vice versa. 100%                    |
+| Numbers           | `format/numbers.js`, `text.js`                                                     | Both locales, unit suffixes, parse/format round-trip. 83% / 100%                                      |
+| Context bridge    | `platform/bridge.js`                                                        | Full request/response round-trip across both contexts, error paths, concurrency, Firefox `cloneInto`. |
+| Context detection | `platform/runContext.js`                                                                   | Chrome/Edge/Firefox, script injection. 96%                                                            |
+| Page storage      | `store/OGBIData.js`                                                                     | Write-through contract, generic check that **every** setter persists.                                 |
 | Store access      | `src/**` (static)                                                                      | Phase 4 rule: no `this.json` alias, no `saveData()` method, no `Save()` behind a setter.              |
-| Version gate      | `util/OgamePageData.js`                                                                | `isAtLeast_13_0_0` across version shapes.                                                             |
+| Version gate      | `ogame/pageData.js`                                                                | `isAtLeast_13_0_0` across version shapes.                                                             |
 | Options           | `ctxpage/conf-options.js`                                                              | Defaults, deep merge, proxy guards.                                                                   |
 | Content storage   | `ctxcontent/services/universe.storage.js`                                              | Key namespacing, Map/Set round-trip. 95%                                                              |
-| API parsers       | `ctxcontent/helpers/universe.{planets,players,alliances}.js`                           | XML fixtures, `fetch` stubbed.                                                                        |
+| API parsers       | `ctxcontent/parsers/universe.{planets,players,alliances}.js`                           | XML fixtures, `fetch` stubbed.                                                                        |
 
-| Page context seam | `util/pageContext.js` | Everything `OGBeyondInfinity` constructor read out of DOM. 100% |
-| Calculation core | `util/gameFormulas.js` | `consumption`, `minesProduction`, `research`, `building`, five `roi*` functions, `getBestRoi`. Characterisation only: values recorded before the Phase 3 move and unchanged after it. |
+| Page context seam | `ogame/pageContext.js` | Everything `OGBeyondInfinity` constructor read out of DOM. 100% |
+| Calculation core | `game/gameFormulas.js` | `consumption`, `minesProduction`, `research`, `building`, five `roi*` functions, `getBestRoi`. Characterisation only: values recorded before the Phase 3 move and unchanged after it. |
 | Service worker | `background.js` | Persistence across worker restart, alarm scheduling, notification clicks, per-domain sync. 81% |
 | Message analyzers | `ctxpage/messages/analyzer/*` | Tab dispatch for all five; parsing paths for harvest, trade, expedition fights. |
 | Pantry backup | `ctxpage/pantry/index.js` | What the `post` upload actually puts in the basket, plus the timestamp it records. |
-| Bridge token | `main.js` vs `util/service.callbackEvent.js` | The two hand-copied `createCallbackToken()` bodies compared as source. |
+| Bridge token | `main.js` vs `platform/bridge.js` | The two hand-copied `createCallbackToken()` bodies compared as source. |
 | Ship table | `ctxpage/fleetdispatch/shipData.js` | Table already there / arrives late / empty / never arrives, plus the one-write rule. |
 
 **Fixtures** live in `test/fixtures/`. `ogamePage.js` build OGame 13 page fragments
@@ -117,7 +122,7 @@ Not covered, rough order of value:
 - **The extracted page modules** (`ctxpage/stats/`, `ctxpage/fleetdispatch/`, `ctxpage/galaxy/`, …). Phase 3 moved ~17k lines out of `ogCore.js`; almost none has behavioural coverage. `test/ctxpage/module-wiring.test.js` guards the wiring statically — module reachable, no binding left behind in `ogCore.js`, `this` only where an OGame object owns it — but nothing opens the pages they draw.
 - **`SpyMessagesAnalyzer`** (1k lines) and **`ExpeditionMessagesAnalyzer`** — only `support()` and `clean()` covered. Parsing paths need full spy-report and expedition-message fixtures.
 - **`ctxcontent/data-helper.js`** — `update()` orchestration and `loading` race behind issue #131.
-- `util/translate.js`, `util/stalk.js`, `util/flying.js`, `util/needs.js`.
+- `format/i18n/translate.js`, `ctxpage/stalk/stalkPanel.js`, `ogame/fleetMovements.js`, `ctxpage/planetbar/needs.js`.
 
 **Two of these tests read source, not behaviour.** `test/util/store-access.test.js` and
 `test/util/callback-token-twins.test.js` scan `src/` as text. That is deliberate: the
@@ -148,7 +153,7 @@ corrupt `ogk-data` starts an empty store (moves the unreadable value to
 fixed the rest:
 
 - `numbers.js`'s precision-0 handling (`precision ?? 0`, not `precision ? precision : 0`).
-- The pretty-printed-XML and HTTP-error-response crashes in `ctxcontent/helpers/*`
+- The pretty-printed-XML and HTTP-error-response crashes in `ctxcontent/parsers/*`
   (`doc.childNodes` → `doc.children`; `fetchXml()` now checks `response.ok` and the
   DOM parser's `<parsererror>` node).
 - `roiMine`'s cost loop (summed `lvl`, not `tolvl` five times).

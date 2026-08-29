@@ -1,15 +1,15 @@
 import Player from "./player.js";
-import { createDOM } from "./dom.js";
-import { tooltip } from "./tooltip.js";
-import { toFormattedNumber } from "./numbers.js";
-import dateTime from "./dateTime.js";
-import highlightTarget, { setHighlightCoords } from "./highlightTarget.js";
+import { createDOM } from "../../ui/dom.js";
+import { tooltip } from "../../ui/tooltip.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import dateTime from "../../format/dateTime.js";
+import highlightTarget, { setHighlightCoords } from "../../ui/highlight.js";
 import player from "./player.js";
-import OgamePageData from "./OgamePageData.js";
-import OGBIData from "./OGBIData.js";
-import { loading } from "./loading.js";
-import { action } from "./ptre.js";
-import Translator from "./translate.js";
+import OgamePageData from "../../ogame/pageData.js";
+import OGBIData from "../../store/OGBIData.js";
+import { loading } from "../../ui/loading.js";
+import { action } from "../../integrations/ptre/ptre.js";
+import Translator from "../../format/i18n/translate.js";
 
 const rawUrl = new URL(window.location.href);
 const page = rawUrl.searchParams.get("component") || rawUrl.searchParams.get("page");

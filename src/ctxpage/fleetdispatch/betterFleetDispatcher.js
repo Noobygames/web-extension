@@ -1,17 +1,17 @@
-import * as DOM from "../../util/dom.js";
-import debounce from "../../util/debounce.js";
+import * as DOM from "../../ui/dom.js";
+import debounce from "../../platform/debounce.js";
 import { fleetState } from "./state.js";
-import { getLogger } from "../../util/logger.js";
-import { createDOM, createSVG } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import ogiMode from "../../util/enum/ogiMode.js";
-import PlayerClass from "../../util/enum/playerClass.js";
+import { getLogger } from "../../platform/logger.js";
+import { createDOM, createSVG } from "../../ui/dom.js";
+import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
+import * as Numbers from "../../format/numbers.js";
+import * as popupUtil from "../../ui/popup.js";
+import * as standardUnit from "../../game/standardUnit.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import OgamePageData from "../../ogame/pageData.js";
+import ogiMode from "../../ogame/ogiMode.js";
+import PlayerClass from "../../game/playerClass.js";
 import { keepOnPlanetDialog } from "./keepOnPlanet.js";
 import {
   calcNeededShips,
@@ -21,8 +21,8 @@ import {
   selectBestCargoShip,
   selectShips,
 } from "./index.js";
-import * as needsUtil from "../../util/needs.js";
-import RecyclingYieldCalculator from "../../util/recyclingYieldCalculator.js";
+import * as needsUtil from "../planetbar/needs.js";
+import RecyclingYieldCalculator from "../../game/recyclingYieldCalculator.js";
 
 /**
  * The fleet-dispatch page: the rebuilt dispatcher UI, the expedition and collect

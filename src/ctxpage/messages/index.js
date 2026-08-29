@@ -1,5 +1,5 @@
-import OGBIObserver from "../../util/observer.js";
-import { getLogger } from "../../util/logger.js";
+import OGBIObserver from "../../platform/observer.js";
+import { getLogger } from "../../platform/logger.js";
 import SpyMessagesAnalyzer from "./analyzer/SpyMessagesAnalyzer.js";
 import ExpeditionMessagesAnalyzer from "./analyzer/ExpeditionMessagesAnalyzer.js";
 import FightMessagesAnalyzer from "./analyzer/FightMessagesAnalyzer.js";

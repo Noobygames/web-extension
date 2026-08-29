@@ -1,5 +1,5 @@
 import { createDOM } from "./dom.js";
-import OGBIData from "./OGBIData.js";
+import OGBIData from "../store/OGBIData.js";
 
 const senders = [];
 let keepTooltip = OGBIData.keepTooltip || true;

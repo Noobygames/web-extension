@@ -1,18 +1,18 @@
-import * as DOM from "../../util/dom.js";
-import isOwnPlanet from "../../util/isOwnPlanet.js";
-import { createDOM } from "../../util/dom.js";
-import { toFormattedNumber } from "../../util/numbers.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import missionType from "../../util/enum/missionType.js";
+import * as DOM from "../../ui/dom.js";
+import isOwnPlanet from "../../ogame/ownPlanets.js";
+import { createDOM } from "../../ui/dom.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import * as standardUnit from "../../game/standardUnit.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import missionType from "../../game/missionType.js";
 import { getOption } from "../conf-options.js";
-import OGIObserver from "../../util/observer.js";
-import { tooltip } from "../../util/tooltip.js";
-import RecyclingYieldCalculator from "../../util/recyclingYieldCalculator.js";
-import * as iconVisibility from "../../util/iconVisibility.js";
-import * as wait from "../../util/wait.js";
-import { getLogger } from "../../util/logger.js";
+import OGIObserver from "../../platform/observer.js";
+import { tooltip } from "../../ui/tooltip.js";
+import RecyclingYieldCalculator from "../../game/recyclingYieldCalculator.js";
+import * as iconVisibility from "../../ui/icons.js";
+import * as wait from "../../platform/wait.js";
+import { getLogger } from "../../platform/logger.js";
 
 const logger = getLogger("planetbar");
 

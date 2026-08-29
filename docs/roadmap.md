@@ -24,15 +24,15 @@
 _These features address current pain points in existing extensions. Use these descriptions as implementation guidelines for the codebase._
 
 **Status: all five implemented**, one commit each. Each feature keeps its arithmetic in a
-DOM-free module under `src/util/` with unit tests, and wires that module into the page separately.
+DOM-free module under `src/game/` with unit tests, and wires that module into the page separately.
 
 | Feature | Module | Wired into | Tests |
 | :------ | :----- | :--------- | :---- |
-| A | `util/fleetFlight.js`, `util/farmEvaluator.js` | spy-report table (`PER_HOUR` column) | 29 |
-| B | `util/harvestPlanner.js` | Empire view, Harvest tab | 23 |
-| C | `util/expeditionBalancer.js` | fleetdispatch, opt-in setting | 20 |
-| D | `util/productionEngine.js` | overview resource-bar tooltip | 27 |
-| E | `util/targetClaims.js`, `service.ptre.js` | galaxy-view row colours | 20 |
+| A | `game/fleetFlight.js`, `game/farmEvaluator.js` | spy-report table (`PER_HOUR` column) | 29 |
+| B | `game/harvestPlanner.js` | Empire view, Harvest tab | 23 |
+| C | `game/expeditionBalancer.js` | fleetdispatch, opt-in setting | 20 |
+| D | `game/productionEngine.js` | overview resource-bar tooltip | 27 |
+| E | `ctxpage/galaxy/targetClaims.js`, `integrations/ptre/service.js` | galaxy-view row colours | 20 |
 
 Compliance notes that constrained the implementations:
 

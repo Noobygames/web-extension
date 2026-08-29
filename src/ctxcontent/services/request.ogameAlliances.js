@@ -1,4 +1,4 @@
-import { fetchXml } from "../../util/fetching.js";
+import { fetchXml } from "../../platform/fetch.js";
 
 /**
  *

@@ -1,8 +1,8 @@
-import { fromFormattedNumber } from "../../util/numbers.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import { pageSignal } from "../../util/abort.js";
+import { fromFormattedNumber } from "../../format/numbers.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import OgamePageData from "../../ogame/pageData.js";
+import { pageSignal } from "../../platform/abort.js";
 
 import { updateEmpireProduction } from "./production.js";
 

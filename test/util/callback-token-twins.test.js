@@ -2,7 +2,7 @@
  * `createCallbackToken()` exists twice, on purpose.
  *
  * `src/main.js` is a classic content script, not a module, so it cannot import
- * `util/service.callbackEvent.js` - and it has to mint the bridge token itself,
+ * `platform/bridge.js` - and it has to mint the bridge token itself,
  * because minting it there is what lets `ogCore.js` (1.1 MB) and the content
  * bundle download in parallel instead of one after the other.
  *
@@ -46,21 +46,21 @@ function functionBody(file, name) {
 }
 
 test("main.js mints the bridge token exactly the way the bridge module does", () => {
-  const bridge = functionBody("src/util/service.callbackEvent.js", "_createToken");
+  const bridge = functionBody("src/platform/bridge.js", "_createToken");
   const contentScript = functionBody("src/main.js", "createCallbackToken");
 
   assert.equal(
     contentScript,
     bridge,
     "the hand-copied token generator in src/main.js drifted from _createToken() in " +
-      "src/util/service.callbackEvent.js - change both or neither"
+      "src/platform/bridge.js - change both or neither"
   );
 });
 
 test("the exported generator produces a lowercase hex token of the documented width", async () => {
   const browser = setupBrowser();
   try {
-    const { createCallbackToken } = await importFresh("src/util/service.callbackEvent.js");
+    const { createCallbackToken } = await importFresh("src/platform/bridge.js");
 
     for (let i = 0; i < 500; i++) {
       const token = createCallbackToken();

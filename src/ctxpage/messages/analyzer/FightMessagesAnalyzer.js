@@ -1,12 +1,12 @@
-import { getLogger } from "../../../util/logger.js";
+import { getLogger } from "../../../platform/logger.js";
 import { messagesTabs } from "../index.js";
-import OGBIData from "../../../util/OGBIData.js";
-import PlanetType from "../../../util/enum/planetType.js";
-import ship from "../../../util/enum/ship.js";
-import * as standardUnit from "../../../util/standardUnit.js";
-import { createDOM } from "../../../util/dom.js";
-import { fleetCost } from "../../../util/fleetCost.js";
-import { toFormattedNumber } from "../../../util/numbers.js";
+import OGBIData from "../../../store/OGBIData.js";
+import PlanetType from "../../../game/planetType.js";
+import ship from "../../../game/ship.js";
+import * as standardUnit from "../../../game/standardUnit.js";
+import { createDOM } from "../../../ui/dom.js";
+import { fleetCost } from "../../../game/fleetCost.js";
+import { toFormattedNumber } from "../../../format/numbers.js";
 
 class FightMessagesAnalyzer {
   #logger;

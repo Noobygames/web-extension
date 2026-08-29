@@ -1,15 +1,15 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM } from "../../util/dom.js";
-import { toFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import shipEnum from "../../util/enum/ship.js";
-import { CARGO_SHIP_IDS } from "../../util/harvestPlanner.js";
-import RecyclingYieldCalculator from "../../util/recyclingYieldCalculator.js";
-import { planHarvest } from "../../util/harvestPlanner.js";
-import flying from "../../util/flying.js";
+import * as DOM from "../../ui/dom.js";
+import { createDOM } from "../../ui/dom.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import * as Numbers from "../../format/numbers.js";
+import * as standardUnit from "../../game/standardUnit.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import shipEnum from "../../game/ship.js";
+import { CARGO_SHIP_IDS } from "../../game/harvestPlanner.js";
+import RecyclingYieldCalculator from "../../game/recyclingYieldCalculator.js";
+import { planHarvest } from "../../game/harvestPlanner.js";
+import flying from "../../ogame/fleetMovements.js";
 
 /** The four tables the overview popup shows, one per tab. */
 function minesOverview(context) {

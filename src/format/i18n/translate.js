@@ -1,10 +1,10 @@
-import OgamePageData from "./OgamePageData.js";
-import OGBIData from "./OGBIData.js";
-import { getLogger } from "./logger.js";
-import MissionType from "./enum/missionType.js";
+import OgamePageData from "../../ogame/pageData.js";
+import OGBIData from "../../store/OGBIData.js";
+import { getLogger } from "../../platform/logger.js";
+import MissionType from "../../game/missionType.js";
 
 import EN from "./translations/en.js";
-import { loadChunk } from "./loadChunk.js";
+import { loadChunk } from "../../platform/loadChunk.js";
 
 /**
  * The six language tables used to sit in this file, one entry per key holding all

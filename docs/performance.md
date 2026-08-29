@@ -38,7 +38,7 @@ every page — to attach a click listener to anything it had not already seen. A
 it had nothing left to do, so essentially all of that work was wasted: **~51 µs per tick in the
 steady state, ~510 µs/second, for the whole session.**
 
-Replaced by one delegated capture-phase listener (`src/util/stageForUpdate.js`). No polling at all,
+Replaced by one delegated capture-phase listener (`src/platform/domChanges.js`). No polling at all,
 and elements the game adds later are picked up immediately rather than up to 100 ms late. Capture
 phase because the game calls `stopPropagation()` on some of its own buttons.
 
@@ -240,7 +240,7 @@ performance tweak, and it wants the profiler numbers below first.
 
 ### Measuring it
 
-`src/util/perf.js` is a profiler that costs one `localStorage.getItem` when off. Turn it on with
+`src/platform/perf.js` is a profiler that costs one `localStorage.getItem` when off. Turn it on with
 `localStorage.setItem("ogi-perf", "1")` (sticky) or `&ogi-perf=1` on the game URL (one load), then
 reload. `ogCore.js` prints:
 

@@ -1,6 +1,6 @@
 import { getOption } from "../ctxpage/conf-options.js";
-import { toFormattedNumber } from "./numbers.js";
-import Translator from "./translate.js";
+import { toFormattedNumber } from "../format/numbers.js";
+import Translator from "../format/i18n/translate.js";
 
 /**
  *

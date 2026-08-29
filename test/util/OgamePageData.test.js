@@ -10,7 +10,7 @@ import { setupBrowser, importFresh } from "../helpers/globals.js";
 
 async function pageData(options) {
   const browser = setupBrowser(options);
-  const module = await importFresh("src/util/OgamePageData.js");
+  const module = await importFresh("src/ogame/pageData.js");
   return { data: module.default, browser };
 }
 
@@ -47,7 +47,7 @@ test("playerLang is taken from the oglocale cookie when present", async () => {
   const browser = setupBrowser({ gameLang: "de" });
   try {
     browser.document.cookie = "oglocale=es";
-    const data = (await importFresh("src/util/OgamePageData.js")).default;
+    const data = (await importFresh("src/ogame/pageData.js")).default;
 
     assert.equal(data.playerLang, "es");
     assert.equal(data.gameLang, "de", "the game language must stay untouched");
@@ -108,8 +108,8 @@ test("versions with fewer segments are padded with zeros", async () => {
 test("the module exports a single shared instance", async () => {
   const browser = setupBrowser();
   try {
-    const first = (await import("../../src/util/OgamePageData.js")).default;
-    const second = (await import("../../src/util/OgamePageData.js")).default;
+    const first = (await import("../../src/ogame/pageData.js")).default;
+    const second = (await import("../../src/ogame/pageData.js")).default;
     assert.equal(first, second);
   } finally {
     browser.cleanup();

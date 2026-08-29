@@ -1,9 +1,9 @@
-import { getLogger } from "../../../util/logger.js";
+import { getLogger } from "../../../platform/logger.js";
 import { messagesTabs } from "../index.js";
-import MessageType from "../../../util/enum/messageType.js";
-import { toFormattedNumber } from "../../../util/numbers.js";
-import { createDOM } from "../../../util/dom.js";
-import * as standardUnit from "../../../util/standardUnit.js";
+import MessageType from "../../../game/messageType.js";
+import { toFormattedNumber } from "../../../format/numbers.js";
+import { createDOM } from "../../../ui/dom.js";
+import * as standardUnit from "../../../game/standardUnit.js";
 
 /**
  * Trade messages get one label appended - the net standard-unit gain or loss of the

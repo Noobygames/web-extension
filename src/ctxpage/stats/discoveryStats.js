@@ -1,9 +1,9 @@
-import { createDOM } from "../../util/dom.js";
-import { tabs } from "../../util/tabs.js";
-import { toFormattedNumber } from "../../util/numbers.js";
-import DateTime from "../../util/dateTime.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
+import { createDOM } from "../../ui/dom.js";
+import { tabs } from "../../ui/tabs.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import DateTime from "../../format/dateTime.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
 
 import { statsState } from "./state.js";
 import { discoveryBox, discoveryCostsBox } from "./boxes.js";

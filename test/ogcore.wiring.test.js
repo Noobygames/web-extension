@@ -83,7 +83,7 @@ test("every this.foo() in ogCore.js resolves to something the class has", () => 
 test("readPageContext still provides every field this guard assumes", async () => {
   // If the seam stops setting one of these, the list above would quietly start
   // excusing a genuinely dangling call.
-  const { readPageContext } = await import("../src/util/pageContext.js");
+  const { readPageContext } = await import("../src/ogame/pageContext.js");
   const provided = new Set(
     String(readPageContext)
       .split("\n")

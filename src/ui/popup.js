@@ -1,6 +1,6 @@
 import { createDOM } from "./dom.js";
-import OGBIData from "./OGBIData.js";
-import PlayerClass from "./enum/playerClass.js";
+import OGBIData from "../store/OGBIData.js";
+import PlayerClass from "../game/playerClass.js";
 
 let resolvedPlayerClass = null;
 

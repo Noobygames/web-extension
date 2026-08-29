@@ -1,6 +1,6 @@
 /**
  * Content-context storage: per-universe keys in chrome.storage.local, with
- * Map/Set support layered on top through util/json.js.
+ * Map/Set support layered on top through store/json.js.
  */
 import test from "node:test";
 import assert from "node:assert/strict";

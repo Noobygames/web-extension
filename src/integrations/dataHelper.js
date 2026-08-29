@@ -1,4 +1,4 @@
-import { pageContextRequest } from "./service.callbackEvent.js";
+import { pageContextRequest } from "../platform/bridge.js";
 
 /**
  * The page-context half of the bridge to the universe database in the content script.

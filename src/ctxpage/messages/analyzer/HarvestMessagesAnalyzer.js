@@ -1,11 +1,11 @@
-import { getLogger } from "../../../util/logger.js";
+import { getLogger } from "../../../platform/logger.js";
 import { messagesTabs } from "../index.js";
-import OGBIData from "../../../util/OGBIData.js";
-import MessageType from "../../../util/enum/messageType.js";
-import ship from "../../../util/enum/ship.js";
-import { toFormattedNumber } from "../../../util/numbers.js";
-import { createDOM } from "../../../util/dom.js";
-import * as standardUnit from "../../../util/standardUnit.js";
+import OGBIData from "../../../store/OGBIData.js";
+import MessageType from "../../../game/messageType.js";
+import ship from "../../../game/ship.js";
+import { toFormattedNumber } from "../../../format/numbers.js";
+import { createDOM } from "../../../ui/dom.js";
+import * as standardUnit from "../../../game/standardUnit.js";
 
 class HarvestMessagesAnalyzer {
   #logger;

@@ -4,7 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { openExpeditionSlots, balanceShips, planExpeditionFleets } from "../../src/util/expeditionBalancer.js";
+import { openExpeditionSlots, balanceShips, planExpeditionFleets } from "../../src/game/expeditionBalancer.js";
 
 // --------------------------------------------------------------------------
 // openExpeditionSlots

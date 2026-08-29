@@ -90,7 +90,7 @@ if (args["stable-id"]) {
 fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
 // 4. Stamp the version constant read by ogCore.js (status bar link)
-const versionJsPath = path.join(outDir, "util", "version.js");
+const versionJsPath = path.join(outDir, "platform", "version.js");
 fs.writeFileSync(versionJsPath, fs.readFileSync(versionJsPath, "utf8").replaceAll("__VERSION__", version));
 
 // 5. Firefox: chrome-extension:// -> moz-extension:// and -chrome-* -> -moz-*

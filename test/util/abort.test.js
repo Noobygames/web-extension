@@ -24,7 +24,7 @@ import { setupBrowser, importFresh } from "../helpers/globals.js";
 /** @returns {Promise<{abort: any, browser: any}>} */
 async function loadAbort(options) {
   const browser = setupBrowser(options);
-  return { abort: await importFresh("src/util/abort.js"), browser };
+  return { abort: await importFresh("src/platform/abort.js"), browser };
 }
 
 test("the signal starts live and is shared by every caller", async () => {
@@ -161,7 +161,7 @@ test("no module assigns window.onbeforeunload any more", () => {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) walk(full);
       else if (entry.name.endsWith(".js")) {
-        // Line by line, skipping comments - util/abort.js quotes the old
+        // Line by line, skipping comments - platform/abort.js quotes the old
         // pattern in its own header to explain why it exists.
         const assigns = fs
           .readFileSync(full, "utf8")
@@ -173,5 +173,5 @@ test("no module assigns window.onbeforeunload any more", () => {
   };
   walk(srcDir);
 
-  assert.deepEqual(offenders, [], "use pageSignal() from util/abort.js instead");
+  assert.deepEqual(offenders, [], "use pageSignal() from platform/abort.js instead");
 });

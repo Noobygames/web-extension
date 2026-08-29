@@ -1,11 +1,11 @@
-import OGBIData from "./OGBIData.js";
-import { createDOM } from "./dom.js";
-import { toFormattedNumber } from "./numbers.js";
-import planetType from "./enum/planetType.js";
-import { tooltip } from "./tooltip.js";
-import OGBIObserver from "./observer.js";
-import flying from "./flying.js";
-import Translator from "./translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import { createDOM } from "../../ui/dom.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import planetType from "../../game/planetType.js";
+import { tooltip } from "../../ui/tooltip.js";
+import OGBIObserver from "../../platform/observer.js";
+import flying from "../../ogame/fleetMovements.js";
+import Translator from "../../format/i18n/translate.js";
 
 const needs = {
   ...OGBIData.needs,

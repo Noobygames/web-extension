@@ -25,7 +25,7 @@ import assert from "node:assert/strict";
 import { setupBrowser } from "../../helpers/globals.js";
 
 const bootstrap = setupBrowser();
-const OGBIData = (await import("../../../src/util/OGBIData.js")).default;
+const OGBIData = (await import("../../../src/store/OGBIData.js")).default;
 const { pantrySync } = await import("../../../src/ctxpage/pantry/index.js");
 bootstrap.cleanup();
 

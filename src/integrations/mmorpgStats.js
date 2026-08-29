@@ -1,4 +1,4 @@
-import OgamePageData from "./OgamePageData.js";
+import OgamePageData from "../ogame/pageData.js";
 
 /**
  * The community mmorpg-stat.eu profile page for one player.

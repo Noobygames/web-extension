@@ -1,4 +1,4 @@
-import { fromNative, toNative } from "../../util/json.js";
+import { fromNative, toNative } from "../../store/json.js";
 
 const storageUniverseKeyBuilder = (universe, key) => `${universe}-${key}-information`;
 

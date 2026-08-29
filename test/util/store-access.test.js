@@ -50,7 +50,7 @@ function jsFiles(dir) {
 /**
  * Source lines that are not comments.
  *
- * The header of `util/gameFormulas.js` explains the very rename this file guards,
+ * The header of `game/gameFormulas.js` explains the very rename this file guards,
  * so a naive substring search over the whole text reports its own documentation.
  */
 function codeLines(file) {
@@ -94,7 +94,7 @@ test("the page store is persisted through OGBIData, not through a `saveData()` m
 });
 
 test("a setter is never followed by a redundant Save()", () => {
-  const source = fs.readFileSync(path.join(srcRoot, "util", "OGBIData.js"), "utf8");
+  const source = fs.readFileSync(path.join(srcRoot, "store", "OGBIData.js"), "utf8");
   const setters = new Set([...source.matchAll(/^\s*set (\w+)\(/gm)].map((m) => m[1]));
   assert.ok(setters.size > 20, "the setter list was not found - did OGBIData change shape?");
 

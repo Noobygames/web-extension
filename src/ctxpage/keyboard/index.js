@@ -1,7 +1,7 @@
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import OGBIData from "../../util/OGBIData.js";
-import ogiMode from "../../util/enum/ogiMode.js";
-import debounce from "../../util/debounce.js";
+import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
+import OGBIData from "../../store/OGBIData.js";
+import ogiMode from "../../ogame/ogiMode.js";
+import debounce from "../../platform/debounce.js";
 
 /**
  * The keyboard shortcuts: planet and moon navigation, the resource fillers, the

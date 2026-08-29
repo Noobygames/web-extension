@@ -1,18 +1,18 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM } from "../../util/dom.js";
-import { toFormattedNumber } from "../../util/numbers.js";
-import * as Numbers from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import PlayerClass from "../../util/enum/playerClass.js";
+import * as DOM from "../../ui/dom.js";
+import { createDOM } from "../../ui/dom.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import * as Numbers from "../../format/numbers.js";
+import * as popupUtil from "../../ui/popup.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import OgamePageData from "../../ogame/pageData.js";
+import PlayerClass from "../../game/playerClass.js";
 import { getOption } from "../conf-options.js";
 import { openPlanetList } from "../fleetdispatch/planetList.js";
-import { tooltip } from "../../util/tooltip.js";
-import * as needsUtil from "../../util/needs.js";
-import Notifier from "../../util/Notifier.js";
-import { getShipsData } from "../../util/shipsData.js";
+import { tooltip } from "../../ui/tooltip.js";
+import * as needsUtil from "../planetbar/needs.js";
+import Notifier from "../../integrations/notifier.js";
+import { getShipsData } from "../../game/shipsData.js";
 
 /**
  * The small changes OGI makes to pages it does not otherwise own: the extra top-bar

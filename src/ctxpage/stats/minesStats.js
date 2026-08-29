@@ -1,6 +1,6 @@
-import { createDOM } from "../../util/dom.js";
-import { toFormattedNumber } from "../../util/numbers.js";
-import OGBIData from "../../util/OGBIData.js";
+import { createDOM } from "../../ui/dom.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import OGBIData from "../../store/OGBIData.js";
 
 import { statsState } from "./state.js";
 

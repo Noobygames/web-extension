@@ -19,7 +19,7 @@ const browser = setupBrowser({
   url: "https://s1-en.ogame.gameforge.com/game/index.php?page=ingame&component=fleetdispatch",
 });
 
-const OGBIData = (await import("../../src/util/OGBIData.js")).default;
+const OGBIData = (await import("../../src/store/OGBIData.js")).default;
 const { calcNeededShips, selectBestCargoShip } = await import("../../src/ctxpage/fleetdispatch/index.js");
 
 test.after(() => {

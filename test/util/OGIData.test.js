@@ -15,7 +15,7 @@ const STORAGE_KEY = "ogk-data";
 // the `json` setter. Construction-time behaviour lives in
 // OGBIData.construction.test.js - see the header there for why it is separate.
 const bootstrap = setupBrowser();
-const OGBIData = (await import("../../src/util/OGBIData.js")).default;
+const OGBIData = (await import("../../src/store/OGBIData.js")).default;
 bootstrap.cleanup();
 
 async function withOGBIData(seed, run) {

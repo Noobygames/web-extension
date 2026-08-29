@@ -52,13 +52,13 @@ const PHASE_3_MODULES = [
   "src/ctxpage/settings/index.js",
   "src/ctxpage/stats/index.js",
   "src/ctxpage/technoDetail/index.js",
-  "src/util/dataHelper.js",
-  "src/util/debounce.js",
-  "src/util/gameFormulas.js",
-  "src/util/isOwnPlanet.js",
-  "src/util/localStorageUsage.js",
-  "src/util/mmorpgStats.js",
-  "src/util/tabs.js",
+  "src/integrations/dataHelper.js",
+  "src/platform/debounce.js",
+  "src/game/gameFormulas.js",
+  "src/ogame/ownPlanets.js",
+  "src/store/usage.js",
+  "src/integrations/mmorpgStats.js",
+  "src/ui/tabs.js",
 ];
 
 /** Comments are prose; a guard that scans them reports words, not code. */

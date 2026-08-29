@@ -1,9 +1,9 @@
-import { createDOM } from "../../util/dom.js";
-import * as stalkUtil from "../../util/stalk.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import markerui from "../../util/markerui.js";
-import highlight from "../../util/highlightTarget.js";
+import { createDOM } from "../../ui/dom.js";
+import * as stalkUtil from "../stalk/stalkPanel.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import markerui from "../../ui/markers.js";
+import highlight from "../../ui/highlight.js";
 import { renderPlanet } from "./renderPlanet.js";
 
 /**

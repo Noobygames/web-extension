@@ -26,14 +26,14 @@
  *
  * Do not add features here. Fixes that cannot wait go in the new analyzers.
  */
-import { createDOM, createDOMSanitized } from "../../util/dom.js";
-import OGBIData from "../../util/OGBIData.js";
-import { getLogger } from "../../util/logger.js";
-import DateTime from "../../util/dateTime.js";
-import Translator from "../../util/translate.js";
-import { DISCORD_INVITATION_URL } from "../../util/gameConstants.js";
-import { fromFormattedNumber } from "../../util/numbers.js";
-import { pageContextRequest } from "../../util/service.callbackEvent.js";
+import { createDOM, createDOMSanitized } from "../../ui/dom.js";
+import OGBIData from "../../store/OGBIData.js";
+import { getLogger } from "../../platform/logger.js";
+import DateTime from "../../format/dateTime.js";
+import Translator from "../../format/i18n/translate.js";
+import { DISCORD_INVITATION_URL } from "../../game/gameConstants.js";
+import { fromFormattedNumber } from "../../format/numbers.js";
+import { pageContextRequest } from "../../platform/bridge.js";
 
 const logger = getLogger("message-analyzer");
 

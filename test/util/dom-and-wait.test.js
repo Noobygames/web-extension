@@ -8,11 +8,11 @@ import assert from "node:assert/strict";
 import { setupBrowser } from "../helpers/globals.js";
 // Neither module touches globals at import time, so a plain static import keeps
 // the coverage report honest (a cache-busted URL counts as a separate file).
-import * as domModule from "../../src/util/dom.js";
-import * as waitModule from "../../src/util/wait.js";
+import * as domModule from "../../src/ui/dom.js";
+import * as waitModule from "../../src/platform/wait.js";
 
 // --------------------------------------------------------------------------
-// util/dom.js
+// ui/dom.js
 // --------------------------------------------------------------------------
 
 async function withDom(run, options) {
@@ -143,7 +143,7 @@ test("createDOMSanitized only skips content that is absent, not content that is 
 test("createDOMSanitized does not mark selects the way createDOM does", async () => {
   await withSanitizer(({ createDOMSanitized }) => {
     // Deliberate: the class version never did, and no caller builds a <select>
-    // through it. Documented in util/dom.js so the difference stays a choice.
+    // through it. Documented in ui/dom.js so the difference stays a choice.
     assert.equal(createDOMSanitized("select").classList.contains("dropdownInitialized"), false);
   });
 });
@@ -219,7 +219,7 @@ test("changeOGSelect still selects when the game renders no dropdown label", asy
 });
 
 // --------------------------------------------------------------------------
-// util/wait.js
+// platform/wait.js
 // --------------------------------------------------------------------------
 
 async function withWait(run, options) {

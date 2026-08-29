@@ -1,9 +1,9 @@
-import { getLogger } from "../util/logger.js";
-import { COORDINATE_PLANET, toNumber as toNumberCoordinate } from "../util/ogame.coordinate.js";
-import { getAlliances } from "./helpers/universe.alliances.js";
-import { getPlayersHighscore, NAN_HIGHSCORE } from "./helpers/universe.highscore.js";
-import { getPlanets } from "./helpers/universe.planets.js";
-import { DEFAULT_PLAYER, getPlayers } from "./helpers/universe.players.js";
+import { getLogger } from "../platform/logger.js";
+import { COORDINATE_PLANET, toNumber as toNumberCoordinate } from "../ogame/coordinates.js";
+import { getAlliances } from "./parsers/universe.alliances.js";
+import { getPlayersHighscore, NAN_HIGHSCORE } from "./parsers/universe.highscore.js";
+import { getPlanets } from "./parsers/universe.planets.js";
+import { DEFAULT_PLAYER, getPlayers } from "./parsers/universe.players.js";
 
 const ptreLogger = getLogger("data-helper.ptre");
 

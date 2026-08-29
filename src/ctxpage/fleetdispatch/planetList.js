@@ -11,7 +11,7 @@
  * still fleet-dispatch code: every caller reaches it from a click handler on a page
  * that has a dispatcher.
  */
-import { createDOM } from "../../util/dom.js";
+import { createDOM } from "../../ui/dom.js";
 
 function openPlanetList(context, callcback, target = fleetDispatcher.targetPlanet, mission = fleetDispatcher.mission) {
   let container = createDOM("div", { class: "ogl-dialogContainer ogl-quickLinks" });

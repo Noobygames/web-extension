@@ -11,7 +11,7 @@ import {
   toArray,
   comparePosition,
   equals,
-} from "../../src/util/ogame.coordinate.js";
+} from "../../src/ogame/coordinates.js";
 
 test("type constants are distinct and stable", () => {
   // Persisted into chrome.storage as part of coordinate numbers - changing

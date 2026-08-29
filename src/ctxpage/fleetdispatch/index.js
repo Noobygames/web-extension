@@ -1,4 +1,4 @@
-import debounce from "../../util/debounce.js";
+import debounce from "../../platform/debounce.js";
 import { fleetState } from "./state.js";
 // Re-exported so ogCore.js keeps one import path for the whole page, and so the
 // split parts stay reachable from the module graph.
@@ -7,12 +7,12 @@ export { openPlanetList } from "./planetList.js";
 export { expedition } from "./expedition.js";
 export { collect, customMissions } from "./customMissions.js";
 export { cacheShipData } from "./shipData.js";
-import { getLogger } from "../../util/logger.js";
-import { getShipsData } from "../../util/shipsData.js";
-import { createDOM, createSVG } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
+import { getLogger } from "../../platform/logger.js";
+import { getShipsData } from "../../game/shipsData.js";
+import { createDOM, createSVG } from "../../ui/dom.js";
+import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
 
 /**
  * The fleet-dispatch page: the rebuilt dispatcher UI, the expedition and collect

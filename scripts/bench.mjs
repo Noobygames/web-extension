@@ -110,8 +110,8 @@ const SCAN_SELECTOR =
 // ---------------------------------------------------------------------------
 
 {
-  const { distance, flightDuration } = await import("../src/util/fleetFlight.js");
-  const { evaluateTarget } = await import("../src/util/farmEvaluator.js");
+  const { distance, flightDuration } = await import("../src/game/fleetFlight.js");
+  const { evaluateTarget } = await import("../src/game/farmEvaluator.js");
 
   const origins = Array.from({ length: 12 }, (_, i) => ({ galaxy: 1, system: i * 20 + 1, position: 8 }));
   const target = { galaxy: 3, system: 250, position: 6 };
@@ -138,7 +138,7 @@ const SCAN_SELECTOR =
 // ---------------------------------------------------------------------------
 
 {
-  const { indexClaims, claimStatus } = await import("../src/util/targetClaims.js");
+  const { indexClaims, claimStatus } = await import("../src/ctxpage/galaxy/targetClaims.js");
 
   const claims = Array.from({ length: 500 }, (_, i) => ({
     coords: `${(i % 9) + 1}:${i}:${(i % 15) + 1}`,
@@ -161,7 +161,7 @@ const SCAN_SELECTOR =
 // ---------------------------------------------------------------------------
 
 {
-  const { planHarvest } = await import("../src/util/harvestPlanner.js");
+  const { planHarvest } = await import("../src/game/harvestPlanner.js");
 
   const planets = Array.from({ length: 20 }, (_, i) => ({
     id: i,

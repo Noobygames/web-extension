@@ -1,4 +1,4 @@
-import iconMode from "./enum/iconMode.js";
+import iconMode from "./iconMode.js";
 
 function shouldDisplayIcon(mode = 4) {
   if (parseInt(mode) === iconMode.HIDDEN) {

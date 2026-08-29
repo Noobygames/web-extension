@@ -1,5 +1,5 @@
-import * as Numbers from "./numbers.js";
-import OGBIData from "./OGBIData.js";
+import * as Numbers from "../format/numbers.js";
+import OGBIData from "../store/OGBIData.js";
 
 /**
  * How many cargo ships are needed to move a pile of resources.

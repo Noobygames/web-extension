@@ -1,7 +1,7 @@
-import { createDOM } from "../../util/dom.js";
-import OGBIData from "../../util/OGBIData.js";
+import { createDOM } from "../../ui/dom.js";
+import OGBIData from "../../store/OGBIData.js";
 import { probingWarning } from "../settings/probingWarning.js";
-import { setHighlightCoords } from "../../util/highlightTarget.js";
+import { setHighlightCoords } from "../../ui/highlight.js";
 
 /**
  * One planet row for the target list and the marker overlays.

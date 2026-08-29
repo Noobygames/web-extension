@@ -12,8 +12,8 @@
  * whole 43 KB settings dialog in the boot bundle. Nothing else in the settings
  * module is reachable from the galaxy view.
  */
-import { createDOM } from "../../util/dom.js";
-import * as popupUtil from "../../util/popup.js";
+import { createDOM } from "../../ui/dom.js";
+import * as popupUtil from "../../ui/popup.js";
 
 function probingWarning() {
   const content = createDOM("div", { style: "text-align: center; width: 550px" });

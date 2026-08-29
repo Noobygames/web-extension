@@ -13,7 +13,7 @@ import {
   CRAWLER_OVERLOAD_MAX,
   CRAWLER_MAX_BONUS,
   CRAWLER_BASE_BONUS,
-} from "../../src/util/productionEngine.js";
+} from "../../src/game/productionEngine.js";
 
 // --------------------------------------------------------------------------
 // effectiveCrawlers

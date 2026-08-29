@@ -6,7 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { setupBrowser } from "../helpers/globals.js";
-import * as runContext from "../../src/util/runContext.js";
+import * as runContext from "../../src/platform/runContext.js";
 
 const CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";

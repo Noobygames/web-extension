@@ -25,7 +25,7 @@ const browser = setupBrowser({ url: "https://s1-en.ogame.gameforge.com/game/inde
 globalThis.playerId = 12345;
 
 const { messagesTabs } = await import("../../../src/ctxpage/messages/index.js");
-const OGBIData = (await import("../../../src/util/OGBIData.js")).default;
+const OGBIData = (await import("../../../src/store/OGBIData.js")).default;
 const SpyMessagesAnalyzer = (await import("../../../src/ctxpage/messages/analyzer/SpyMessagesAnalyzer.js")).default;
 const ExpeditionMessagesAnalyzer = (
   await import("../../../src/ctxpage/messages/analyzer/ExpeditionMessagesAnalyzer.js")

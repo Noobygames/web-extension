@@ -7,7 +7,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { distance, flightDuration, roundTripDuration } from "../../src/util/fleetFlight.js";
+import { distance, flightDuration, roundTripDuration } from "../../src/game/fleetFlight.js";
 
 const at = (galaxy, system, position) => ({ galaxy, system, position });
 

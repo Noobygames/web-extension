@@ -21,8 +21,8 @@
  * `OGBIData.json.empire.length`. Both were moved as they are - repairs belong in their
  * own commits, not in a move.
  */
-import { BUIDLING_INFO } from "./enum/buildingInfo.js";
-import { RESEARCH_INFO } from "./enum/researchInfo.js";
+import { BUIDLING_INFO } from "./buildingInfo.js";
+import { RESEARCH_INFO } from "./researchInfo.js";
 import {
   CRAWLER_OVERLOAD_MAX,
   GEOLOGIST_CRAWLER_BONUS,
@@ -31,9 +31,9 @@ import {
   PLASMATECH_BONUS,
   TRADER_RESOURCE_BONUS,
 } from "./gameConstants.js";
-import PlayerClass from "./enum/playerClass.js";
-import AllianceClass from "./enum/allianceClass.js";
-import OGBIData from "./OGBIData.js";
+import PlayerClass from "./playerClass.js";
+import AllianceClass from "./allianceClass.js";
+import OGBIData from "../store/OGBIData.js";
 
 export function consumption(id, lvl) {
   if (!BUIDLING_INFO[id].baseCons || !BUIDLING_INFO[id].factorCons) return 0;

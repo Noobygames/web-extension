@@ -1,6 +1,6 @@
 /** @typedef {Object} LocalizationStrings */
 
-import OgamePageData from "./OgamePageData.js";
+import OgamePageData from "../ogame/pageData.js";
 
 export function toFormattedNumber(value, precision = null, units = false) {
   const commaSeparator = ["us", "en", "ro", "zh"];

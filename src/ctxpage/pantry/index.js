@@ -1,7 +1,7 @@
-import { createDOM } from "../../util/dom.js";
-import OGBIData from "../../util/OGBIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import { ensureLZString } from "../../util/lzstring.js";
+import { createDOM } from "../../ui/dom.js";
+import OGBIData from "../../store/OGBIData.js";
+import OgamePageData from "../../ogame/pageData.js";
+import { ensureLZString } from "../../platform/lzstring.js";
 
 /**
  * Backing the local store up to a Pantry bucket, and the toast that reports it.

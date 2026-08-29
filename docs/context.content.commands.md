@@ -1,6 +1,6 @@
 # Context - Content Commands
 
-Source: `callbackEvents` [service.callbackEvent.js](../src/util/service.callbackEvent.js)
+Source: `callbackEvents` [bridge.js](../src/platform/bridge.js)
 
 [toc]
 
@@ -102,7 +102,7 @@ const xml = new DOMParser().parseFromString(response, "text/xml");
 - Promise behavior: `pageContextRequest` RESOLVES when `success === true` and REJECTS when `success === false` (e.g., unknown command/action or an error during callback execution). It is recommended to use `try/catch` or `.catch(...)`.
 - Firefox compatibility: the response is cloned with `cloneInto`; this is transparent to the consumer.
 - Arguments: parameters must be cloneable/serializable data.
-- Import alias: this document uses the alias `callbackEvents` for illustration purposes. In code you can import it as a namespace `import * as callbackEvents from "../src/util/service.callbackEvent.js";` or via named imports `import { pageContextInit, pageContextRequest } from "../src/util/service.callbackEvent.js"`.
+- Import alias: this document uses the alias `callbackEvents` for illustration purposes. In code you can import it as a namespace `import * as callbackEvents from "../src/platform/bridge.js";` or via named imports `import { pageContextInit, pageContextRequest } from "../src/platform/bridge.js"`.
 
 Error-handling example:
 

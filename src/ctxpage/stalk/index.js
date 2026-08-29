@@ -1,12 +1,12 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM } from "../../util/dom.js";
-import { toFormattedNumber } from "../../util/numbers.js";
-import OGBIData from "../../util/OGBIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import * as stalkUtil from "../../util/stalk.js";
-import dataHelper from "../../util/dataHelper.js";
-import markerui from "../../util/markerui.js";
-import { generateMMORPGLink } from "../../util/mmorpgStats.js";
+import * as DOM from "../../ui/dom.js";
+import { createDOM } from "../../ui/dom.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import OGBIData from "../../store/OGBIData.js";
+import OgamePageData from "../../ogame/pageData.js";
+import * as stalkUtil from "./stalkPanel.js";
+import dataHelper from "../../integrations/dataHelper.js";
+import markerui from "../../ui/markers.js";
+import { generateMMORPGLink } from "../../integrations/mmorpgStats.js";
 import { generateHiscoreLink, highlightTarget, stalk } from "../galaxy/index.js";
 
 /**

@@ -77,7 +77,7 @@ const CHUNK_DIR = "chunks";
  * `--prune` removes them; the build flows do not use it, because keeping the
  * readable per-file source in the package is worth more than the bytes.
  */
-const MODULE_DIRS = ["util", "ctxpage"];
+const MODULE_DIRS = ["game", "ogame", "store", "ui", "format", "platform", "integrations", "ctxpage"];
 
 const BANNER = `/*
  * Bundled by scripts/bundle.mjs. Not minified, not obfuscated.

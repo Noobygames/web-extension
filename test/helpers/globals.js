@@ -306,7 +306,7 @@ export function setupBrowser(options = {}) {
     chrome: chromeStub,
     dom,
     cleanup() {
-      // Deliberately not window.close(): modules such as util/fetching.js keep a
+      // Deliberately not window.close(): modules such as platform/fetch.js keep a
       // module-level DOMParser bound to the window of their first import, and a
       // closed window turns that into a null-dereference in later suites.
       restore(saved);
@@ -319,7 +319,7 @@ export function setupBrowser(options = {}) {
  * (`OGBIData`, `OgamePageData`, `Translator`, ...) are re-evaluated against the
  * globals of the current test instead of leaking state between tests.
  *
- * @param {string} specifier module path relative to the repository root, e.g. "src/util/OGBIData.js"
+ * @param {string} specifier module path relative to the repository root, e.g. "src/store/OGBIData.js"
  * @returns {Promise<any>}
  */
 let importCounter = 0;

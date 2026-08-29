@@ -18,7 +18,7 @@ const STORAGE_KEY = "ogk-data";
 test("an empty localStorage yields an empty object, not a crash", async () => {
   const browser = setupBrowser();
   try {
-    const fresh = (await importFresh("src/util/OGBIData.js")).default;
+    const fresh = (await importFresh("src/store/OGBIData.js")).default;
 
     assert.deepEqual(fresh.json, {});
     assert.equal(fresh.options, undefined);
@@ -31,7 +31,7 @@ test("existing data is loaded on construction", async () => {
   const browser = setupBrowser();
   try {
     globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify({ playerId: 4711, options: { fret: 203 } }));
-    const fresh = (await importFresh("src/util/OGBIData.js")).default;
+    const fresh = (await importFresh("src/store/OGBIData.js")).default;
 
     assert.equal(fresh.playerId, 4711);
     assert.deepEqual(fresh.options, { fret: 203 });
@@ -43,10 +43,10 @@ test("existing data is loaded on construction", async () => {
 test("a fresh instance sees what a previous one persisted", async () => {
   const browser = setupBrowser();
   try {
-    const first = (await importFresh("src/util/OGBIData.js")).default;
+    const first = (await importFresh("src/store/OGBIData.js")).default;
     first.technology = { 1: 20, 2: 18 };
 
-    const second = (await importFresh("src/util/OGBIData.js")).default;
+    const second = (await importFresh("src/store/OGBIData.js")).default;
     assert.deepEqual(second.technology, { 1: 20, 2: 18 });
   } finally {
     browser.cleanup();
@@ -57,7 +57,7 @@ test("corrupt localStorage content starts an empty store instead of crashing", a
   // This used to be a KNOWN BUG: the constructor called JSON.parse() without a
   // try/catch, so one truncated write took the whole page context down at module
   // evaluation - before any feature existed to recover from it.
-  // The failure is not asserted through the log: util/logger.js captures
+  // The failure is not asserted through the log: platform/logger.js captures
   // `console.error` at module evaluation, so swapping it out afterwards observes
   // nothing. The backup key written in the same catch block is the durable evidence
   // that the guard ran, and it is asserted in the next test.
@@ -65,7 +65,7 @@ test("corrupt localStorage content starts an empty store instead of crashing", a
   try {
     globalThis.localStorage.setItem(STORAGE_KEY, "{not json");
 
-    const data = (await importFresh("src/util/OGBIData.js")).default;
+    const data = (await importFresh("src/store/OGBIData.js")).default;
 
     assert.deepEqual(data.json, {}, "it starts empty rather than throwing");
   } finally {
@@ -83,7 +83,7 @@ test("the unreadable value is moved aside, not overwritten", async () => {
   try {
     globalThis.localStorage.setItem(STORAGE_KEY, "{not json");
 
-    const data = (await importFresh("src/util/OGBIData.js")).default;
+    const data = (await importFresh("src/store/OGBIData.js")).default;
     data.technology = { 1: 1 }; // any setter, to force a write-through
 
     assert.equal(globalThis.localStorage.getItem("ogk-data-corrupt"), "{not json");
@@ -97,7 +97,7 @@ test("the unreadable value is moved aside, not overwritten", async () => {
 test("an empty or absent ogk-data is not treated as corrupt", async () => {
   const browser = setupBrowser();
   try {
-    const data = (await importFresh("src/util/OGBIData.js")).default;
+    const data = (await importFresh("src/store/OGBIData.js")).default;
 
     assert.deepEqual(data.json, {});
     assert.equal(globalThis.localStorage.getItem("ogk-data-corrupt"), null, "nothing was backed up");

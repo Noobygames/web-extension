@@ -6,9 +6,9 @@
  * it. `resourceDetail()` next door is the part that runs on every page, and it
  * needs none of that - the two only ever shared a directory.
  */
-import { createDOM } from "../../util/dom.js";
-import * as popupUtil from "../../util/popup.js";
-import Translator from "../../util/translate.js";
+import { createDOM } from "../../ui/dom.js";
+import * as popupUtil from "../../ui/popup.js";
+import Translator from "../../format/i18n/translate.js";
 import { defenseOverview, fleetOverview, harvestOverview, minesOverview } from "./tables.js";
 
 /**

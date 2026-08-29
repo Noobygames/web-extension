@@ -6,7 +6,7 @@
 
 .DEFAULT_GOAL := help
 
-# Version stamped into manifest.json and util/version.js.
+# Version stamped into manifest.json and platform/version.js.
 # Empty by default: the unpacked build then falls back to the package.json
 # version, and packaging.sh falls back to its date-based version.
 # Override per invocation: make dev VERSION=9.9.9

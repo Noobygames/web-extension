@@ -68,7 +68,7 @@ To check specific names instead:
 | supplies / research   | `technologyDetails`                                                                               |
 | overview, fleetdispatch | `planet`, `spionageAmount`                                                                      |
 
-Which is why the reads are guarded rather than assumed — `src/util/shipsData.js` is the
+Which is why the reads are guarded rather than assumed — `src/game/shipsData.js` is the
 pattern to copy. An unguarded read of a page-specific global throws out of whatever is
 calling it; when that caller is `OGBeyondInfinity.start()`, the rest of the boot never runs.
 

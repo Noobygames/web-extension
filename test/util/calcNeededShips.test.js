@@ -39,8 +39,8 @@ async function withPage({ json = {}, onPage = [0, 0, 0] }, run) {
     <span id="resources_deuterium">${deuterium}</span>`;
 
   try {
-    const { calcNeededShips } = await importFresh("src/util/calcNeededShips.js");
-    const OGBIData = (await import("../../src/util/OGBIData.js")).default;
+    const { calcNeededShips } = await importFresh("src/game/calcNeededShips.js");
+    const OGBIData = (await import("../../src/store/OGBIData.js")).default;
     OGBIData.json = stored;
 
     await run(calcNeededShips);

@@ -1,11 +1,11 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM } from "../../util/dom.js";
-import { toFormattedNumber } from "../../util/numbers.js";
-import * as standardUnit from "../../util/standardUnit.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import { tooltip } from "../../util/tooltip.js";
-import flying from "../../util/flying.js";
+import * as DOM from "../../ui/dom.js";
+import { createDOM } from "../../ui/dom.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import * as standardUnit from "../../game/standardUnit.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import { tooltip } from "../../ui/tooltip.js";
+import flying from "../../ogame/fleetMovements.js";
 
 /**
  * The resource panel that replaces OGame's own numbers in the top bar, and the update

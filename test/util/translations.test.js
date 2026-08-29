@@ -3,7 +3,7 @@
  *
  * Before Phase 5 of refactoring.md there was one table, one entry per key holding
  * all six strings, so a key either existed in every language or in none. Splitting
- * it into `src/util/translations/<lang>.js` bought 67 KB off the core bundle and
+ * it into `src/format/i18n/translations/<lang>.js` bought 67 KB off the core bundle and
  * cost that guarantee: adding a string is now six edits, and forgetting five of
  * them is invisible - the missing languages fall back to English and look fine to
  * whoever wrote the key.
@@ -16,12 +16,12 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
-import de from "../../src/util/translations/de.js";
-import en from "../../src/util/translations/en.js";
-import es from "../../src/util/translations/es.js";
-import fr from "../../src/util/translations/fr.js";
-import tr from "../../src/util/translations/tr.js";
-import br from "../../src/util/translations/br.js";
+import de from "../../src/format/i18n/translations/de.js";
+import en from "../../src/format/i18n/translations/en.js";
+import es from "../../src/format/i18n/translations/es.js";
+import fr from "../../src/format/i18n/translations/fr.js";
+import tr from "../../src/format/i18n/translations/tr.js";
+import br from "../../src/format/i18n/translations/br.js";
 
 const tables = { de, en, es, fr, tr, br };
 const TYPES = ["tech", "res", "text"];
@@ -82,7 +82,10 @@ test("translate.js keeps English static and the other five behind import()", () 
   // The split only pays if `en` is the one that ships in the core: it is the
   // fallback for every key, so a dynamic `en` would make every lookup wait for a
   // fetch. And a computed specifier would bundle to nothing - see importLanguage().
-  const source = fs.readFileSync(path.resolve(import.meta.dirname, "..", "..", "src", "util", "translate.js"), "utf8");
+  const source = fs.readFileSync(
+    path.resolve(import.meta.dirname, "..", "..", "src", "format", "i18n", "translate.js"),
+    "utf8"
+  );
 
   assert.ok(source.includes('import EN from "./translations/en.js";'), "English is no longer statically imported");
   for (const lang of ["de", "es", "fr", "tr", "br"]) {

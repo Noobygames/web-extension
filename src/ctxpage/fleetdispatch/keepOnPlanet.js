@@ -1,8 +1,8 @@
-import { createDOM, createDOMSanitized } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import OGBIData from "../../util/OGBIData.js";
-import Translator from "../../util/translate.js";
-import shipEnum from "../../util/enum/ship.js";
+import { createDOM, createDOMSanitized } from "../../ui/dom.js";
+import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
+import OGBIData from "../../store/OGBIData.js";
+import Translator from "../../format/i18n/translate.js";
+import shipEnum from "../../game/ship.js";
 
 /**
  * The "keep on planet" dialog: how many resources and ships a planet is never to send

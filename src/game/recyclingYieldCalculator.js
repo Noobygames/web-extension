@@ -1,5 +1,5 @@
 import { fleetCost } from "./fleetCost.js";
-import shipEnum from "./enum/ship.js";
+import shipEnum from "./ship.js";
 import { defenceCost } from "./defenceCost.js";
 
 class RecyclingYieldCalculator {

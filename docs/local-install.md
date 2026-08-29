@@ -64,7 +64,7 @@ install stable. Deleting it changes the id and orphans the stored data, so keep 
 
 Same as `make dev` (both call `scripts/build-unpacked.mjs`):
 
-- stamps the real version into `manifest.json` and `util/version.js` (the source carries `0.0.0`
+- stamps the real version into `manifest.json` and `platform/version.js` (the source carries `0.0.0`
   and `__VERSION__` placeholders, which is why `src/` cannot be loaded directly)
 - drops `manifest-firefox.json`
 - removes `update_url` — Chromium ignores or rejects it for unpacked builds

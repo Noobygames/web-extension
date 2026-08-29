@@ -1,10 +1,10 @@
-import * as ptreService from "./service.ptre.js";
-import OgamePageData from "./OgamePageData.js";
-import Translator from "./translate.js";
-import { createDOM } from "./dom.js";
-import { formatToUnits } from "./numbers.js";
-import { popup } from "./popup.js";
-import OGBIData from "./OGBIData.js";
+import * as ptreService from "./service.js";
+import OgamePageData from "../../ogame/pageData.js";
+import Translator from "../../format/i18n/translate.js";
+import { createDOM } from "../../ui/dom.js";
+import { formatToUnits } from "../../format/numbers.js";
+import { popup } from "../../ui/popup.js";
+import OGBIData from "../../store/OGBIData.js";
 
 const universe = window.location.host.replace(/\D/g, "");
 

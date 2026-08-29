@@ -1,4 +1,4 @@
-import defenceCosts from "./enum/defenceCosts.js";
+import defenceCosts from "./defenceCosts.js";
 
 /**
  *

@@ -39,7 +39,7 @@ async function buildBundles() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ogi-bundle-"));
   fs.cpSync(path.join(projectRoot, "src"), dir, { recursive: true });
 
-  const versionJs = path.join(dir, "util", "version.js");
+  const versionJs = path.join(dir, "platform", "version.js");
   fs.writeFileSync(versionJs, fs.readFileSync(versionJs, "utf8").replaceAll("__VERSION__", "9.9.9"));
 
   return { dir, written: await bundle(dir) };
@@ -98,7 +98,7 @@ test("the page-specific code is in chunks, not in the file every page loads", ()
     "chunks/galaxyView.js",
     // Five of the six language tables. English stays in the entry as the fallback
     // for every key; the other five were 67 KB nobody could read, and they are the
-    // reason the entry is under 500 KB at all. See util/translate.js.
+    // reason the entry is under 500 KB at all. See format/i18n/translate.js.
     "chunks/de.js",
     "chunks/es.js",
     "chunks/fr.js",

@@ -10,7 +10,7 @@ import {
   planPlanetHarvest,
   planHarvest,
   CARGO_SHIP_IDS,
-} from "../../src/util/harvestPlanner.js";
+} from "../../src/game/harvestPlanner.js";
 
 const CAPACITIES = { 202: 5000, 203: 25000, 219: 10000 };
 

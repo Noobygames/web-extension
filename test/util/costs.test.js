@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { fleetCost } from "../../src/util/fleetCost.js";
-import { defenceCost } from "../../src/util/defenceCost.js";
-import shipCosts from "../../src/util/enum/shipCosts.js";
-import defenceCosts from "../../src/util/enum/defenceCosts.js";
-import ship from "../../src/util/enum/ship.js";
-import defence from "../../src/util/enum/defence.js";
-import recyclingYieldCalculator from "../../src/util/recyclingYieldCalculator.js";
+import { fleetCost } from "../../src/game/fleetCost.js";
+import { defenceCost } from "../../src/game/defenceCost.js";
+import shipCosts from "../../src/game/shipCosts.js";
+import defenceCosts from "../../src/game/defenceCosts.js";
+import ship from "../../src/game/ship.js";
+import defence from "../../src/game/defence.js";
+import recyclingYieldCalculator from "../../src/game/recyclingYieldCalculator.js";
 
 test("ship ids match the OGame technology ids", () => {
   // These leak into stored data and into DOM selectors; a typo here is silent.

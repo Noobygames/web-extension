@@ -1,8 +1,8 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
+import * as DOM from "../../ui/dom.js";
+import { createDOM } from "../../ui/dom.js";
+import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
 
 import { statsState } from "./state.js";
 

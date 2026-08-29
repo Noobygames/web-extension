@@ -25,7 +25,7 @@ import {
   isBuildPage,
   isLeveledBuildingPage,
   isResearchPage,
-} from "../../src/util/enum/gamePages.js";
+} from "../../src/ogame/pages.js";
 
 const projectRoot = path.resolve(import.meta.dirname, "..", "..");
 

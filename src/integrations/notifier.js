@@ -1,8 +1,8 @@
-import { getLogger } from "./logger.js";
-import OGBIData from "./OGBIData.js";
-import Translator from "./translate.js";
-import MissionType from "./enum/missionType.js";
-import NotificationPriority from "./enum/NotificationPriority.js";
+import { getLogger } from "../platform/logger.js";
+import OGBIData from "../store/OGBIData.js";
+import Translator from "../format/i18n/translate.js";
+import MissionType from "../game/missionType.js";
+import NotificationPriority from "./notificationPriority.js";
 
 class Notifier {
   constructor() {

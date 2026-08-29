@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { toJSON, fromJSON, toNative, fromNative, extractJSON, InvalidJSONError } from "../../src/util/json.js";
+import { toJSON, fromJSON, toNative, fromNative, extractJSON, InvalidJSONError } from "../../src/store/json.js";
 
 test("toJSON/fromJSON round-trips plain values unchanged", () => {
   const value = { a: 1, b: "two", c: [3, null, true], d: { nested: false } };

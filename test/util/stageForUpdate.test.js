@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { setupBrowser } from "../helpers/globals.js";
-import { watchForEmpireChanges, UPDATE_TRIGGER_SELECTOR } from "../../src/util/stageForUpdate.js";
+import { watchForEmpireChanges, UPDATE_TRIGGER_SELECTOR } from "../../src/platform/domChanges.js";
 
 function withPage(html, run) {
   const browser = setupBrowser();

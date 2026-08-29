@@ -1,10 +1,10 @@
-import { createDOM, createSVG } from "../../util/dom.js";
-import * as wait from "../../util/wait.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import { pageSignal } from "../../util/abort.js";
+import { createDOM, createSVG } from "../../ui/dom.js";
+import * as wait from "../../platform/wait.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import { pageSignal } from "../../platform/abort.js";
 import { updateresourceDetail } from "../empireOverview/index.js";
-import ogiMode from "../../util/enum/ogiMode.js";
+import ogiMode from "../../ogame/ogiMode.js";
 // Re-exported so ogCore.js keeps one import path per page, and so the split parts
 // stay reachable from the module graph.
 export { updateLifeform } from "./lifeform.js";
@@ -12,8 +12,8 @@ export { ProcessProductionProgressData, updateProductionProgress } from "./produ
 
 import { updateEmpireProduction, updateProductionProgress } from "./production.js";
 import { updateLifeformPlanetBonus } from "./lifeform.js";
-import { watchForEmpireChanges } from "../../util/stageForUpdate.js";
-import Notifier from "../../util/Notifier.js";
+import { watchForEmpireChanges } from "../../platform/domChanges.js";
+import Notifier from "../../integrations/notifier.js";
 
 /**
  * Reading the empire: the background fetch of the standalone empire page and the

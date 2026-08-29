@@ -1,5 +1,5 @@
 /**
- * `util/tabs.js` - the tab strip behind the statistics popup.
+ * `ui/tabs.js` - the tab strip behind the statistics popup.
  *
  * It came out of `ogCore.js` in Phase 3 of refactoring.md as the first piece of that
  * file's UI to get any coverage at all. The behaviour worth pinning is that panels
@@ -11,7 +11,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { setupBrowser } from "../helpers/globals.js";
-import { tabs } from "../../src/util/tabs.js";
+import { tabs } from "../../src/ui/tabs.js";
 
 function withPage(run) {
   const browser = setupBrowser();

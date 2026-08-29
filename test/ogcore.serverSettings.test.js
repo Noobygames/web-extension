@@ -34,7 +34,7 @@ const INTRO_URL = "https://s1-en.ogame.gameforge.com/game/index.php?page=ingame&
 /** Set by each test before calling `updateServerSettings()`; read by the mock below. */
 let nextServerDataXml = "";
 
-mock.module(new URL("../src/util/service.callbackEvent.js", import.meta.url).href, {
+mock.module(new URL("../src/platform/bridge.js", import.meta.url).href, {
   namedExports: {
     pageContextInit: () => {},
     pageContextRequest: async (command, action) => {
@@ -49,7 +49,7 @@ mock.module(new URL("../src/util/service.callbackEvent.js", import.meta.url).hre
 const bootstrap = setupBrowser({ url: INTRO_URL });
 document.documentElement.dataset.ogiCallbackEventToken = "0123456789ab";
 const { OGBeyondInfinity } = await import("../src/ogCore.js");
-const OGBIData = (await import("../src/util/OGBIData.js")).default;
+const OGBIData = (await import("../src/store/OGBIData.js")).default;
 bootstrap.cleanup();
 
 /**

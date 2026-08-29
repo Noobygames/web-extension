@@ -1,7 +1,7 @@
-import missionType from "./enum/missionType.js";
-import * as needsUtil from "./needs.js";
-import OGBIData from "./OGBIData.js";
-import { fromFormattedNumber } from "./numbers.js";
+import missionType from "../game/missionType.js";
+import * as needsUtil from "../ctxpage/planetbar/needs.js";
+import OGBIData from "../store/OGBIData.js";
+import { fromFormattedNumber } from "../format/numbers.js";
 
 const isOwnPlanet = (coords) => {
   const planetList = document.getElementById("planetList").children;

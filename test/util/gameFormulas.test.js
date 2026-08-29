@@ -1,5 +1,5 @@
 /**
- * `util/gameFormulas.js` - the game's arithmetic.
+ * `game/gameFormulas.js` - the game's arithmetic.
  *
  * These began life in `test/ogCore.calculations.test.js`, pinned against
  * `OGBeyondInfinity.prototype`. Phase 3 of refactoring.md moved the functions into this
@@ -18,7 +18,7 @@ import { setupBrowser } from "../helpers/globals.js";
 
 const browser = setupBrowser();
 
-const OGBIData = (await import("../../src/util/OGBIData.js")).default;
+const OGBIData = (await import("../../src/store/OGBIData.js")).default;
 const {
   consumption,
   minesProduction,
@@ -30,7 +30,7 @@ const {
   roiAstrophysics,
   roiMine,
   getBestRoi,
-} = await import("../../src/util/gameFormulas.js");
+} = await import("../../src/game/gameFormulas.js");
 
 test.after(() => browser.cleanup());
 

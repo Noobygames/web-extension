@@ -1,15 +1,15 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM } from "../../util/dom.js";
-import * as wait from "../../util/wait.js";
-import * as ptreService from "../../util/service.ptre.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import dataHelper from "../../util/dataHelper.js";
+import * as DOM from "../../ui/dom.js";
+import { createDOM } from "../../ui/dom.js";
+import * as wait from "../../platform/wait.js";
+import * as ptreService from "../../integrations/ptre/service.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import OgamePageData from "../../ogame/pageData.js";
+import dataHelper from "../../integrations/dataHelper.js";
 import { getOption } from "../conf-options.js";
-import { CLAIM_FREE, claimCssClass, claimStatus, indexClaims } from "../../util/targetClaims.js";
+import { CLAIM_FREE, claimCssClass, claimStatus, indexClaims } from "./targetClaims.js";
 import { renderPlanet } from "./renderPlanet.js";
-import { pageContextRequest } from "../../util/service.callbackEvent.js";
+import { pageContextRequest } from "../../platform/bridge.js";
 import { addTemplateSelector } from "../fleetdispatch/templates.js";
 import { addMarkerUI, generateHiscoreLink, getMarkedPlayers, highlightTarget, stalk, targetList } from "./index.js";
 

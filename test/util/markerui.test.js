@@ -1,5 +1,5 @@
 /**
- * `util/markerui.js` - the colour-marker picker.
+ * `ui/markers.js` - the colour-marker picker.
  *
  * `add()` used to carry two parameters it never read, `_context` first and `_moon` last.
  * `SpyMessagesAnalyzer` called it without the leading one, so every argument shifted:
@@ -17,8 +17,8 @@ const browser = setupBrowser({
   ogameVersion: "13.0.0",
 });
 
-const OGBIData = (await import("../../src/util/OGBIData.js")).default;
-const Markerui = (await import("../../src/util/markerui.js")).default;
+const OGBIData = (await import("../../src/store/OGBIData.js")).default;
+const Markerui = (await import("../../src/ui/markers.js")).default;
 
 test.after(() => browser.cleanup());
 

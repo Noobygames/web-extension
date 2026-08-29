@@ -1,8 +1,8 @@
 import { getOption, setOption } from "../conf-options.js";
-import * as DOM from "../../util/dom.js";
-import OGBIData from "../../util/OGBIData.js";
-import OGIObserver from "../../util/observer.js";
-import Translator from "../../util/translate.js";
+import * as DOM from "../../ui/dom.js";
+import OGBIData from "../../store/OGBIData.js";
+import OGIObserver from "../../platform/observer.js";
+import Translator from "../../format/i18n/translate.js";
 
 export function addTemplateSelector(templateDivId, templateType, updateCallback) {
   const addMxSelectors = (divId, type) => {

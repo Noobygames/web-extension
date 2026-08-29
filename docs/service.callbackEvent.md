@@ -1,6 +1,6 @@
 # Service: Callback Event Bridge
 
-Source: [`src/util/service.callbackEvent.js`](../src/util/service.callbackEvent.js)
+Source: [`src/platform/bridge.js`](../src/platform/bridge.js)
 
 This module implements a communication bridge between the Page Context (code running on the page) and the Content Context (the extension content script) using `CustomEvent` and a shared token stored in `document.documentElement.dataset`.
 
@@ -96,7 +96,7 @@ Limitations:
 ### In the content script (registering actions)
 
 ```ts
-import { contentContextInit } from "../util/service.callbackEvent.js";
+import { contentContextInit } from "../platform/bridge.js";
 import { getExpeditionType } from "./callbacks/expedition-type.js";
 
 contentContextInit({
@@ -115,7 +115,7 @@ contentContextInit({
 ### On the page (consuming)
 
 ```ts
-import { pageContextInit, pageContextRequest } from "../util/service.callbackEvent.js";
+import { pageContextInit, pageContextRequest } from "../platform/bridge.js";
 
 pageContextInit();
 

@@ -26,7 +26,7 @@
  * @property {number} mission
  * @property {number} ship
  */
-import { getLogger } from "../util/logger.js";
+import { getLogger } from "../platform/logger.js";
 
 const log = getLogger("conf-options");
 

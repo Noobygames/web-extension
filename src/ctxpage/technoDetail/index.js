@@ -1,20 +1,20 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as wait from "../../util/wait.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import AllianceClass from "../../util/enum/allianceClass.js";
-import PlayerClass from "../../util/enum/playerClass.js";
-import shipEnum from "../../util/enum/ship.js";
-import * as needsUtil from "../../util/needs.js";
-import * as time from "../../util/time.js";
+import * as DOM from "../../ui/dom.js";
+import { createDOM } from "../../ui/dom.js";
+import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
+import * as wait from "../../platform/wait.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import AllianceClass from "../../game/allianceClass.js";
+import PlayerClass from "../../game/playerClass.js";
+import shipEnum from "../../game/ship.js";
+import * as needsUtil from "../planetbar/needs.js";
+import * as time from "../../format/time.js";
 import {
   ENGINEER_ENERGY_BONUS,
   IONTECHNOLOGY_BONUS,
   OFFICER_ENERGY_BONUS,
   TRADER_ENERGY_BONUS,
-} from "../../util/gameConstants.js";
+} from "../../game/gameConstants.js";
 import {
   building,
   consumption,
@@ -25,8 +25,8 @@ import {
   roiLfResearch,
   roiMine,
   roiPlasmatechnology,
-} from "../../util/gameFormulas.js";
-import { isBuildPage, isLeveledBuildingPage, isResearchPage } from "../../util/enum/gamePages.js";
+} from "../../game/gameFormulas.js";
+import { isBuildPage, isLeveledBuildingPage, isResearchPage } from "../../ogame/pages.js";
 
 /**
  * The detail panel OGame opens for a building or a technology, with OGI's additions:

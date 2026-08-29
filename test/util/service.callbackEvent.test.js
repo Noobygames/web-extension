@@ -19,7 +19,7 @@ const DATASET_NAME = "ogiCallbackEventToken";
 /** Boots a page, runs contentContextInit() then pageContextInit() on it. */
 async function installBridge(callbackCommandMap, options = {}) {
   const browser = setupBrowser({ chrome: true, ...options });
-  const bridge = await importFresh("src/util/service.callbackEvent.js");
+  const bridge = await importFresh("src/platform/bridge.js");
 
   bridge.contentContextInit(callbackCommandMap);
   const contentToken = browser.document.documentElement.dataset[DATASET_NAME];
@@ -36,7 +36,7 @@ test("contentContextInit refuses to run when chrome.runtime is missing", async (
   const browser = setupBrowser({ chrome: true });
   try {
     delete globalThis.chrome.runtime;
-    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const bridge = await importFresh("src/platform/bridge.js");
     assert.throws(() => bridge.contentContextInit({}), /Invalid context execution/);
   } finally {
     browser.cleanup();
@@ -50,7 +50,7 @@ test("contentContextInit reports its own error when there is no chrome at all", 
   // already got this right (reads `window.chrome`, not the bare global).
   const browser = setupBrowser({ chrome: false });
   try {
-    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const bridge = await importFresh("src/platform/bridge.js");
     assert.throws(
       () => bridge.contentContextInit({}),
       (error) => {
@@ -67,7 +67,7 @@ test("contentContextInit reports its own error when there is no chrome at all", 
 test("contentContextInit publishes a token on the document element", async () => {
   const browser = setupBrowser({ chrome: true });
   try {
-    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const bridge = await importFresh("src/platform/bridge.js");
     bridge.contentContextInit({});
 
     const token = browser.document.documentElement.dataset[DATASET_NAME];
@@ -80,7 +80,7 @@ test("contentContextInit publishes a token on the document element", async () =>
 test("contentContextInit refuses a second initialisation", async () => {
   const browser = setupBrowser({ chrome: true });
   try {
-    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const bridge = await importFresh("src/platform/bridge.js");
     bridge.contentContextInit({});
     assert.throws(() => bridge.contentContextInit({}), /already initialized/);
   } finally {
@@ -91,7 +91,7 @@ test("contentContextInit refuses a second initialisation", async () => {
 test("pageContextInit refuses to run inside an extension context", async () => {
   const browser = setupBrowser({ chrome: true });
   try {
-    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const bridge = await importFresh("src/platform/bridge.js");
     bridge.contentContextInit({});
     assert.throws(() => bridge.pageContextInit(), /Invalid context execution/);
   } finally {
@@ -102,7 +102,7 @@ test("pageContextInit refuses to run inside an extension context", async () => {
 test("pageContextInit refuses to run before the content script initialised", async () => {
   const browser = setupBrowser({ chrome: false });
   try {
-    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const bridge = await importFresh("src/platform/bridge.js");
     assert.throws(() => bridge.pageContextInit(), /not initialized/);
   } finally {
     browser.cleanup();
@@ -306,7 +306,7 @@ test("responses are cloned with cloneInto on Firefox", async () => {
   });
 
   try {
-    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const bridge = await importFresh("src/platform/bridge.js");
     bridge.contentContextInit({ ptre: { galaxy: () => "cloned" } });
 
     delete globalThis.chrome;
@@ -373,7 +373,7 @@ test("a request nobody listens for is rejected rather than left hanging", async 
   // nor rejected, so the caller and everything awaiting it stalled with no error
   // anywhere. There is now a 30 s deadlock guard.
   const browser = setupBrowser({ chrome: true });
-  const bridge = await importFresh("src/util/service.callbackEvent.js");
+  const bridge = await importFresh("src/platform/bridge.js");
   const token = bridge.createCallbackToken();
   browser.document.documentElement.dataset[DATASET_NAME] = token;
 
@@ -432,7 +432,7 @@ test("a request that gets its reply does not fire the timeout", async (t) => {
 test("contentContextInit accepts a token minted by the caller", async () => {
   const browser = setupBrowser({ chrome: true });
   try {
-    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const bridge = await importFresh("src/platform/bridge.js");
     const token = bridge.createCallbackToken();
     browser.document.documentElement.dataset[DATASET_NAME] = token;
 
@@ -448,7 +448,7 @@ test("contentContextInit accepts a token minted by the caller", async () => {
 test("a preset token still routes a request end to end", async () => {
   const browser = setupBrowser({ chrome: true });
   try {
-    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const bridge = await importFresh("src/platform/bridge.js");
     const token = bridge.createCallbackToken();
     browser.document.documentElement.dataset[DATASET_NAME] = token;
     bridge.contentContextInit({ ptre: { galaxy: () => "routed" } }, token);
@@ -470,7 +470,7 @@ test("the page context may consume the token before the content script registers
   // evaluated. contentContextInit() must not read the dataset in that case.
   const browser = setupBrowser({ chrome: true });
   try {
-    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const bridge = await importFresh("src/platform/bridge.js");
     const token = bridge.createCallbackToken();
     browser.document.documentElement.dataset[DATASET_NAME] = token;
 
@@ -498,7 +498,7 @@ test("the page context may consume the token before the content script registers
 test("a second contentContextInit is refused even with a preset token", async () => {
   const browser = setupBrowser({ chrome: true });
   try {
-    const bridge = await importFresh("src/util/service.callbackEvent.js");
+    const bridge = await importFresh("src/platform/bridge.js");
     const token = bridge.createCallbackToken();
     bridge.contentContextInit({}, token);
     assert.throws(() => bridge.contentContextInit({}, token), /already initialized/);

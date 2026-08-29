@@ -1,4 +1,4 @@
-import planetType from "./enum/planetType.js";
+import planetType from "../game/planetType.js";
 
 /**
  * Singleton view over the `<meta name="ogame-*">` tags the game puts in `<head>`.

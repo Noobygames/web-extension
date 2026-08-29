@@ -1,9 +1,9 @@
-import { createDOM } from "../../util/dom.js";
-import { tooltip } from "../../util/tooltip.js";
-import Translator from "../../util/translate.js";
-import Player from "../../util/player.js";
-import OGBIObserver from "../../util/observer.js";
-import { getLogger } from "../../util/logger.js";
+import { createDOM } from "../../ui/dom.js";
+import { tooltip } from "../../ui/tooltip.js";
+import Translator from "../../format/i18n/translate.js";
+import Player from "../stalk/player.js";
+import OGBIObserver from "../../platform/observer.js";
+import { getLogger } from "../../platform/logger.js";
 
 /**
  * Chat enhancements - page context.

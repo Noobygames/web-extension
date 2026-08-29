@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import { setupBrowser } from "../helpers/globals.js";
 
 const bootstrap = setupBrowser();
-const OGBIData = (await import("../../src/util/OGBIData.js")).default;
+const OGBIData = (await import("../../src/store/OGBIData.js")).default;
 const { cacheShipData, mapShipsData } = await import("../../src/ctxpage/fleetdispatch/shipData.js");
 bootstrap.cleanup();
 

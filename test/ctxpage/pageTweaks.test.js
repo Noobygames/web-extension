@@ -20,7 +20,7 @@ const browser = setupBrowser({
   ogameVersion: "13.0.0",
 });
 
-const OGBIData = (await import("../../src/util/OGBIData.js")).default;
+const OGBIData = (await import("../../src/store/OGBIData.js")).default;
 const { checkDebris } = await import("../../src/ctxpage/pageTweaks/index.js");
 
 test.after(() => browser.cleanup());

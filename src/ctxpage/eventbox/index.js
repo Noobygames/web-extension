@@ -1,11 +1,11 @@
-import { createDOM } from "../../util/dom.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
+import { createDOM } from "../../ui/dom.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
 import { updateresourceDetail } from "../empireOverview/index.js";
 import { updateEmpireData } from "../empire/index.js";
-import flying from "../../util/flying.js";
-import * as wait from "../../util/wait.js";
-import { getLogger } from "../../util/logger.js";
+import flying from "../../ogame/fleetMovements.js";
+import * as wait from "../../platform/wait.js";
+import { getLogger } from "../../platform/logger.js";
 
 const logger = getLogger("eventBox");
 

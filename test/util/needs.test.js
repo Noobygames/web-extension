@@ -26,7 +26,7 @@ const flyingFixture = {
   },
 };
 
-mock.module(new URL("../../src/util/flying.js", import.meta.url).href, { defaultExport: () => flyingFixture });
+mock.module(new URL("../../src/ogame/fleetMovements.js", import.meta.url).href, { defaultExport: () => flyingFixture });
 
 // needs.js reads `document` at import time (it registers a MutationObserver on
 // #eventboxContent immediately unless the document is still loading), and
@@ -38,8 +38,8 @@ const bootstrap = setupBrowser({
     <div id="eventboxContent"></div>
   `,
 });
-const OGBIData = (await import("../../src/util/OGBIData.js")).default;
-const needsUtil = await import("../../src/util/needs.js");
+const OGBIData = (await import("../../src/store/OGBIData.js")).default;
+const needsUtil = await import("../../src/ctxpage/planetbar/needs.js");
 bootstrap.cleanup();
 
 test("display() leaves OGBIData.json.flying alone", () => {

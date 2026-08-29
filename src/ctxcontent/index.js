@@ -1,10 +1,10 @@
-import { getLogger } from "../util/logger.js";
-import { injectScript } from "../util/runContext.js";
-import { contentContextInit } from "../util/service.callbackEvent.js";
-import { suppressAbortRejections } from "../util/abort.js";
-import * as wait from "../util/wait.js";
+import { getLogger } from "../platform/logger.js";
+import { injectScript } from "../platform/runContext.js";
+import { contentContextInit } from "../platform/bridge.js";
+import { suppressAbortRejections } from "../platform/abort.js";
+import * as wait from "../platform/wait.js";
 import { getExpeditionType } from "./callbacks/expedition-type.js";
-import { getServerDataXml } from "./helpers/universe.data.js";
+import { getServerDataXml } from "./parsers/universe.data.js";
 import { DataHelper } from "./data-helper.js";
 
 const mainLogger = getLogger();

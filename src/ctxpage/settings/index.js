@@ -1,16 +1,16 @@
-import * as DOM from "../../util/dom.js";
-import { createDOM, createSVG } from "../../util/dom.js";
-import { toFormattedNumber, fromFormattedNumber } from "../../util/numbers.js";
-import * as popupUtil from "../../util/popup.js";
-import Translator from "../../util/translate.js";
-import OGBIData from "../../util/OGBIData.js";
-import OgamePageData from "../../util/OgamePageData.js";
-import VERSION from "../../util/version.js";
+import * as DOM from "../../ui/dom.js";
+import { createDOM, createSVG } from "../../ui/dom.js";
+import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
+import * as popupUtil from "../../ui/popup.js";
+import Translator from "../../format/i18n/translate.js";
+import OGBIData from "../../store/OGBIData.js";
+import OgamePageData from "../../ogame/pageData.js";
+import VERSION from "../../platform/version.js";
 import { getOption, setOption } from "../conf-options.js";
 import { applyWideLayout, normalizeZoomFactor } from "../wide-layout.js";
 import { keepOnPlanetDialog } from "../fleetdispatch/keepOnPlanet.js";
-import { getLocalStorageSize, purgeLocalStorage } from "../../util/localStorageUsage.js";
-import { pageContextRequest } from "../../util/service.callbackEvent.js";
+import { getLocalStorageSize, purgeLocalStorage } from "../../store/usage.js";
+import { pageContextRequest } from "../../platform/bridge.js";
 
 /**
  * The settings dialog, the first-run welcome popup, and the notice explaining why the

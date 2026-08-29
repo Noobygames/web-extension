@@ -1,15 +1,15 @@
-import { cleanValue } from "../../../../util/cleanValue.js";
-import { pageSignal } from "../../../../util/abort.js";
-import { calcNeededShips } from "../../../../util/calcNeededShips.js";
-import * as DOM from "../../../../util/dom.js";
-import ship from "../../../../util/enum/ship.js";
-import planetType from "../../../../util/enum/planetType.js";
-import Translator from "../../../../util/translate.js";
-import OGBIData from "../../../../util/OGBIData.js";
-import RecyclingYieldCalculator from "../../../../util/recyclingYieldCalculator.js";
-import * as standardUnit from "../../../../util/standardUnit.js";
-import { toFormattedNumber } from "../../../../util/numbers.js";
-import * as popupUtil from "../../../../util/popup.js";
+import { cleanValue } from "../../../../format/text.js";
+import { pageSignal } from "../../../../platform/abort.js";
+import { calcNeededShips } from "../../../../game/calcNeededShips.js";
+import * as DOM from "../../../../ui/dom.js";
+import ship from "../../../../game/ship.js";
+import planetType from "../../../../game/planetType.js";
+import Translator from "../../../../format/i18n/translate.js";
+import OGBIData from "../../../../store/OGBIData.js";
+import RecyclingYieldCalculator from "../../../../game/recyclingYieldCalculator.js";
+import * as standardUnit from "../../../../game/standardUnit.js";
+import { toFormattedNumber } from "../../../../format/numbers.js";
+import * as popupUtil from "../../../../ui/popup.js";
 
 export class SpyReport {
   get date() {

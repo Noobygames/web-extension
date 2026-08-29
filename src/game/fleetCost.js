@@ -1,4 +1,4 @@
-import shipCosts from "./enum/shipCosts.js";
+import shipCosts from "./shipCosts.js";
 
 /**
  *

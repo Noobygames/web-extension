@@ -11,11 +11,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import RecyclingYieldCalculator from "../../src/util/recyclingYieldCalculator.js";
-import ship from "../../src/util/enum/ship.js";
-import defence from "../../src/util/enum/defence.js";
+import RecyclingYieldCalculator from "../../src/game/recyclingYieldCalculator.js";
+import ship from "../../src/game/ship.js";
+import defence from "../../src/game/defence.js";
 
-// Recycler and Gauss Cannon (util/enum/shipCosts.js, util/enum/defenceCosts.js) both
+// Recycler and Gauss Cannon (game/shipCosts.js, game/defenceCosts.js) both
 // cost non-zero deuterium, so they are enough to prove the switch actually zeroes it
 // rather than the cost happening to be zero already.
 const RECYCLER = ship.Recycler;

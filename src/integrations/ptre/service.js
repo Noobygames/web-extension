@@ -1,5 +1,5 @@
-import { getLogger } from "./logger.js";
-import { pageSignal, isAbortError } from "./abort.js";
+import { getLogger } from "../../platform/logger.js";
+import { pageSignal, isAbortError } from "../../platform/abort.js";
 
 const logger = getLogger("service.ptre");
 

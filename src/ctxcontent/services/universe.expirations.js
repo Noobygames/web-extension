@@ -1,4 +1,4 @@
-import { fromNative, toNative } from "../../util/json.js";
+import { fromNative, toNative } from "../../store/json.js";
 
 /**
  * @type {Map<string, Map<string, number>>}
