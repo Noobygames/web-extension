@@ -8834,6 +8834,12 @@ li.resource {
   grid-template-columns: repeat(5, 1fr);
 }
 
+.ogl-tooltip .ogk-expedition-explain {
+  max-width: 260px;
+  margin-bottom: 8px;
+  color: #9fb2c4;
+}
+
 .ogl-tooltip .ogk-expedition-options {
   width: auto;
   display: grid;

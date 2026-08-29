@@ -238,13 +238,13 @@ class SpyMessagesAnalyzer {
     thead.appendChild(header);
 
     header.appendChild(createDOM("th", {}, "#"));
-    header.appendChild(createDOM("th", { "data-filter": "DATE" }, "Date (*)"));
-    header.appendChild(createDOM("th", { "data-filter": "COORDS" }, "Coords"));
-    header.appendChild(createDOM("th", {}, "Name (+)"));
-    header.appendChild(createDOM("th", { "data-filter": "$" }, "Gain"));
+    header.appendChild(createDOM("th", { "data-filter": "DATE" }, `${Translator.translate(97)} (*)`));
+    header.appendChild(createDOM("th", { "data-filter": "COORDS" }, Translator.translate(98)));
+    header.appendChild(createDOM("th", {}, `${Translator.translate(73)} (+)`));
+    header.appendChild(createDOM("th", { "data-filter": "$" }, Translator.translate(265)));
     header.appendChild(createDOM("th", { "data-filter": "PER_HOUR" }, Translator.translate(232)));
-    header.appendChild(createDOM("th", { "data-filter": "FLEET" }, "Fleet"));
-    header.appendChild(createDOM("th", { "data-filter": "DEF" }, "Def"));
+    header.appendChild(createDOM("th", { "data-filter": "FLEET" }, Translator.translate(63)));
+    header.appendChild(createDOM("th", { "data-filter": "DEF" }, Translator.translate(54)));
 
     header.querySelectorAll("th").forEach((th) => {
       const filter = th.getAttribute("data-filter");
@@ -450,7 +450,7 @@ class SpyMessagesAnalyzer {
 
       dateDetail.appendChild(createDOM("div", undefined, report.cleanDate.toLocaleDateString()));
       dateDetail.appendChild(createDOM("div", undefined, report.cleanDate.toLocaleTimeString()));
-      dateDetail.appendChild(createDOM("div", undefined, `Activity: ${report.activity}`));
+      dateDetail.appendChild(createDOM("div", undefined, `${Translator.translate(137)}: ${report.activity}`));
 
       const dateCol = createDOM("td", { class: "ogl-tooltipLeft ogl-date" }, DateTime.timeSince(report.cleanDate));
 
@@ -485,22 +485,22 @@ class SpyMessagesAnalyzer {
       const gainColTitleMetal = createDOM(
         "div",
         { class: "ogl-metal" },
-        `Metal : ${toFormattedNumber(report.metal, null, true)}`
+        `${Translator.translate(0, "res")} : ${toFormattedNumber(report.metal, null, true)}`
       );
       const gainColTitleCrystal = createDOM(
         "div",
         { class: "ogl-crystal" },
-        `Crystal : ${toFormattedNumber(report.crystal, null, true)}`
+        `${Translator.translate(1, "res")} : ${toFormattedNumber(report.crystal, null, true)}`
       );
       const gainColTitleDeut = createDOM(
         "div",
         { class: "ogl-deut" },
-        `Deuterium : ${toFormattedNumber(report.deut, null, true)}`
+        `${Translator.translate(2, "res")} : ${toFormattedNumber(report.deut, null, true)}`
       );
       const gainColTitleSplitLine = createDOM(
         "div",
         { class: "splitline" },
-        `Total : ${toFormattedNumber(report.total, null, true)}`
+        `${Translator.translate(40)} : ${toFormattedNumber(report.total, null, true)}`
       );
 
       gainColTitle.appendChild(gainColTitleMetal);

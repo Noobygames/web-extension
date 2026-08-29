@@ -72,18 +72,23 @@ function expedition(context) {
     if (!document.querySelector("#allornone .allornonewrap")) return;
     const btnExpe = createDOM("button", {
       class: `ogl-expedition ${OGBIData.json.options.expedition.cargoShip == 202 ? "smallCargo" : "largeCargo"}`,
+      // Otherwise the icon-only button explains nothing until the 750ms hover
+      // panel below kicks in - and the panel itself only showed ship/option
+      // pickers, never what clicking the button actually does.
+      title: Translator.translate(260),
     });
     document.querySelector("#allornone .secondcol").appendChild(btnExpe);
     const optionsContainerDiv = createDOM("div");
+    optionsContainerDiv.appendChild(createDOM("div", { class: "ogk-expedition-explain" }, Translator.translate(260)));
     const combatShipDiv = optionsContainerDiv.appendChild(createDOM("div", { class: "ogk-expedition-options" }));
     const optionsDiv = optionsContainerDiv.appendChild(createDOM("div", { class: "ogk-expedition-options" }));
 
     const smallCargo = optionsDiv.appendChild(
-      createDOM("div", { class: "ogl-option ogl-fleet-ship choice ogl-fleet-202" })
+      createDOM("div", { class: "ogl-option ogl-fleet-ship choice ogl-fleet-202", title: Translator.translate(271) })
     );
     smallCargo.classList.toggle("highlight", OGBIData.json.options.expedition.cargoShip == 202);
     const largeCargo = optionsDiv.appendChild(
-      createDOM("div", { class: "ogl-option ogl-fleet-ship choice ogl-fleet-203" })
+      createDOM("div", { class: "ogl-option ogl-fleet-ship choice ogl-fleet-203", title: Translator.translate(271) })
     );
     largeCargo.classList.toggle("highlight", OGBIData.json.options.expedition.cargoShip == 203);
     smallCargo.addEventListener("click", () => updateCargoShip(202));
@@ -97,7 +102,7 @@ function expedition(context) {
     };
 
     const sendProbe = optionsDiv.appendChild(
-      createDOM("div", { class: "ogl-option ogl-fleet-ship choice ogl-fleet-210" })
+      createDOM("div", { class: "ogl-option ogl-fleet-ship choice ogl-fleet-210", title: Translator.translate(266) })
     );
     sendProbe.classList.toggle("highlight", OGBIData.json.options.expedition.sendProbe);
     sendProbe.addEventListener("click", () => {
@@ -109,6 +114,7 @@ function expedition(context) {
     const sendCombat = optionsDiv.appendChild(
       createDOM("div", {
         class: `ogl-option ogl-fleet-ship choice ogl-fleet-${OGBIData.json.options.expedition.combatShip}`,
+        title: Translator.translate(267),
       })
     );
     sendCombat.classList.toggle("highlight", OGBIData.json.options.expedition.sendCombat);
@@ -119,7 +125,10 @@ function expedition(context) {
     });
 
     const expeditionRotation = optionsDiv.appendChild(
-      createDOM("div", { class: "ogl-option choice-expedition-icon expedition-rotation" })
+      createDOM("div", {
+        class: "ogl-option choice-expedition-icon expedition-rotation",
+        title: Translator.translate(268),
+      })
     );
     expeditionRotation.classList.toggle("highlight", OGBIData.json.options.expedition.rotation);
     expeditionRotation.addEventListener("click", () => {
@@ -130,7 +139,10 @@ function expedition(context) {
 
     if (context.commander || context.admiral) {
       const expeditionFleet = optionsDiv.appendChild(
-        createDOM("div", { class: "ogl-option choice-expedition-icon expedition-fleet" })
+        createDOM("div", {
+          class: "ogl-option choice-expedition-icon expedition-fleet",
+          title: Translator.translate(269),
+        })
       );
       expeditionFleet.classList.toggle("highlight", OGBIData.json.options.expedition.standardFleet);
       expeditionFleet.addEventListener("click", () => {
@@ -143,7 +155,10 @@ function expedition(context) {
     const combatShip = [218, 213, 211, 215, 207];
     combatShip.forEach((ship) => {
       const element = combatShipDiv.appendChild(
-        createDOM("div", { class: `ogl-option ogl-fleet-ship choice ogl-fleet-${ship}` })
+        createDOM("div", {
+          class: `ogl-option ogl-fleet-ship choice ogl-fleet-${ship}`,
+          title: Translator.translate(270),
+        })
       );
       element.classList.toggle("highlight", ship == OGBIData.json.options.expedition.combatShip);
       element.addEventListener("click", () => updateCombatShip(ship));

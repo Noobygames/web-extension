@@ -260,7 +260,11 @@ function settings(context) {
   optiondiv = featureSettings.appendChild(
     createDOM(
       "span",
-      { style: "display: flex;justify-content: space-between; align-items: center;" },
+      {
+        class: "tooltip",
+        title: Translator.translate(274),
+        style: "display: flex;justify-content: space-between; align-items: center;",
+      },
       Translator.translate(34)
     )
   );
@@ -399,7 +403,15 @@ function settings(context) {
     })
   );
 
-  optiondiv = featureSettings.appendChild(createDOM("span", {}, Translator.translate(101)));
+  // These three only take effect through the expedition button on the fleet dispatch
+  // page (next to the custom mission buttons) - not obvious from this settings panel
+  // alone, hence the explanatory note and per-field tooltips below.
+  featureSettings.appendChild(
+    createDOM("span", { class: "tooltip ogk-expedition-settings-note" }, Translator.translate(264))
+  );
+  optiondiv = featureSettings.appendChild(
+    createDOM("span", { class: "tooltip", title: Translator.translate(261) }, Translator.translate(101))
+  );
   let expeditionDefaultTime = optiondiv.appendChild(
     createDOM("input", {
       type: "text",
@@ -407,7 +419,9 @@ function settings(context) {
       value: OGBIData.json.options.expedition.defaultTime,
     })
   );
-  optiondiv = featureSettings.appendChild(createDOM("span", {}, Translator.translate(149)));
+  optiondiv = featureSettings.appendChild(
+    createDOM("span", { class: "tooltip", title: Translator.translate(262) }, Translator.translate(149))
+  );
   let expeditionLimitCargo = optiondiv.appendChild(
     createDOM("input", {
       type: "text",
@@ -415,7 +429,9 @@ function settings(context) {
       value: Math.round(100 * OGBIData.json.options.expedition.limitCargo),
     })
   );
-  optiondiv = featureSettings.appendChild(createDOM("span", {}, Translator.translate(150)));
+  optiondiv = featureSettings.appendChild(
+    createDOM("span", { class: "tooltip", title: Translator.translate(263) }, Translator.translate(150))
+  );
   let expeditionRotationAfter = optiondiv.appendChild(
     createDOM("input", {
       type: "text",
@@ -636,16 +652,22 @@ function settings(context) {
   );
   let missionDiv = span.appendChild(createDOM("div", { style: "display:flex" }));
   let none = missionDiv.appendChild(
-    createDOM("a", { class: "icon icon_against", style: "margin-top: 2px;margin-right: 5px;" })
+    createDOM("a", {
+      class: "icon icon_against",
+      style: "margin-top: 2px;margin-right: 5px;",
+      title: Translator.translate(272),
+    })
   );
   let own3 = missionDiv.appendChild(
     createDOM("div", {
       class: `ogl-mission-icon ogl-mission-3 ${OGBIData.json.options.harvestMission == 3 ? "ogl-active" : ""}`,
+      title: Translator.translate(201),
     })
   );
   let own4 = missionDiv.appendChild(
     createDOM("div", {
       class: `ogl-mission-icon ogl-mission-4 ${OGBIData.json.options.harvestMission == 4 ? "ogl-active" : ""}`,
+      title: Translator.translate(202),
     })
   );
   own3.addEventListener("click", () => {
@@ -676,16 +698,22 @@ function settings(context) {
   );
   missionDiv = span.appendChild(createDOM("div", { style: "display:flex" }));
   none = missionDiv.appendChild(
-    createDOM("a", { class: "icon icon_against", style: "margin-top: 2px;margin-right: 5px;" })
+    createDOM("a", {
+      class: "icon icon_against",
+      style: "margin-top: 2px;margin-right: 5px;",
+      title: Translator.translate(272),
+    })
   );
   let other3 = missionDiv.appendChild(
     createDOM("div", {
       class: `ogl-mission-icon ogl-mission-3 ${OGBIData.json.options.foreignMission == 3 ? "ogl-active" : ""}`,
+      title: Translator.translate(201),
     })
   );
   let other1 = missionDiv.appendChild(
     createDOM("div", {
       class: `ogl-mission-icon ogl-mission-1 ${OGBIData.json.options.foreignMission == 1 ? "ogl-active" : ""}`,
+      title: Translator.translate(200),
     })
   );
   other1.addEventListener("click", () => {
@@ -712,16 +740,22 @@ function settings(context) {
   );
   missionDiv = span.appendChild(createDOM("div", { style: "display:flex" }));
   none = missionDiv.appendChild(
-    createDOM("a", { class: "icon icon_against", style: "margin-top: 2px;margin-right: 5px;" })
+    createDOM("a", {
+      class: "icon icon_against",
+      style: "margin-top: 2px;margin-right: 5px;",
+      title: Translator.translate(272),
+    })
   );
   let expe15 = missionDiv.appendChild(
     createDOM("div", {
       class: `ogl-mission-icon ogl-mission-15 ${OGBIData.json.options.expeditionMission == 15 ? "ogl-active" : ""}`,
+      title: Translator.translate(209),
     })
   );
   let expe6 = missionDiv.appendChild(
     createDOM("div", {
       class: `ogl-mission-icon ogl-mission-6 ${OGBIData.json.options.expeditionMission == 6 ? "ogl-active" : ""}`,
+      title: Translator.translate(273),
     })
   );
   expe15.addEventListener("click", () => {
@@ -790,6 +824,7 @@ function settings(context) {
           createDOM("button", {
             class: getresetBuittonClass(customMissionId),
             "data-marked": OGBIData.json.options.customMissions[customMissionId].color,
+            title: `${Translator.translate(26)} #${customMissionId}`,
           })
         );
         btnReset.addEventListener("click", () => {
