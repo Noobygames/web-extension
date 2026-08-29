@@ -356,5 +356,9 @@ export default Object.freeze({
     272: "Varsayılan yok - her seferinde elle seç.",
     273: "Casusluk",
     274: "İmparatorluk verilerini arka planda daha az sıklıkla tazeler (1 dakikalık kontrolü atlar, 5 dakikalık kontrolü korur) - biraz daha eski veri, daha az arka plan isteği.",
+    275: "Görünüm",
+    276: "Bildirimler ve güncellemeler",
+    277: "Geniş düzen",
+    278: "İşaretli kategoriler aşağıdaki Sıfırla'ya tıklandığında silinir. İşaretsiz olanlar korunur.",
   },
 });

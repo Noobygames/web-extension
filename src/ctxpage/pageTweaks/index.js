@@ -371,9 +371,13 @@ function utilities(context) {
       );
       const ship = document.querySelector(`.technology[data-technology="${id}"]`);
       if (ship) {
-        ship.addEventListener("ontouchstart" in document.documentElement ? "touchstart" : "mouseenter", () => {
-          tooltip(ship, tooltipDiv, true);
-        });
+        ship.addEventListener(
+          "ontouchstart" in document.documentElement ? "touchstart" : "mouseenter",
+          () => {
+            tooltip(ship, tooltipDiv, true);
+          },
+          { passive: true }
+        );
         ship._tippy.disable();
       }
     }

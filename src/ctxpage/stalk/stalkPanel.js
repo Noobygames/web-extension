@@ -504,15 +504,19 @@ export function stalk(sender, player, delay = undefined) {
     finalPlayer = player;
   }
 
-  sender.addEventListener("ontouchstart" in document.documentElement ? "touchstart" : "mouseenter", () => {
-    if (!finalPlayer) {
-      Player.get(player).then((p) => {
-        render(p);
-      });
-    } else {
-      render(finalPlayer);
-    }
-  });
+  sender.addEventListener(
+    "ontouchstart" in document.documentElement ? "touchstart" : "mouseenter",
+    () => {
+      if (!finalPlayer) {
+        Player.get(player).then((p) => {
+          render(p);
+        });
+      } else {
+        render(finalPlayer);
+      }
+    },
+    { passive: true }
+  );
 
   if (rawUrl.searchParams.get("id") === player) {
     rawUrl.searchParams.delete("id");

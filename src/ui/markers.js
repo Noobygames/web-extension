@@ -76,9 +76,13 @@ function addPlayer(parent, playerId) {
     });
   });
 
-  parent.addEventListener("ontouchstart" in document.documentElement ? "touchstart" : "mouseenter", () => {
-    tooltip(parent, div);
-  });
+  parent.addEventListener(
+    "ontouchstart" in document.documentElement ? "touchstart" : "mouseenter",
+    () => {
+      tooltip(parent, div);
+    },
+    { passive: true }
+  );
 }
 
 function displayPlayer(parent, id) {
@@ -149,9 +153,13 @@ function add(coords, parent, id) {
     });
   });
 
-  parent.addEventListener("ontouchstart" in document.documentElement ? "touchstart" : "mouseenter", () => {
-    tooltip(parent, div);
-  });
+  parent.addEventListener(
+    "ontouchstart" in document.documentElement ? "touchstart" : "mouseenter",
+    () => {
+      tooltip(parent, div);
+    },
+    { passive: true }
+  );
 }
 
 function display(parent, coords) {

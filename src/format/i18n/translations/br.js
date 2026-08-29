@@ -356,5 +356,9 @@ export default Object.freeze({
     272: "Sem padrão - escolher manualmente toda vez.",
     273: "Espionagem",
     274: "Atualiza os dados do império com menos frequência em segundo plano (pula a verificação de 1 minuto, mantém a de 5 minutos) - dados um pouco mais desatualizados, menos requisições em segundo plano.",
+    275: "Exibição",
+    276: "Notificações e atualizações",
+    277: "Layout largo",
+    278: "As categorias marcadas são apagadas ao clicar em Redefinir abaixo. As desmarcadas são mantidas.",
   },
 });

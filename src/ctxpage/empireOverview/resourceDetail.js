@@ -344,7 +344,9 @@ function resourceDetail(context) {
     }
     tooltip(flyingIcon, tooltipDiv, false);
   };
-  flyingIcon.addEventListener("ontouchstart" in document.documentElement ? "touchstart" : "mouseenter", RTlistener);
+  flyingIcon.addEventListener("ontouchstart" in document.documentElement ? "touchstart" : "mouseenter", RTlistener, {
+    passive: true,
+  });
 }
 
 function updateresourceDetail(context) {

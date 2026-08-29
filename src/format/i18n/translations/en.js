@@ -356,5 +356,9 @@ export default Object.freeze({
     272: "No default - choose manually every time.",
     273: "Espionage",
     274: "Refreshes empire data less often in the background (skips the 1-minute check, keeps the 5-minute one) - slightly staler data, fewer background requests.",
+    275: "Display",
+    276: "Notifications & updates",
+    277: "Wide layout",
+    278: "Checked categories are cleared when you click Reset below. Unchecked ones are kept.",
   },
 });

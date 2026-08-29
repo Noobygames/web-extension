@@ -561,11 +561,15 @@ function updatePlanets_FleetActivity() {
             //if there is less than 19 lines, auto disable the tooltip
             const autoTooltipDisable = movementsList.length < 19;
 
-            div.addEventListener("ontouchstart" in document.documentElement ? "touchstart" : "mouseenter", () => {
-              $(".ogi-movement-scroll").mCustomScrollbar("destroy");
-              tooltip(div, movementTooltipToScroll, true, { auto: true }, 50, !autoTooltipDisable);
-              $(".ogi-movement-scroll, .mCS_destroyed").mCustomScrollbar({ theme: "ogame" });
-            });
+            div.addEventListener(
+              "ontouchstart" in document.documentElement ? "touchstart" : "mouseenter",
+              () => {
+                $(".ogi-movement-scroll").mCustomScrollbar("destroy");
+                tooltip(div, movementTooltipToScroll, true, { auto: true }, 50, !autoTooltipDisable);
+                $(".ogi-movement-scroll, .mCS_destroyed").mCustomScrollbar({ theme: "ogame" });
+              },
+              { passive: true }
+            );
           }
         });
       }

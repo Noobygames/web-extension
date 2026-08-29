@@ -144,7 +144,11 @@ function settings(context) {
 
   let size = getLocalStorageSize();
   let container = createDOM("div", { class: "ogl-dialogContainer ogl-settings" });
-  let dataDiv = container.appendChild(createDOM("div"));
+  // Everything except the save footer lives in here - it is the part that scrolls,
+  // so the save button (appended straight to `container`, below) stays visible
+  // without having to scroll all the way down a long options list to reach it.
+  let scrollBody = container.appendChild(createDOM("div", { class: "ogk-settings-body" }));
+  let dataDiv = scrollBody.appendChild(createDOM("div"));
   let ogameInfinity = dataDiv.appendChild(createDOM("div"));
   ogameInfinity.appendChild(createDOM("div", { class: "ogk-logo" }, `v${VERSION}`));
   ogameInfinity.appendChild(
@@ -189,6 +193,7 @@ function settings(context) {
   dataDiv.appendChild(createDOM("hr"));
   let featureSettings = dataDiv.appendChild(createDOM("div", { style: "display: grid;" }));
   featureSettings.appendChild(createDOM("h1", {}, Translator.translate(103)));
+  featureSettings.appendChild(createDOM("h2", {}, Translator.translate(276)));
   if (OGBIData.json.timezoneDiff != 0) {
     let spanZone = featureSettings.appendChild(
       createDOM(
@@ -276,6 +281,7 @@ function settings(context) {
   if (OGBIData.json.options.lessAggressiveEmpireAutomaticUpdate) {
     lessAggressiveEmpireAutomaticUpdateBox.checked = true;
   }
+  featureSettings.appendChild(createDOM("h2", {}, Translator.translate(275)));
   let fleetActivity = featureSettings.appendChild(
     DOM.createDOMSanitized(
       "div",
@@ -321,6 +327,7 @@ function settings(context) {
     const isChecked = e.currentTarget.checked;
     OGBIData.json.options.navigationArrows = isChecked;
   });
+  featureSettings.appendChild(createDOM("h2", {}, Translator.translate(277)));
   // Wide-screen layout: stretch the fixed-width game column on monitors >= 1600px.
   let wideLayout = featureSettings.appendChild(
     DOM.createDOMSanitized(
@@ -363,6 +370,7 @@ function settings(context) {
       value: String(getOption("wideZoomFactor") ?? 0),
     })
   );
+  featureSettings.appendChild(createDOM("h2", {}, Translator.translate(120)));
   optiondiv = featureSettings.appendChild(
     createDOM("span", { class: "tooltip", title: Translator.translate(105) }, Translator.translate(35))
   );
@@ -403,12 +411,11 @@ function settings(context) {
     })
   );
 
+  featureSettings.appendChild(createDOM("h2", {}, Translator.translate(209)));
   // These three only take effect through the expedition button on the fleet dispatch
   // page (next to the custom mission buttons) - not obvious from this settings panel
   // alone, hence the explanatory note and per-field tooltips below.
-  featureSettings.appendChild(
-    createDOM("span", { class: "tooltip ogk-expedition-settings-note" }, Translator.translate(264))
-  );
+  featureSettings.appendChild(createDOM("span", { class: "tooltip ogk-settings-note" }, Translator.translate(264)));
   optiondiv = featureSettings.appendChild(
     createDOM("span", { class: "tooltip", title: Translator.translate(261) }, Translator.translate(101))
   );
@@ -456,6 +463,7 @@ function settings(context) {
     OGBIData.json.options.expedition.balancedDispatch = e.currentTarget.checked;
   });
 
+  featureSettings.appendChild(createDOM("h2", {}, Translator.translate(275)));
   optiondiv = featureSettings.appendChild(DOM.createDOM("span", {}, Translator.translate(181)));
   const standardUnitInput = DOM.createDOM("select", { class: "ogl-selectInput tooltip" });
   standardUnitInput.append(
@@ -524,6 +532,10 @@ function settings(context) {
       }"> ${size.total}</strong>  / 5 Mb`
     )
   );
+  // Otherwise nothing on this panel says these checkboxes gate the Reset button
+  // below rather than doing anything on their own - a real "what does this do"
+  // gap, since checking one has zero visible effect until Reset is clicked.
+  dataManagement.appendChild(createDOM("span", { class: "tooltip ogk-settings-note" }, Translator.translate(278)));
   let expeditionsBox = dataManagement.appendChild(
     DOM.createDOMSanitized(
       "div",
@@ -633,9 +645,9 @@ function settings(context) {
     download(data, `oginfinity-${OgamePageData.gameLang}-${context.universe}.data`);
   });
   let resetBtn = dataBtns.appendChild(createDOM("button", { class: "btn_blue ogl-btn_red" }, Translator.translate(26)));
-  container.appendChild(createDOM("div", { style: "width: 1px; background: #10171d;" }));
+  scrollBody.appendChild(createDOM("div", { style: "width: 1px; background: #10171d;" }));
 
-  let settingDiv = container.appendChild(createDOM("div"));
+  let settingDiv = scrollBody.appendChild(createDOM("div"));
   let saveBtn = createDOM("button", { class: "btn_blue save" }, Translator.translate(27));
 
   let keepOnPlanet = settingDiv.appendChild(createDOM("div"));
@@ -959,7 +971,8 @@ function settings(context) {
   );
   simulatorInput.value = OGBIData.json.options.simulator;
   simulator.appendChild(simulatorInput);
-  settingDiv.appendChild(saveBtn);
+  let footer = container.appendChild(createDOM("div", { class: "ogk-settings-footer" }));
+  footer.appendChild(saveBtn);
   saveBtn.addEventListener("click", () => {
     OGBIData.json.options.importExportReminderMode = importExportReminderMode?.value;
     OGBIData.json.options.rvalLimit = fromFormattedNumber(rvalInput.value, true);

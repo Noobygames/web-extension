@@ -356,5 +356,9 @@ export default Object.freeze({
     272: "Keine Vorauswahl - jedes Mal manuell wählen.",
     273: "Spionage",
     274: "Aktualisiert Empire-Daten im Hintergrund seltener (überspringt die 1-Minuten-Prüfung, behält die 5-Minuten-Prüfung) - etwas ältere Daten, weniger Hintergrundanfragen.",
+    275: "Anzeige",
+    276: "Benachrichtigungen & Updates",
+    277: "Breites Layout",
+    278: "Angehakte Kategorien werden beim Klick auf 'Zurücksetzen' unten gelöscht. Nicht angehakte bleiben erhalten.",
   },
 });

@@ -298,7 +298,7 @@ function attachCoordinateMenu(span, coords) {
   span.addEventListener("mouseenter", open);
   // Touch devices get the same menu on tap; the entries are plain links, so a
   // second tap follows one of them.
-  span.addEventListener("touchstart", open);
+  span.addEventListener("touchstart", open, { passive: true });
 }
 
 /**

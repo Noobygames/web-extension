@@ -356,5 +356,9 @@ export default Object.freeze({
     272: "Sin valor predeterminado - elegir manualmente cada vez.",
     273: "Espionaje",
     274: "Actualiza los datos del imperio con menos frecuencia en segundo plano (omite la comprobación de 1 minuto, mantiene la de 5 minutos) - datos algo menos frescos, menos solicitudes en segundo plano.",
+    275: "Visualización",
+    276: "Notificaciones y actualizaciones",
+    277: "Diseño ancho",
+    278: "Las categorías marcadas se borran al pulsar Restablecer más abajo. Las no marcadas se conservan.",
   },
 });

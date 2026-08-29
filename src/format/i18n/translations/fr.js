@@ -356,5 +356,9 @@ export default Object.freeze({
     272: "Aucune valeur par défaut - choisir manuellement à chaque fois.",
     273: "Espionnage",
     274: "Actualise les données d'empire moins souvent en arrière-plan (saute la vérification à 1 minute, garde celle à 5 minutes) - données légèrement plus anciennes, moins de requêtes en arrière-plan.",
+    275: "Affichage",
+    276: "Notifications et mises à jour",
+    277: "Mise en page large",
+    278: "Les catégories cochées sont effacées en cliquant sur Réinitialiser ci-dessous. Les non cochées sont conservées.",
   },
 });
