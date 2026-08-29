@@ -19,7 +19,6 @@ import OGBIData from "../../../util/OGBIData.js";
 import Translator from "../../../util/translate.js";
 import { evaluateTarget } from "../../../util/farmEvaluator.js";
 import { formatDuration } from "../../../util/fleetFlight.js";
-import * as coordinate from "../../../util/ogame.coordinate.js";
 
 class SpyMessagesAnalyzer {
   #logger;
@@ -532,8 +531,16 @@ class SpyMessagesAnalyzer {
           createDOM("div", undefined, `${Translator.translate(233)}: ${formatDuration(flight.durationSeconds)}`)
         );
         if (flight.origin) {
+          // flight.origin is a plain {galaxy, system, position} object from
+          // farmEvaluator.js's nearestOrigin() - never an OGameCoordinate instance
+          // or an encoded number, so it was never a valid coordinate.toString()
+          // argument. Before Phase A.5 of refactoring-new.md, the module's empty
+          // "unsupported argument" guard silently produced the string "[undefined]"
+          // here; after that fix made the guard throw instead, this call site
+          // started throwing on every render - formatted directly instead.
+          const { galaxy, system, position } = flight.origin;
           perHourDetail.appendChild(
-            createDOM("div", undefined, `${Translator.translate(234)}: ${coordinate.toString(flight.origin, true)}`)
+            createDOM("div", undefined, `${Translator.translate(234)}: [${galaxy}:${system}:${position}]`)
           );
         }
         perHourCol.addEventListener("mouseover", () => tooltip(perHourCol, perHourDetail, true, false, 50));

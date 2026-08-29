@@ -362,7 +362,7 @@ function betterHighscore(context) {
                 statusClass = "status_abbr_honorableTarget";
               }
               playerDiv.replaceChildren(DOM.createDOM("span", { class: `${statusClass}` }, `${p.name}`));
-              stalk(context.galaxyContext, playerDiv, p);
+              stalk(playerDiv, p);
             });
           }
         }
