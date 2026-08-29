@@ -183,6 +183,8 @@ class SpyMessagesAnalyzer {
       origins,
       shipSpeed: Number(chosen?.speed) || 0,
       fleetSpeedFactor: Number(json.speedFleetWar) || 1,
+      cargoCapacity: Number(chosen?.cargoCapacity) || 0,
+      fuelConsumption: Number(chosen?.fuelConsumption) || 0,
       universe: {
         galaxies: settings.galaxies,
         systems: settings.systems,
@@ -219,6 +221,8 @@ class SpyMessagesAnalyzer {
       shipSpeed: context.shipSpeed,
       fleetSpeedFactor: context.fleetSpeedFactor,
       universe: context.universe,
+      cargoCapacity: context.cargoCapacity,
+      fuelConsumption: context.fuelConsumption,
     });
   }
 
@@ -328,6 +332,15 @@ class SpyMessagesAnalyzer {
         el.querySelector("a").href = `?${fleetLink.toString()}`;
         el.querySelector("a").textContent = toFormattedNumber(parseInt(value));
       });
+
+      // Gewinn/h is computed from whichever ship is chosen (#flightContext() reads
+      // OGBIData.options.spyFret), but that context is cached per table build - without
+      // invalidating it here, switching ships left every row's profit/hour frozen on
+      // whatever ship was selected when the table was first drawn.
+      this.#flightContextCache = null;
+      const table = document.querySelector(".ogl-spyTable");
+      table?.querySelector("tbody")?.remove();
+      this.#displaySpyTable();
     };
 
     smallCargo.addEventListener("click", saveDefaultCargo);
@@ -543,6 +556,22 @@ class SpyMessagesAnalyzer {
             createDOM("div", undefined, `${Translator.translate(234)}: [${galaxy}:${system}:${position}]`)
           );
         }
+        // Distance/ships/fuel breakdown, not just the final number: this formula has
+        // never been checked against a real page (fleetFlight.js is the only consumer
+        // of the OGame flight-time formula in this whole tool - everywhere else reads
+        // OGame's own displayed numbers instead of recomputing them), so a wrong input
+        // should be visible at a glance instead of requiring a console session to find.
+        perHourDetail.appendChild(
+          createDOM(
+            "div",
+            undefined,
+            `${toFormattedNumber(flight.distance, 0)} · ${flight.shipCount}x · -${toFormattedNumber(
+              Math.round(flight.fuelCost),
+              null,
+              true
+            )} ${Translator.translate(2, "res")}`
+          )
+        );
         perHourCol.addEventListener("mouseover", () => tooltip(perHourCol, perHourDetail, true, false, 50));
       }
 

@@ -9,20 +9,21 @@
  * Pure computation over data the page already carries. Nothing here fetches anything, and nothing
  * here dispatches anything - the result is a number to sort a table by.
  */
-import { distance, roundTripDuration } from "./fleetFlight.js";
+import { distance, roundTripDuration, roundTripFuel } from "./fleetFlight.js";
 
 const SECONDS_PER_HOUR = 3600;
 
 /**
- * @param {number} loot          resources actually lootable (SpyReport.renta)
+ * @param {number} netLoot        resources actually lootable, after fuel cost
  * @param {number} roundTripSeconds
- * @return {number} resources per hour, 0 when the trip is impossible or instantaneous
+ * @return {number} resources per hour, 0 when the trip is impossible, instantaneous, or costs
+ *                   more fuel than it brings back
  */
-export function profitPerHour(loot, roundTripSeconds) {
-  if (!(loot > 0)) return 0;
+export function profitPerHour(netLoot, roundTripSeconds) {
+  if (!(netLoot > 0)) return 0;
   if (!(roundTripSeconds > 0) || !Number.isFinite(roundTripSeconds)) return 0;
 
-  return (loot / roundTripSeconds) * SECONDS_PER_HOUR;
+  return (netLoot / roundTripSeconds) * SECONDS_PER_HOUR;
 }
 
 /**
@@ -57,7 +58,12 @@ export function nearestOrigin(target, origins, universe = {}) {
  * @param {number} [params.speedPercent]
  * @param {number} [params.fleetSpeedFactor]
  * @param {object} [params.universe]
- * @return {{distance: number, durationSeconds: number, profitPerHour: number, origin: object|null}}
+ * @param {number} [params.cargoCapacity]        the chosen ship's cargo hold - lets the fleet
+ *                                                size, and therefore its fuel bill, scale with
+ *                                                how much there actually is to carry
+ * @param {number} [params.fuelConsumption]       the chosen ship's fuelConsumption stat
+ * @return {{distance: number, durationSeconds: number, profitPerHour: number, origin: object|null,
+ *           shipCount: number, fuelCost: number, netLoot: number}}
  */
 export function evaluateTarget({
   target,
@@ -67,11 +73,21 @@ export function evaluateTarget({
   speedPercent = 1,
   fleetSpeedFactor = 1,
   universe = {},
+  cargoCapacity = 0,
+  fuelConsumption = 0,
 }) {
   const nearest = nearestOrigin(target, origins, universe);
 
   if (!nearest) {
-    return { distance: Infinity, durationSeconds: Infinity, profitPerHour: 0, origin: null };
+    return {
+      distance: Infinity,
+      durationSeconds: Infinity,
+      profitPerHour: 0,
+      origin: null,
+      shipCount: 0,
+      fuelCost: 0,
+      netLoot: 0,
+    };
   }
 
   const durationSeconds = roundTripDuration({
@@ -81,11 +97,26 @@ export function evaluateTarget({
     fleetSpeedFactor,
   });
 
+  // At least one ship even for a trivial loot amount - an empty fleet cannot fly out to
+  // find that out. Loot that does not need the full hold still burns fuel for however
+  // many ships are actually sent.
+  const shipCount = cargoCapacity > 0 ? Math.max(1, Math.ceil(loot / cargoCapacity)) : 0;
+  const fuelCost = roundTripFuel({
+    shipCount,
+    baseConsumption: fuelConsumption,
+    distance: nearest.distance,
+    speedPercent,
+  });
+  const netLoot = Math.max(0, loot - fuelCost);
+
   return {
     origin: nearest.origin,
     distance: nearest.distance,
     durationSeconds,
-    profitPerHour: profitPerHour(loot, durationSeconds),
+    shipCount,
+    fuelCost,
+    netLoot,
+    profitPerHour: profitPerHour(netLoot, durationSeconds),
   };
 }
 

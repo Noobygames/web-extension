@@ -9,8 +9,18 @@
  *   different position  ->  1000 +  5 * positionDelta
  *   same position       ->     5          (planet <-> moon or debris field)
  *
- *   duration = (10 + (35000 / speedSlider) * sqrt(distance * 10 / shipSpeed)) / fleetSpeedFactor
+ *   duration = (10 + (350000 / speedSlider) * sqrt(distance * 10 / shipSpeed)) / fleetSpeedFactor
  *              with speedSlider on the game's own 10..100 scale
+ *
+ * The 350000 was written as 35000 until a real-world report caught it: a player-supplied
+ * flight (28502 speed, 2890 distance, universe fleet-speed 2) gave 6:02 round trip here
+ * against 29:27 shown in-game - a ~4.88x gap that turned out to be a clean, hidden 10x. Cross-
+ * checked against `Galaxy_Flight_Duration` (openuserjs.org/scripts/LukaNebo/Galaxy_Flight_Duration),
+ * a Tolerated Tool actively used on OGame Origin, whose formula (`10 + 3500/speedModifier * ...`,
+ * speedModifier 0.1..1.0) reproduces the real 29:27 for that exact case; ((10)+(350000/100)*sqrt)/2
+ * lands on the same number here since 350000/100 = 3500 = 3500/1. The 35000 commonly quoted for
+ * mainline OGame either measures a different constant or a different game version - not re-checked,
+ * since this tool only ever needs to match Origin.
  *
  * Nothing here talks to the network or the DOM: every input comes from data the page already
  * carries (universe settings from serverData.xml, ship speeds from fleetDispatcher.fleetHelper).
@@ -58,7 +68,7 @@ export function flightDuration({ distance: dist, shipSpeed, speedPercent = 1, fl
   if (!(shipSpeed > 0) || !(speedPercent > 0) || !(fleetSpeedFactor > 0)) return Infinity;
 
   // speedPercent arrives as a fraction; the formula wants the slider as 10..100.
-  return (10 + (35000 / (speedPercent * 100)) * Math.sqrt((dist * 10) / shipSpeed)) / fleetSpeedFactor;
+  return (10 + (350000 / (speedPercent * 100)) * Math.sqrt((dist * 10) / shipSpeed)) / fleetSpeedFactor;
 }
 
 /**
@@ -67,6 +77,33 @@ export function flightDuration({ distance: dist, shipSpeed, speedPercent = 1, fl
  */
 export function roundTripDuration(params) {
   return flightDuration(params) * 2;
+}
+
+/**
+ * Deuterium cost of a round trip: the fuel a farming run actually has to spend, so
+ * profitPerHour() can subtract it from the loot instead of pretending the trip is free.
+ *
+ * Was missing entirely before (refactoring-new.md, "Gewinn/h" investigation) - the tool
+ * had `fuelConsumption` per ship cached (fleetdispatch/shipData.js) but never spent it.
+ *
+ * Formula verified against the reverse-engineered OGame server source
+ * (game/fleet.php, https://deepwiki.com/ogamespec/ogame-opensource/3.1-fleet-movement-and-missions):
+ *
+ *   outbound = shipCount * baseConsumption * distance / 35000 * (speedPercent + 1)^2
+ *   return   = outbound / 2   (the trip home burns half of what the trip out did)
+ *
+ * @param {object} params
+ * @param {number} params.shipCount        how many of the ship are actually sent
+ * @param {number} params.baseConsumption  the ship's fuelConsumption stat
+ * @param {number} params.distance         from distance()
+ * @param {number} [params.speedPercent]   fleet speed slider, 0..1 (1 = 100%)
+ * @return {number} deuterium units for the whole round trip
+ */
+export function roundTripFuel({ shipCount, baseConsumption, distance, speedPercent = 1 }) {
+  if (!(shipCount > 0) || !(baseConsumption > 0) || !(distance > 0)) return 0;
+
+  const outbound = shipCount * baseConsumption * (distance / 35000) * (speedPercent + 1) ** 2;
+  return outbound * 1.5;
 }
 
 /**

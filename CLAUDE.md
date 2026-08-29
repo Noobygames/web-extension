@@ -411,3 +411,10 @@ Any box unchecked → say so plainly, tell developer what to fix or who to ask.
 ---
 
 _This file and a request conflict, or request not covered here → stop, tell developer to ask a ToolDev on the OGame Origin forum before building. Full rules: "Forbidden features", "Tool Submission Guidelines", "API Access Process" threads on that forum._
+
+---
+
+Wichtigste Regel: Fasse dich IMMER BEI ALLEN TEXTEN KURZ!
+ALLE KOMMENTARE: KURZ
+ALLE MD FILES: KURZ
+niemand will lange Prosa!

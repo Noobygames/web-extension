@@ -89,7 +89,8 @@ test("a far target can still win if it carries enough loot", () => {
 test("the reported duration is the round trip, not the one way", () => {
   const result = evaluateTarget({ origins: [at(1, 1, 1)], target: at(1, 2, 1), loot: 1e6, shipSpeed: 7500 });
 
-  assert.ok(result.durationSeconds > 1360 && result.durationSeconds < 1380, result.durationSeconds);
+  // one-way ~6766s (see fleetFlight.test.js), so the round trip is ~13533s, not ~1370s
+  assert.ok(result.durationSeconds > 13520 && result.durationSeconds < 13545, result.durationSeconds);
 });
 
 test("a player with no planets gets a zero score instead of a crash", () => {
@@ -103,6 +104,67 @@ test("a player with no planets gets a zero score instead of a crash", () => {
 test("an unknown ship speed scores zero rather than NaN", () => {
   const result = evaluateTarget({ origins: [at(1, 1, 1)], target: at(1, 2, 1), loot: 1e6, shipSpeed: 0 });
 
+  assert.equal(result.profitPerHour, 0);
+});
+
+// --------------------------------------------------------------------------
+// evaluateTarget - fuel cost. Was entirely missing before this fix: profitPerHour()
+// only ever divided the raw loot by the round trip, never subtracting what the trip
+// itself cost in deuterium (fleetdispatch/shipData.js already cached fuelConsumption
+// per ship; nothing spent it). Fleet size now scales with the loot to carry, and its
+// fuel bill scales with the fleet - see roundTripFuel() in fleetFlight.test.js for the
+// formula itself.
+// --------------------------------------------------------------------------
+
+test("fuel is subtracted from the loot before profitPerHour is computed", () => {
+  const origins = [at(1, 1, 1)];
+  const common = { origins, target: at(1, 2, 1), loot: 1e6, shipSpeed: 7500 };
+
+  const free = evaluateTarget(common);
+  const withFuel = evaluateTarget({ ...common, cargoCapacity: 25000, fuelConsumption: 10 });
+
+  assert.equal(free.fuelCost, 0, "no cargo/consumption stat given, so nothing is spent");
+  assert.ok(withFuel.fuelCost > 0);
+  assert.equal(withFuel.netLoot, 1e6 - withFuel.fuelCost);
+  assert.ok(withFuel.profitPerHour < free.profitPerHour, "the fuel bill must lower the ranking, not raise it");
+});
+
+test("the fleet is sized to carry the loot, and at least one ship is always sent", () => {
+  const origins = [at(1, 1, 1)];
+
+  const bigLoot = evaluateTarget({
+    origins,
+    target: at(1, 2, 1),
+    loot: 100000,
+    shipSpeed: 7500,
+    cargoCapacity: 25000,
+    fuelConsumption: 10,
+  });
+  assert.equal(bigLoot.shipCount, 4, "100000 / 25000");
+
+  const tinyLoot = evaluateTarget({
+    origins,
+    target: at(1, 2, 1),
+    loot: 1,
+    shipSpeed: 7500,
+    cargoCapacity: 25000,
+    fuelConsumption: 10,
+  });
+  assert.equal(tinyLoot.shipCount, 1, "even 1 resource still needs a ship to go get it");
+  assert.ok(tinyLoot.fuelCost > 0, "that one ship still burns fuel");
+});
+
+test("a target that costs more fuel than it carries scores zero, not negative", () => {
+  const result = evaluateTarget({
+    origins: [at(1, 1, 1)],
+    target: at(9, 250, 1), // far enough that the fuel bill exceeds a tiny loot
+    loot: 10,
+    shipSpeed: 7500,
+    cargoCapacity: 25000,
+    fuelConsumption: 10,
+  });
+
+  assert.equal(result.netLoot, 0);
   assert.equal(result.profitPerHour, 0);
 });
 

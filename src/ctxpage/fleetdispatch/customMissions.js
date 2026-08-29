@@ -576,7 +576,11 @@ function customMissions(context) {
                 ? context.current.planet.nextElementSibling.id.split("-")[1]
                 : document.querySelectorAll(".smallplanet")[0].id.split("-")[1];
               if (context.current.isMoon) {
-                nextId = new URL(document.querySelector(`#planet-${nextId} .moonlink`).href).searchParams.get("cp");
+                // Falls back to the planet itself when it has no moon - landing on the
+                // planet beats crashing the whole redirect ("Cannot read properties of
+                // null (reading 'href')" when `.moonlink` does not exist).
+                const moonLink = document.querySelector(`#planet-${nextId} .moonlink`);
+                if (moonLink) nextId = new URL(moonLink.href).searchParams.get("cp");
               }
             }
 
@@ -848,7 +852,11 @@ function collect(context) {
         ? context.current.planet.nextElementSibling.id.split("-")[1]
         : document.querySelectorAll(".smallplanet")[0].id.split("-")[1];
       if (context.current.isMoon) {
-        nextId = new URL(document.querySelector(`#planet-${nextId} .moonlink`).href).searchParams.get("cp");
+        // Falls back to the planet itself when it has no moon - landing on the planet
+        // beats crashing the whole redirect ("Cannot read properties of null (reading
+        // 'href')" when `.moonlink` does not exist).
+        const moonLink = document.querySelector(`#planet-${nextId} .moonlink`);
+        if (moonLink) nextId = new URL(moonLink.href).searchParams.get("cp");
       }
       fleetState.onFleetSentRedirectUrl =
         "https://" +

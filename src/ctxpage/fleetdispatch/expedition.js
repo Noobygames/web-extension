@@ -468,7 +468,11 @@ function expedition(context) {
           }
           let nextId = nextPlanet.id.split("-")[1];
           if (context.current.isMoon) {
-            nextId = new URL(document.querySelector(`#planet-${nextId} .moonlink`).href).searchParams.get("cp");
+            // Falls back to the planet itself when it has no moon - landing on the planet
+            // beats crashing the whole redirect (`.moonlink` is null: "Cannot read
+            // properties of null (reading 'href')").
+            const moonLink = document.querySelector(`#planet-${nextId} .moonlink`);
+            if (moonLink) nextId = new URL(moonLink.href).searchParams.get("cp");
           }
           link += `&cp=${nextId}`;
         }

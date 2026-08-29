@@ -449,13 +449,21 @@ function selectShips(context, shipID, amount) {
 
 function preselectShips(context) {
   if (context.page == "fleetdispatch") {
+    // One selectShip() per matching ship, one refresh() after all of them - not one
+    // refresh() per ship. A URL preselecting several ship types (am202=10&am203=5, ...)
+    // used to call fleetDispatcher.refresh() back-to-back inside this loop, which could
+    // crash inside OGame's own refresh() ("Cannot read properties of null (reading 'href')")
+    // when it ran against a still-mid-update DOM state.
+    let anySelected = false;
     fleetDispatcher.shipsOnPlanet.forEach((ship) => {
       let param = context.rawURL.searchParams.get(`am${ship.id}`);
       if (param) {
-        selectShips(context, ship.id, param);
-        fleetDispatcher.refresh();
+        if (param > ship.number) param = ship.number;
+        fleetDispatcher.selectShip(ship.id, param);
+        anySelected = true;
       }
     });
+    if (anySelected) fleetDispatcher.refresh();
   }
 }
 

@@ -693,6 +693,39 @@ test("the cargo column carries a ship count per cargo type and links to the one 
   assert.ok(shipCell.querySelector("a").getAttribute("href").includes(`am${ship.SmallCargoShip}=10`));
 });
 
+test("switching the preselected cargo ship refreshes Gewinn/h instead of leaving it frozen", () => {
+  // Was a bug: the cargo-choice click only refreshed the per-row send-fleet link/capacity,
+  // never the flight context #flightOf()/#flightContext() cache Gewinn/h reads from - so
+  // switching from Small Cargo to Large Cargo (very different speed) left every row's
+  // profit/hour computed against whichever ship was selected when the table was first built.
+  resetStore({ spyFret: ship.SmallCargoShip });
+  document.body.innerHTML = spyPageChrome();
+  OGBIData.empire = [{ coordinates: "1:5:3" }]; // an origin, so #flightOf() has something to fly from
+  const report = spyReportRow(9571, { targetPlayerId: 99999, loot: "25%", metal: 1000000 });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+
+  // Gain and Gewinn/h share the same "ogl-lootable" class - Gewinn/h is the second one
+  // in each row, right after Gain.
+  const perHourOf = () =>
+    document.querySelectorAll('.ogl-spyTable tbody tr[data-report-id="9571"] .ogl-lootable')[1].textContent;
+
+  const cargoHeader = document.querySelector(".ogl-spyTable thead th .ogl-fleet-ship");
+  cargoHeader.parentElement.dispatchEvent(new window.Event("mouseover"));
+  const smallCargoPerHour = perHourOf();
+
+  document
+    .querySelector(`.ogl-tooltip .ogl-fleet-ship[data-ship="${ship.LargeCargoShip}"]`)
+    .dispatchEvent(new window.Event("click", { bubbles: true }));
+
+  assert.equal(OGBIData.options.spyFret, ship.LargeCargoShip, "the choice itself is persisted");
+  const largeCargoPerHour = perHourOf();
+
+  // Small (speed 10000) and Large Cargo (speed 7500) fly the same distance at different
+  // speeds, so a frozen cache would show the exact same number twice.
+  assert.notEqual(smallCargoPerHour, largeCargoPerHour);
+});
+
 test("the options bar toggles table visibility, append mode and auto-delete, and persists each choice", () => {
   resetStore({ spyTableEnable: true, spyTableAppend: false, autoDeleteEnable: false });
   document.body.innerHTML = spyPageChrome();

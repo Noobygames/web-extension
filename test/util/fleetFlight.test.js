@@ -7,7 +7,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { distance, flightDuration, roundTripDuration } from "../../src/game/fleetFlight.js";
+import { distance, flightDuration, roundTripDuration, roundTripFuel } from "../../src/game/fleetFlight.js";
 
 const at = (galaxy, system, position) => ({ galaxy, system, position });
 
@@ -79,11 +79,22 @@ test("a missing universe size disables wrapping rather than producing NaN", () =
 // flightDuration
 // --------------------------------------------------------------------------
 
-test("a large cargo one system away takes about 11 minutes at speed 1", () => {
+test("a large cargo one system away takes about 1h53m at speed 1", () => {
   const seconds = flightDuration({ distance: distance(at(1, 1, 1), at(1, 2, 1)), shipSpeed: 7500 });
 
-  // in-game reference value for this trip
-  assert.ok(seconds > 680 && seconds < 690, `expected ~686s, got ${seconds}`);
+  // 10 + 3500 * sqrt(2795*10/7500), not an in-game reference value - see the real-world
+  // regression test below for the one actually cross-checked against the live game.
+  assert.ok(seconds > 6760 && seconds < 6770, `expected ~6766s, got ${seconds}`);
+});
+
+test("matches a real Origin flight: 28502 speed, 2 systems, universe fleet speed 2x", () => {
+  // Reported by a player: 2890 distance (2 systems apart, same galaxy), Small Cargo at
+  // 28502 speed, universe fleet-speed setting 2x (war and peaceful both), real in-game
+  // duration 0:29:27 (1767s) for both Attack and Transport missions. This is what caught
+  // the 35000 -> 350000 fix above: the old constant gave 6:02 here, not 29:27.
+  const seconds = flightDuration({ distance: 2890, shipSpeed: 28502, fleetSpeedFactor: 2 });
+
+  assert.ok(Math.abs(seconds - 1767) < 1, `expected ~1767s (29:27), got ${seconds}`);
 });
 
 test("the universe fleet speed divides the duration", () => {
@@ -121,4 +132,42 @@ test("a round trip is exactly twice the one-way flight", () => {
   const params = { distance: 2795, shipSpeed: 7500 };
 
   assert.equal(roundTripDuration(params), flightDuration(params) * 2);
+});
+
+// --------------------------------------------------------------------------
+// roundTripFuel - was missing entirely before this fix; the tool had
+// fuelConsumption cached per ship (fleetdispatch/shipData.js) but never spent it,
+// so profitPerHour() (farmEvaluator.js) showed pure gross loot. Formula verified
+// against the reverse-engineered OGame server source (game/fleet.php):
+//   outbound = shipCount * baseConsumption * distance/35000 * (speedPercent+1)^2
+//   round trip = outbound * 1.5 (the trip home burns half of what the trip out did)
+// --------------------------------------------------------------------------
+
+test("round trip fuel matches the source-verified formula at 100% speed", () => {
+  // outbound = 10 ships * 10 consumption * (35000/35000) * (1+1)^2 = 400; round trip = 600
+  const fuel = roundTripFuel({ shipCount: 10, baseConsumption: 10, distance: 35000, speedPercent: 1 });
+
+  assert.equal(fuel, 600);
+});
+
+test("fuel scales linearly with ship count and with distance", () => {
+  const base = roundTripFuel({ shipCount: 1, baseConsumption: 10, distance: 35000, speedPercent: 1 });
+
+  assert.equal(roundTripFuel({ shipCount: 5, baseConsumption: 10, distance: 35000, speedPercent: 1 }), base * 5);
+  assert.equal(roundTripFuel({ shipCount: 1, baseConsumption: 10, distance: 70000, speedPercent: 1 }), base * 2);
+});
+
+test("slower speedPercent burns less fuel, per the (speedPercent+1)^2 term", () => {
+  const full = roundTripFuel({ shipCount: 1, baseConsumption: 10, distance: 35000, speedPercent: 1 });
+  const half = roundTripFuel({ shipCount: 1, baseConsumption: 10, distance: 35000, speedPercent: 0.5 });
+
+  // (0.5+1)^2 / (1+1)^2 = 2.25/4 = 0.5625
+  assert.ok(Math.abs(half - full * 0.5625) < 1e-9);
+});
+
+test("a trip with no ships, no consumption stat, or no distance costs nothing rather than NaN", () => {
+  assert.equal(roundTripFuel({ shipCount: 0, baseConsumption: 10, distance: 35000 }), 0);
+  assert.equal(roundTripFuel({ shipCount: 5, baseConsumption: 0, distance: 35000 }), 0);
+  assert.equal(roundTripFuel({ shipCount: 5, baseConsumption: 10, distance: 0 }), 0);
+  assert.equal(roundTripFuel({ shipCount: 5, baseConsumption: 10, distance: undefined }), 0);
 });
