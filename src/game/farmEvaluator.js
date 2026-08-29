@@ -100,7 +100,13 @@ export function evaluateTarget({
   // At least one ship even for a trivial loot amount - an empty fleet cannot fly out to
   // find that out. Loot that does not need the full hold still burns fuel for however
   // many ships are actually sent.
-  const shipCount = cargoCapacity > 0 ? Math.max(1, Math.ceil(loot / cargoCapacity)) : 0;
+  //
+  // The 107/100 margin matches calcNeededShips({moreFret: true, ...}), the formula that
+  // sizes the fleet shown to the player (SpyReport.js's pt/gt/pf/pb). Without it this
+  // function under-counts by one ship against what the recommendation actually sends,
+  // so the fuel bill (and therefore profit/h) was computed for a smaller fleet than the
+  // one the player is told to dispatch.
+  const shipCount = cargoCapacity > 0 ? Math.max(1, Math.ceil(((loot / cargoCapacity) * 107) / 100)) : 0;
   const fuelCost = roundTripFuel({
     shipCount,
     baseConsumption: fuelConsumption,

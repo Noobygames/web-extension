@@ -7245,6 +7245,11 @@ div[data-marker]:hover {
   z-index: 99999999 !important;
 }
 
+.ogl-perHourDetail {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .ogl-tooltip div[style*="display:none;"] {
   display: block !important;
 }

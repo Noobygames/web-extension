@@ -539,7 +539,7 @@ class SpyMessagesAnalyzer {
       );
 
       if (perHour > 0) {
-        const perHourDetail = createDOM("div");
+        const perHourDetail = createDOM("div", { class: "ogl-perHourDetail" });
         perHourDetail.appendChild(
           createDOM("div", undefined, `${Translator.translate(233)}: ${formatDuration(flight.durationSeconds)}`)
         );

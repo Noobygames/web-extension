@@ -140,7 +140,7 @@ test("the fleet is sized to carry the loot, and at least one ship is always sent
     cargoCapacity: 25000,
     fuelConsumption: 10,
   });
-  assert.equal(bigLoot.shipCount, 4, "100000 / 25000");
+  assert.equal(bigLoot.shipCount, 5, "100000 / 25000, plus the 7% margin calcNeededShips also applies");
 
   const tinyLoot = evaluateTarget({
     origins,
