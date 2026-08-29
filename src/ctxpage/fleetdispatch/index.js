@@ -391,13 +391,18 @@ function neededCargo(context) {
           fret: ship.id,
           resources: total,
         });
-        let span = createDOM("span", { class: "ogl-needed" }, toFormattedNumber(amount, 0));
-        document.querySelector(`.technology[data-technology="${ship.id}"]`).appendChild(span);
-        span.addEventListener("click", (event) => {
+        const container = document.querySelector(`.technology[data-technology="${ship.id}"]`);
+        // resetall/selectShips/refresh() below can make OGame re-render this container's
+        // children, dropping our span and its listener - only clickable once otherwise.
+        // Remove any stale span first, then rebuild it on every click too, so it stays live.
+        container?.querySelector(".ogl-needed")?.remove();
+        let span = container?.appendChild(createDOM("span", { class: "ogl-needed" }, toFormattedNumber(amount, 0)));
+        span?.addEventListener("click", (event) => {
           event.stopPropagation();
           document.querySelector("#resetall").click();
           selectShips(context, ship.id, amount);
           document.querySelector(".ogl-cargo .select-most").click();
+          neededCargo(context);
         });
       }
     });
