@@ -13,14 +13,16 @@ const filter = process.argv[2];
 const results = [];
 
 function bench(name, iterations, fn) {
-  if (filter && !name.toLowerCase().includes(filter.toLowerCase())) return;
+  if (filter && !name.toLowerCase().includes(filter.toLowerCase())) return undefined;
 
   fn(); // warm up, so the first call's JIT cost is not attributed to the measurement
   const start = process.hrtime.bigint();
   for (let i = 0; i < iterations; i++) fn();
   const nanos = Number(process.hrtime.bigint() - start);
 
-  results.push({ name, iterations, totalMs: nanos / 1e6, perOpUs: nanos / iterations / 1000 });
+  const record = { name, iterations, totalMs: nanos / 1e6, perOpUs: nanos / iterations / 1000 };
+  results.push(record);
+  return record;
 }
 
 /** A page roughly the size of an OGame overview: planet bar, resource bar, event list. */
@@ -103,6 +105,47 @@ const SCAN_SELECTOR =
 
   const parsed = JSON.parse(blob);
   bench("store: reading the already-parsed object (the new cost)", 200000, () => parsed.ships[203].cargoCapacity);
+}
+
+// ---------------------------------------------------------------------------
+// OGBIData.Save() - refactoring-new.md Phase C, the hot/cold blob split.
+// updateProductionProgress() ends on this call and runs from renderPlanetBar(),
+// i.e. on every page load before first paint - unlike the benchmarks above, this
+// one runs the real store module against a real (jsdom) localStorage, since the
+// thing being measured is JSON.stringify cost driven by blob size, not arithmetic.
+// ---------------------------------------------------------------------------
+
+{
+  const dom = new JSDOM("", { url: "https://s1-en.ogame.gameforge.com/game/index.php" });
+  globalThis.localStorage = dom.window.localStorage;
+
+  // The pre-split shape: everything in one blob, spies dominating it, matching the
+  // 428 KB "established account" figure docs/performance.md measures against.
+  const legacyBlob = {
+    playerId: 4711,
+    options: { fret: 203 },
+    empire: Array.from({ length: 12 }, (_, i) => ({ id: i, metal: 1e6, crystal: 5e5, deuterium: 2e5 })),
+    technology: Object.fromEntries(Array.from({ length: 30 }, (_, i) => [i, i % 20])),
+    productionProgress: { 1: "2026-01-01T00:00:00.000Z" },
+    spies: Object.fromEntries(Array.from({ length: 5000 }, (_, i) => [i, { coords: "1:2:3", total: 1e6 }])),
+    expeditions: Object.fromEntries(Array.from({ length: 2000 }, (_, i) => [i, { metal: 1e5 }])),
+  };
+  const legacyRaw = JSON.stringify(legacyBlob);
+  console.log(`(ogk-data blob used below: ${(legacyRaw.length / 1024).toFixed(0)} KB, before the split)`);
+
+  const before = bench("store: Save() serialising the whole pre-split blob (before Phase C)", 500, () =>
+    JSON.stringify(legacyBlob)
+  );
+
+  // After migration, the same account: ogk-data (hot) holds just the small fields;
+  // ogk-history (cold, spies/expeditions) sits apart and is untouched by this call.
+  globalThis.localStorage.setItem("ogk-data", legacyRaw);
+  const { default: OGBIData } = await import("../src/store/OGBIData.js");
+  const after = bench("store: Save() after the split, no cold field touched (Phase C)", 500, () => {
+    OGBIData.options = OGBIData.options; // eslint-disable-line no-self-assign
+  });
+
+  if (before && after) console.log(`(Save() speedup after the split: ${(before.perOpUs / after.perOpUs).toFixed(1)}x)`);
 }
 
 // ---------------------------------------------------------------------------

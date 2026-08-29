@@ -197,21 +197,22 @@ export default function () {
       }
     };
 
-    // Resources
-    const metal = fromFormattedNumber(
-      fleetDataRow.slice(metalRow, metalRow + 1)?.[0]?.querySelector("td:nth-child(2)")?.textContent || "0"
-    );
+    // Resources. `.at(row)` handles a negative row correctly (row -1 is the last
+    // element); the previous `.slice(row, row + 1)` broke specifically for row -1,
+    // since `row + 1` is then the literal index 0, not "one past the start" - start
+    // > end, so the slice was always empty and deuterium always read as 0.
+    const metal = fromFormattedNumber(fleetDataRow.at(metalRow)?.querySelector("td:nth-child(2)")?.textContent || "0");
     addResource("metal", metal);
     if (addToTotal) met += metal;
 
     const crystal = fromFormattedNumber(
-      fleetDataRow.slice(crystalRow, crystalRow + 1)?.[0]?.querySelector("td:nth-child(2)")?.textContent || "0"
+      fleetDataRow.at(crystalRow)?.querySelector("td:nth-child(2)")?.textContent || "0"
     );
     addResource("crystal", crystal);
     if (addToTotal) cri += crystal;
 
     const deuterium = fromFormattedNumber(
-      fleetDataRow.slice(deuteriumRow, deuteriumRow + 1)?.[0]?.querySelector("td:nth-child(2)")?.textContent || "0"
+      fleetDataRow.at(deuteriumRow)?.querySelector("td:nth-child(2)")?.textContent || "0"
     );
     addResource("deuterium", deuterium);
     if (addToTotal) deut += deuterium;

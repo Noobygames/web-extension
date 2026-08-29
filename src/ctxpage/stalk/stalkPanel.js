@@ -568,7 +568,7 @@ export function update(planets) {
     a.appendChild(createDOM("span", {}, planet.coords));
     a.setAttribute("data-coords", planet.coords);
 
-    if (planet.id === mainId) {
+    if (parseFloat(planet.id) === mainId) {
       a.classList.add("ogl-main");
       planetIcon.classList.add("ogl-active");
     }

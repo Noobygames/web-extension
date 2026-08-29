@@ -45,6 +45,7 @@ const GLOBAL_KEYS = [
   "Node",
   "DOMParser",
   "XMLSerializer",
+  "MutationObserver",
   "getComputedStyle",
   "LocalizationStrings",
   "chrome",
@@ -285,6 +286,7 @@ export function setupBrowser(options = {}) {
   define("Node", window.Node);
   define("DOMParser", window.DOMParser);
   define("XMLSerializer", window.XMLSerializer);
+  define("MutationObserver", window.MutationObserver);
   define("getComputedStyle", window.getComputedStyle.bind(window));
 
   if (localization) define("LocalizationStrings", { ...localization });

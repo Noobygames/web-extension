@@ -584,6 +584,77 @@ mindestens um den Faktor 5 gefallen, gemessen über den `ogk-data`-Block von `pe
 `TRAP:`-Tests unverändert grün. Ein Test, der die Migration von einem echten alten Blob durchspielt,
 inklusive Abbruch mittendrin.
 
+### Umsetzung — ERLEDIGT
+
+**Der Schnitt, konkret.** `COLD_FIELDS` in `src/store/OGBIData.js` ist eine feste Liste:
+`spies`, `expeditions`, `combats`, `harvests`, `discoveries`, `expeditionSums`, `discoveriesSums`,
+`combatsSums`, `translations` — genau die neun Felder aus der Tabelle oben (`trades`/`tradesSums`
+gab es zu dem Zeitpunkt schon nicht mehr, tot seit Phase A.3). Alles andere ist heiß, per Default —
+auch die knapp 100 generischen `OGBIData.json.<feld>`-Zugriffe, die nie einen eigenen Getter/Setter
+hatten (`speed`, `technology`, `moonProductionProgress*`, `lfResearchProgress*`, `allianceClass`,
+`reminders`, …). Eine Positivliste für „heiß" zu pflegen hätte bedeutet, bei jedem neuen Feld im
+Code mitzuziehen; eine Negativliste für „kalt" mit neun festen, historisch gewachsenen Namen nicht.
+
+**Eine Proxy, kein zweites Interface.** `get json()` liefert dieselbe Instanz für die Lebensdauer
+des Singletons zurück — die Proxy-Traps lesen `self.#hot`/`self.#cold` bei jedem Zugriff neu, nicht
+einmalig beim Bau. Lesen, Schreiben, `in`, `delete`, `Object.keys()`, `Object.assign({}, json)`,
+`JSON.stringify(json)` — alles funktioniert unverändert gegen zwei Objekte statt eines. Kein
+Aufrufer außerhalb von `OGBIData.js` wurde angefasst außer den beiden unten.
+
+**`Save()` bekam ein Dirty-Flag, ungeplant.** Der Plan sagte für Schritt 3, `updateProductionProgress()`
+solle „nur noch die heiße Hälfte" schreiben. Ohne weiteres Zutun hätte `Save()` beide Hälften
+geschrieben — die Kompatibilitäts-Falle des Plans selbst: der teure Boot-Pfad-Aufruf bleibt teuer,
+nur jetzt mit einem zweiten `localStorage`-Schreiben obendrauf. Also trägt `#coldDirty` jetzt Buch:
+gesetzt, wenn die Proxy-`set`/`deleteProperty`-Traps ein `COLD_FIELDS`-Feld anfassen; gelöscht nach
+jedem `#saveCold()`. `Save()` schreibt Heiß immer, Kalt nur wenn das Flag steht. Ergebnis:
+`updateProductionProgress()` selbst musste **nicht angefasst werden** — keins seiner Felder ist kalt,
+also bleibt sein `Save()`-Aufruf automatisch heiß-only.
+
+**Ein echter, stiller Kopplungsbruch, gefunden beim Nachziehen.** `format/i18n/translate.js`
+aktualisiert `translations` (kalt) und schrieb `OGBIData.json.translations = translations;` — ohne
+je `Save()` zu rufen. Im ungeteilten Blob war das kein Bug: irgendein anderer Setter (Optionen,
+Empire, egal was) hat kurz danach ohnehin den ganzen Blob geschrieben und die Übersetzung gratis
+mitgenommen. Nach dem Schnitt schreibt kein heißer Setter mehr die kalte Hälfte — ohne Korrektur
+wären Übersetzungs-Updates ab diesem Commit still verschwunden, bei grünem Test, weil kein
+bestehender Test das je geprüft hat. Fix: `OGBIData.Save()` explizit nach beiden Zuweisungen
+(`UpdateAllTechNamesFromEmpire`, `InitializeLFNames`).
+
+**Ein Bypass geschlossen, der `_json` sonst überlebt hätte.** `traderOverview/TraderImportExportPage.js`
+griff über `OGBIData._json.reminders` direkt auf das alte private Feld zu, nicht über den Getter — der
+in `refactoring.md` Phase 4 dokumentierte Vertrag „nur `OGBIData.json`, nie ein Alias" wurde hier schon
+gebrochen. `_json` existiert nach dem Schnitt gar nicht mehr (`#hot`/`#cold`, echte private Felder statt
+Konvention), also musste das ohnehin auf `OGBIData.json.reminders` umgestellt werden — der Bug wäre sonst
+erst als Absturz zur Laufzeit aufgefallen, nicht beim Lesen.
+
+**Migration.** `#migrate()` läuft nur, solange `ogk-history` noch nicht existiert — danach ist der
+Schnitt bereits vollzogen und der Test „once ogk-history exists, migration never runs again" hält das
+fest. Schreibreihenfolge bei einem Fund: erst `ogk-history`, dann das getrimmte `ogk-data` — wirft der
+zweite Schreibvorgang (Kontingent, o. ä.), bleibt `ogk-data` auf der Platte exakt der Alt-Zustand, und
+der nächste Seitenaufruf versucht die Migration erneut. Der Speicher dieser Sitzung ist trotzdem sofort
+korrekt gesplittet, unabhängig vom Schreiberfolg. `test/util/OGIData.migration.test.js` (neu, 4 Tests)
+spielt das durch: echte Migration, Blob ohne kalte Felder (kein Schreiben nötig), bereits migriert
+(kein zweiter Versuch), und der Abbruch mittendrin — der explizite Exit-Kriterium-Test.
+
+**`OGIData.construction.test.js` und `OGIData.test.js` liefen mit einer Ausnahme unverändert weiter** —
+alle bestehenden Seeds sind rein heiß, die Migrationsprüfung ist für sie ein No-Op. Angepasst wurden
+nur `stored()` (liest jetzt `ogk-data` **und** `ogk-history` und führt sie zusammen — das ist, was
+`OGBIData.json` dem Aufrufer ohnehin als eine Sicht zeigt) und `withOGBIData()` (die redundante manuelle
+`localStorage.setItem(STORAGE_KEY, JSON.stringify(seed))`-Zeile flog raus — sie schrieb den **ungeteilten**
+Seed direkt in `ogk-data`, was bei einem kalten Feld im Seed den Schnitt sofort wieder aufgehoben hätte;
+der `json`-Setter persistiert bereits korrekt gesplittet). Kein `TRAP:`-Test geändert.
+
+### Exit-Kriterium Phase C — ERREICHT
+
+| Kriterium                                    | Ziel             | Ist                                                                                                                                                                                                                      |
+| :------------------------------------------- | :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ogk-data` (heiß) < 50 KB, etabliertes Konto | < 50 KB          | nicht an echten Kontodaten gemessen (kein Browser hier) — strukturell erzwungen: jedes monoton wachsende Feld ist per `COLD_FIELDS` kalt, der heiße Rest ist durchweg klein/gedeckelt                                    |
+| `Save()`-Zeit, Faktor 5                      | ≥ 5×             | **~119×–212×**, `node scripts/bench.mjs store` gegen einen synthetischen 251-KB-Blob (siehe `docs/performance.md`)                                                                                                       |
+| `TRAP:`-Tests                                | unverändert grün | **unverändert**, alle 3 grün                                                                                                                                                                                             |
+| Migrationstest inkl. Abbruch mittendrin      | vorhanden        | **`test/util/OGIData.migration.test.js`**, 4 Tests                                                                                                                                                                       |
+| Tests gesamt                                 | —                | 556 → **563**                                                                                                                                                                                                            |
+| `npm run check`                              | 0 Fehler         | **0**                                                                                                                                                                                                                    |
+| Vorher/Nachher auf echter OGame-Seite        | gemessen         | **nicht gemacht** — kein Browser verfügbar; `scripts/bench.mjs` liefert eine reproduzierbare untere Schranke nach derselben Methodik wie der Rest von `docs/performance.md`, ersetzt aber keine echte `ogi-perf`-Messung |
+
 ---
 
 ## 5. Phase D — Abdeckung dorthin, wo es weh tut
@@ -610,6 +681,91 @@ Danach: `SpyMessagesAnalyzer` (9,6 %, 1.039 Zeilen) und `SpyReport` (12,8 %) —
 benannt, „dort landen die meisten Fehlerberichte" (`docs/testing.md`).
 
 **Exit:** > 70 % Zeilen gesamt, und keine Datei im Boot-Pfad unter 60 %.
+
+### Umsetzung — TEILWEISE ERLEDIGT
+
+Die fünf Boot-Pfad-Dateien und die beiden `SpyMessagesAnalyzer`/`SpyReport`-Dateien — die vollständige,
+namentlich genannte Liste dieses Abschnitts — sind abgedeckt. Das Gesamtziel von > 70 % ist **nicht**
+erreicht; das war bei 150 Dateien und 34.581 Zeilen mit dieser Liste allein auch nicht zu erwarten,
+siehe „Was offen bleibt" unten.
+
+| Datei                    | Vorher |                    Nachher |
+| :----------------------- | -----: | -------------------------: |
+| `resourceDetail.js`      |  3,2 % |                 **97,8 %** |
+| `production.js`          |  4,0 % |                 **95,0 %** |
+| `stalkPanel.js`          |  7,2 % |                 **79,0 %** |
+| `fleetMovements.js`      |  9,2 % | **98,7 %** (siehe Fußnote) |
+| `needs.js`               | 19,0 % |                 **91,6 %** |
+| `SpyMessagesAnalyzer.js` |  9,6 % |                 **71,0 %** |
+| `SpyReport.js`           | 12,8 % |                 **89,0 %** |
+| Gesamt (alle Dateien)    | 52,5 % |                 **59,2 %** |
+
+Fußnote `fleetMovements.js`: in der Gesamt-Coverage-Tabelle (`make coverage`) steht diese Datei
+weiterhin bei 9,2 % — derselbe Mess-Artefakt, der in `docs/testing.md` schon für `OGBIData.js` und
+`pageData.js` dokumentiert ist. `test/util/page-context-boot.test.js` importiert die Datei ebenfalls
+(reine Modul-Auswertung, kein Verhalten), läuft alphabetisch nach `test/ogame/`, und der Reporter
+behält pro Datei nur die zuletzt gesehene URL. Isoliert gemessen (nur die beiden neuen Testdateien):
+**98,68 %**. Kein Nacharbeiten nötig — dieselbe Zeile aus `docs/testing.md` gilt hier unverändert:
+„Treat that row as artefact, not gap."
+
+**3 `KNOWN BUG:`-Tests neu dazugekommen — und, außerhalb des eigentlichen Phase-D-Umfangs (reine
+Abdeckung, kein Bugfixing), auf ausdrücklichen Wunsch direkt im Anschluss gefixt:**
+
+- `stalkPanel.js`: `update()` verglich `mainId` (Zahl, `Math.min(...validIds)`) mit `planet.id`
+  (String, überall wo das Feld wirklich befüllt wird) via `===` — kein Planet wurde je als `ogl-main`
+  markiert, unabhängig davon, welcher tatsächlich die niedrigste ID hatte. **Fix:**
+  `parseFloat(planet.id) === mainId`.
+- `fleetMovements.js`: `fleetDataRow.slice(deuteriumRow, deuteriumRow + 1)` wurde bei
+  `deuteriumRow = -1` (kein Lifeforms-Konto) zu `slice(-1, 0)` — das Ende-Argument ist der **Literal**-Index
+  `0`, nicht „ein hinter dem Start", also Start > Ende, und der Aufruf lieferte immer `[]`. Deuterium
+  wurde deshalb im häufigsten Fall (keine Lifeforms) immer als `0` gelesen, unabhängig vom
+  Tabelleninhalt. Metall und Kristall waren vom selben Bug nicht betroffen (ihre Offsets kreuzen die
+  Null nicht). **Fix:** `fleetDataRow.at(row)` statt `.slice(row, row + 1)?.[0]` für alle drei
+  Ressourcen — `.at()` behandelt einen negativen Index direkt richtig.
+- `SpyMessagesAnalyzer.js`: der Gefahren-Hinweis für unbekannte Flotten-/Verteidigungsdaten verglich
+  gegen den String `"No Data"` (großes D), `SpyReport.js` erzeugt aber durchgehend `"No data"`
+  (kleines d) — der Vergleich traf nie, der numerische Fallback lieferte `NaN` (führt ebenfalls zu
+  `false`), und die Zelle blieb leer statt eine Warnung zu zeigen. Gerade der riskanteste Fall — OGame
+  hat die Flotte nicht verraten — sah identisch aus wie „0 Flotte, 0 Verteidigung, ungefährlich".
+  **Fix:** Vergleich auf `"No data"` korrigiert, und die Zelle zeigt jetzt das Label „No data" statt
+  leer zu bleiben, wenn der Wert nicht numerisch ist.
+
+Alle drei Tests umbenannt (Präfix `KNOWN BUG:` entfernt) und auf das jetzt korrekte Verhalten
+umgestellt; volle Suite (650 Tests) und `npm run check` (0 Fehler) danach erneut grün, beide Builds
+(Chrome/Firefox) erneut verifiziert.
+
+**Ein echter Test-Infrastruktur-Fund:** `test/helpers/globals.js`s `setupBrowser()` exportierte
+`MutationObserver` nicht, obwohl jsdom es bereitstellt — jeder Test, der `stalkPanel.js`s
+`observeSideStalkPlayerTitle()` durchläuft, warf `ReferenceError: MutationObserver is not defined`.
+Ergänzt in `GLOBAL_KEYS` und der `define()`-Liste; betrifft jeden künftigen Test, nicht nur diese Phase.
+
+**Zwei wiederkehrende Test-Fallen, gefunden beim Verifizieren der (durch einen Rate-Limit
+unterbrochenen) Subagenten-Arbeit:**
+
+1. jsdom setzt `ontouchstart` auf `document.documentElement` **immer** (auch ohne echte Touch-Unterstützung
+   — derselbe Grund, warum `"ontouchstart" in window` als Feature-Test in echten Browsern seit Jahren als
+   unzuverlässig gilt). Code, der `"ontouchstart" in document.documentElement ? "touchstart" : "mouseenter"`
+   verzweigt (`stalkPanel.js`s `stalk()`, `resourceDetail.js`s Flottenflug-Tooltip), bindet in jedem Test
+   also an `"touchstart"`, nie an `"mouseenter"` — Tests müssen das passende Event dispatchen, sonst
+   passiert beobachtbar nichts (kein Fehler, nur eine leere Assertion).
+2. `SpyMessagesAnalyzer#flagDeleted()` setzt einen echten 10-Sekunden-`setTimeout()` als
+   Sicherheitsnetz, falls der Server nie bestätigt. Ein Test, der die Löschung auslöst, ohne die
+   Bestätigung zu simulieren oder den Timer zu mocken, hinterlässt einen echten, referenzierten Timer —
+   der hält den Node-Prozess bis zu 10 echte Sekunden am Leben (unabhängig davon, ob sein Callback dank
+   eines `settled`-Flags am Ende ein No-Op ist: `clearTimeout()` wird nie aufgerufen) und kann, wenn er
+   irgendwann während eines völlig anderen Tests feuert, gegen dessen inzwischen abgebautes
+   `document`/`$` crashen. Drei betroffene Tests liefen deshalb je 10 Sekunden und ließen die
+   Testdatei insgesamt >10 s statt <1 s dauern; behoben mit `t.mock.timers.enable({apis:["setTimeout"]})`
+   um die auslösende Aktion.
+
+### Was offen bleibt
+
+`Phase D2 restliche Abdeckung -> laufend` (Abschnitt 6) war von Anfang an als fortlaufende, nicht als
+einmalig abschließbare Arbeit geplant — bei 150 Dateien ist die hier bearbeitete Liste ein Anfang, kein
+Abschluss. Nächste Kandidaten nach Zeilenzahl × Unbedecktheit: alles unter `src/ctxpage/messages/analyzer/`
+außer `SpyMessagesAnalyzer.js` (Trade/Harvest/Expedition/Fight sind jeweils schon teilweise über
+`test/ctxpage/messages/analyzers.test.js` mitgedeckt, aber nicht Ziel dieser Phase), und die
+Fleetdispatch-/Galaxy-Module, die laut `docs/testing.md` ebenfalls noch großteils ungetestet sind.
 
 ---
 

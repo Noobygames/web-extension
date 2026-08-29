@@ -74,28 +74,32 @@ Load module under cache-busting URL so module-level singleton re-evaluate. Neede
 **Use only when test is about construction.** Two reasons:
 
 1. Defeats point of singleton — everywhere else, shared instance is more faithful model of real page.
-2. Node coverage reporter merge every URL for a path into one row, keep last evaluation seen. One `importFresh()` make whole module look barely covered. `src/store/OGBIData.js` report ~36% for exactly this reason; accessors in fact exercised exhaustively by `test/util/OGBIData.test.js`. Construction tests moved to `OGBIData.construction.test.js` to contain damage, but merged multi-file run still report low number. Treat that row as artefact, not gap.
+2. Node coverage reporter merge every URL for a path into one row, keep last evaluation seen. One `importFresh()` make whole module look barely covered. `src/store/OGBIData.js` report low % for exactly this reason; accessors in fact exercised exhaustively by `test/util/OGIData.test.js`. Construction tests live in `OGIData.construction.test.js`, migration tests (the hot/cold split, `refactoring-new.md` Phase C) in `OGIData.migration.test.js` — same reason, kept apart. Treat that row as artefact, not gap.
 
 Where singleton can reset through own API, prefer that — `OGBIData.json = {…}` is full reset, keep report honest.
 
 ## What is covered
 
-`make coverage` print current table. As of writing: **524 tests**. Headline percentage not meaningful alone — the extracted page modules are in the denominator and almost none of them has behavioural coverage.
+`make coverage` print current table. As of writing: **650 tests**, 59.2% lines / 70.4% branches / 49.7% functions overall. Headline percentage not meaningful alone — the extracted page modules are in the denominator and almost none of them has behavioural coverage.
 
-| Area              | Module                                                                                 | Notes                                                                                                 |
-| ----------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Serialisation     | `store/json.js`                                                                         | Map/Set encoding, `extractJSON`, native round-trip. 96%                                               |
-| Coordinates       | `ogame/coordinates.js`                                                             | Encoding, ordering, type handling. 99%                                                                |
-| Costs             | `game/fleetCost.js`, `defenceCost.js`, `shipCosts.js`, `defenceCosts.js`, `recyclingYieldCalculator.js` | Includes consistency check: every ship/defence has cost entry and vice versa. 100%                    |
-| Numbers           | `format/numbers.js`, `text.js`                                                     | Both locales, unit suffixes, parse/format round-trip. 83% / 100%                                      |
-| Context bridge    | `platform/bridge.js`                                                        | Full request/response round-trip across both contexts, error paths, concurrency, Firefox `cloneInto`. |
-| Context detection | `platform/runContext.js`                                                                   | Chrome/Edge/Firefox, script injection. 96%                                                            |
-| Page storage      | `store/OGBIData.js`                                                                     | Write-through contract, generic check that **every** setter persists.                                 |
-| Store access      | `src/**` (static)                                                                      | Phase 4 rule: no `this.json` alias, no `saveData()` method, no `Save()` behind a setter.              |
-| Version gate      | `ogame/pageData.js`                                                                | `isAtLeast_13_0_0` across version shapes.                                                             |
-| Options           | `ctxpage/conf-options.js`                                                              | Defaults, deep merge, proxy guards.                                                                   |
-| Content storage   | `ctxcontent/services/universe.storage.js`                                              | Key namespacing, Map/Set round-trip. 95%                                                              |
-| API parsers       | `ctxcontent/parsers/universe.{planets,players,alliances}.js`                           | XML fixtures, `fetch` stubbed.                                                                        |
+`refactoring-new.md` Phase D covered the five worst boot-path files (all ran on every page load at 3-19% before) plus `SpyMessagesAnalyzer.js`/`SpyReport.js` (docs' own "where most bug reports land"): `resourceDetail.js` 3→98%, `production.js` 4→95%, `stalkPanel.js` 7→79%, `fleetMovements.js` 9→99% (see next paragraph), `needs.js` 19→92%, `SpyMessagesAnalyzer.js` 10→71%, `SpyReport.js` 13→89%. The overall >70%-lines exit criterion is not met by this alone - Phase D2 ("restliche Abdeckung") is explicitly ongoing, not a one-shot target.
+
+`fleetMovements.js` is the sharpest example of the artefact below: `make coverage` still reports 9% for it because `test/util/page-context-boot.test.js` (a pure module-evaluation smoke test, alphabetically after `test/ogame/`) re-imports it and "wins" the merge. Isolated (`node --test --experimental-test-coverage test/ogame/fleetMovements*.test.js`) it measures 98.68%. Same artefact as `OGBIData.js` above - trust the isolated number.
+
+| Area              | Module                                                                                                  | Notes                                                                                                                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Serialisation     | `store/json.js`                                                                                         | Map/Set encoding, `extractJSON`, native round-trip. 96%                                                                                                                                                      |
+| Coordinates       | `ogame/coordinates.js`                                                                                  | Encoding, ordering, type handling. 99%                                                                                                                                                                       |
+| Costs             | `game/fleetCost.js`, `defenceCost.js`, `shipCosts.js`, `defenceCosts.js`, `recyclingYieldCalculator.js` | Includes consistency check: every ship/defence has cost entry and vice versa. 100%                                                                                                                           |
+| Numbers           | `format/numbers.js`, `text.js`                                                                          | Both locales, unit suffixes, parse/format round-trip. 83% / 100%                                                                                                                                             |
+| Context bridge    | `platform/bridge.js`                                                                                    | Full request/response round-trip across both contexts, error paths, concurrency, Firefox `cloneInto`.                                                                                                        |
+| Context detection | `platform/runContext.js`                                                                                | Chrome/Edge/Firefox, script injection. 96%                                                                                                                                                                   |
+| Page storage      | `store/OGBIData.js`                                                                                     | Write-through contract, generic check that **every** setter persists. Hot/cold blob split (`ogk-data` / `ogk-history`, Phase C): dirty-flag `Save()`, migration from a pre-split blob incl. abort mid-write. |
+| Store access      | `src/**` (static)                                                                                       | Phase 4 rule: no `this.json` alias, no `saveData()` method, no `Save()` behind a setter.                                                                                                                     |
+| Version gate      | `ogame/pageData.js`                                                                                     | `isAtLeast_13_0_0` across version shapes.                                                                                                                                                                    |
+| Options           | `ctxpage/conf-options.js`                                                                               | Defaults, deep merge, proxy guards.                                                                                                                                                                          |
+| Content storage   | `ctxcontent/services/universe.storage.js`                                                               | Key namespacing, Map/Set round-trip. 95%                                                                                                                                                                     |
+| API parsers       | `ctxcontent/parsers/universe.{planets,players,alliances}.js`                                            | XML fixtures, `fetch` stubbed.                                                                                                                                                                               |
 
 | Page context seam | `ogame/pageContext.js` | Everything `OGBeyondInfinity` constructor read out of DOM. 100% |
 | Calculation core | `game/gameFormulas.js` | `consumption`, `minesProduction`, `research`, `building`, five `roi*` functions, `getBestRoi`. Characterisation only: values recorded before the Phase 3 move and unchanged after it. |
@@ -151,6 +155,23 @@ tests. `pageContextRequest` has a 30 s deadlock guard instead of hanging forever
 corrupt `ogk-data` starts an empty store (moves the unreadable value to
 `ogk-data-corrupt`) instead of throwing at import time. `refactoring-new.md` Phase A
 fixed the rest:
+
+Phase D (coverage-only) found 3 more while writing tests for previously near-zero-coverage
+files, and — although Phase D is supposed to be coverage-only — they were fixed immediately
+afterward rather than left standing:
+
+- `stalkPanel.js`'s `update()` compared `mainId` (a number, `Math.min(...)`) against `planet.id`
+  (a string everywhere it's actually populated) with `===` — never matched, so no planet was ever
+  flagged `ogl-main`. Fixed: `parseFloat(planet.id) === mainId`.
+- `fleetMovements.js` read deuterium via `fleetDataRow.slice(-1, 0)` — the end argument is the
+  literal index `0`, not "one past the start", so start > end and the call always returned `[]`;
+  deuterium always read as 0 without lifeforms. Metal/crystal didn't cross zero, so they were
+  unaffected. Fixed: `fleetDataRow.at(row)`, which handles a negative index directly, for all three.
+- `SpyMessagesAnalyzer.js`'s danger check compared against the literal `"No Data"` (capital D);
+  `SpyReport.js` only ever produces `"No data"` (lowercase). The riskiest report (fleet/defense
+  unknown) rendered identically to a harmless 0/0 one, and as a blank cell rather than a label
+  (`toFormattedNumber("No data", ...)` returns `undefined` for non-numeric input). Fixed: match the
+  real sentinel string, and special-case it before formatting so the cell shows "No data".
 
 - `numbers.js`'s precision-0 handling (`precision ?? 0`, not `precision ? precision : 0`).
 - The pretty-printed-XML and HTTP-error-response crashes in `ctxcontent/parsers/*`

@@ -17,6 +17,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { setupBrowser } from "../../helpers/globals.js";
+import { planetList } from "../../fixtures/ogamePage.js";
+import { spyReportRow } from "../../fixtures/spyReport.js";
 
 const browser = setupBrowser({ url: "https://s1-en.ogame.gameforge.com/game/index.php?page=messages" });
 
@@ -24,8 +26,13 @@ const browser = setupBrowser({ url: "https://s1-en.ogame.gameforge.com/game/inde
 // transport from an outgoing one, and to find their own combat report.
 globalThis.playerId = 12345;
 
+// `localTime` is an OGame page global (server-adjusted "now"), read by
+// `DateTime.timeSince()` for the spy table's date column.
+globalThis.localTime = Date.now();
+
 const { messagesTabs } = await import("../../../src/ctxpage/messages/index.js");
 const OGBIData = (await import("../../../src/store/OGBIData.js")).default;
+const ship = (await import("../../../src/game/ship.js")).default;
 const SpyMessagesAnalyzer = (await import("../../../src/ctxpage/messages/analyzer/SpyMessagesAnalyzer.js")).default;
 const ExpeditionMessagesAnalyzer = (
   await import("../../../src/ctxpage/messages/analyzer/ExpeditionMessagesAnalyzer.js")
@@ -37,13 +44,35 @@ const TradeMessagesAnalyzer = (await import("../../../src/ctxpage/messages/analy
 
 test.after(() => {
   delete globalThis.playerId;
+  delete globalThis.localTime;
+  delete globalThis.$;
+  delete globalThis.ogame;
   browser.cleanup();
 });
 
-/** A fresh, empty store for every test - OGBIData is a singleton over localStorage. */
+/**
+ * A fresh, empty store for every test - OGBIData is a singleton over localStorage.
+ *
+ * `playerId` and the spy-table-specific option keys are only read by
+ * `SpyMessagesAnalyzer`/`SpyReport`; the other analyzers ignore them.
+ */
 function resetStore(options = {}) {
   OGBIData.json = {
-    options: { standardUnitBase: 0, tradeRate: [2.5, 1.5, 1], ...options },
+    playerId: 12345,
+    options: {
+      standardUnitBase: 0,
+      tradeRate: [2.5, 1.5, 1],
+      spyTableEnable: true,
+      spyTableAppend: false,
+      spyFilter: "$",
+      spyFret: ship.SmallCargoShip,
+      rvalLimit: 1e9,
+      rvalSelfLimitPlanet: 1e12,
+      rvalSelfLimitMoon: 1e12,
+      autoDeleteEnable: false,
+      ptreTK: null,
+      ...options,
+    },
     harvests: {},
     expeditions: {},
     combats: {},
@@ -51,8 +80,93 @@ function resetStore(options = {}) {
     combatsSums: {},
     discoveries: {},
     discoveriesSums: {},
-    ships: { 218: { cargoCapacity: 20000 } },
+    ships: {
+      218: { cargoCapacity: 20000 },
+      [ship.SmallCargoShip]: { cargoCapacity: 5000, speed: 10000 },
+      [ship.LargeCargoShip]: { cargoCapacity: 25000, speed: 7500 },
+      [ship.EspionageProbe]: { cargoCapacity: 5, speed: 5000000 },
+      [ship.Pathfinder]: { cargoCapacity: 10000, speed: 12000 },
+    },
+    universeSettingsTooltip: {
+      debrisFactor: 0.3,
+      debrisFactorDef: 0.3,
+      deuteriumInDebris: false,
+      repairFactor: 0.7,
+      galaxies: 6,
+      systems: 499,
+      donutGalaxy: true,
+      donutSystem: true,
+    },
+    empire: [],
+    speedFleetWar: 1,
   };
+}
+
+/**
+ * The page chrome `SpyMessagesAnalyzer` reads from outside the message list itself:
+ * somewhere to insert the table before (`#messages .messagePaginator`), and the
+ * current planet's coordinates for the "simulator" button (`#planetList`).
+ *
+ * @param {{trash?: boolean}} [opts] `trash: true` renders the disabled trashcan
+ *        button that flips the analyzer into "viewing the trash" mode.
+ */
+function spyPageChrome({ trash = false } = {}) {
+  return `
+    ${planetList([{ id: 1, coords: "1:2:3", active: true }])}
+    <div id="messages">
+      <ul class="messagesHolder"></ul>
+      <div class="messagePaginator"></div>
+    </div>
+    ${trash ? '<div class="messagesTrashcanBtns"><button class="custom_btn" disabled="disabled"></button></div>' : ""}
+  `;
+}
+
+/** What `Messages` hands an analyzer: a callable returning the current rows. */
+const spyCallableOf =
+  (...rows) =>
+  () =>
+    rows;
+
+/**
+ * Minimal jQuery stand-in for the two things `SpyMessagesAnalyzer#flagDeleted` uses:
+ * `$(el).data(key[, value])` and `$(document).on/off("ajaxSuccess", handler)`. Real
+ * jQuery is never loaded in this suite - OGame provides it as a page global.
+ */
+function installJQueryStub() {
+  const elementData = new WeakMap();
+  const handlers = new Map();
+
+  function $(target) {
+    if (target === document) {
+      return {
+        on(event, handler) {
+          if (!handlers.has(event)) handlers.set(event, new Set());
+          handlers.get(event).add(handler);
+          return this;
+        },
+        off(event, handler) {
+          handlers.get(event)?.delete(handler);
+          return this;
+        },
+      };
+    }
+    return {
+      data(key, value) {
+        if (value === undefined) return elementData.get(target)?.[key];
+        const existing = elementData.get(target) || {};
+        existing[key] = value;
+        elementData.set(target, existing);
+        return this;
+      },
+    };
+  }
+
+  $._trigger = (event, ...args) => {
+    handlers.get(event)?.forEach((handler) => handler(...args));
+  };
+
+  globalThis.$ = $;
+  return $;
 }
 
 /**
@@ -432,4 +546,325 @@ test("SpyMessagesAnalyzer.clean keeps the table in append mode, but a forced cle
 
   new SpyMessagesAnalyzer().clean(true);
   assert.equal(document.querySelector(".ogl-spyTable"), null);
+});
+
+test("the spy table lists claimed reports and skips a report about the player's own planet", () => {
+  resetStore();
+  document.body.innerHTML = spyPageChrome();
+  const enemyReport = spyReportRow(9401, {
+    targetPlayerId: 99999,
+    loot: "25%",
+    metal: 100000,
+    crystal: 50000,
+    deuterium: 20000,
+  });
+  const ownReport = spyReportRow(9402, { targetPlayerId: 12345 }); // matches OGBIData.playerId
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(enemyReport, ownReport), messagesTabs.SPY);
+
+  const rows = document.querySelectorAll(".ogl-spyTable tbody tr");
+  assert.equal(rows.length, 1, "the player's own report never enters the farm table");
+  assert.equal(rows[0].getAttribute("data-report-id"), "9401");
+});
+
+test("the table is built hidden, with no body at all, when spyTableEnable is off", () => {
+  resetStore({ spyTableEnable: false });
+  document.body.innerHTML = spyPageChrome();
+  const report = spyReportRow(9403, { targetPlayerId: 99999 });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+
+  const table = document.querySelector(".ogl-spyTable");
+  assert.ok(table.classList.contains("ogl-hidden"));
+  assert.equal(table.querySelector("tbody"), null, "the analyzer returns before ever reading the reports");
+});
+
+test("reports sort by gain, highest first, under the default $ filter", () => {
+  resetStore({ spyFilter: "$" });
+  document.body.innerHTML = spyPageChrome();
+  // loot is fixed at 25%, so renta is driven by metal alone: 25000, 50000, 12500.
+  const mid = spyReportRow(9501, { targetPlayerId: 99999, loot: "25%", metal: 100000 });
+  const highest = spyReportRow(9502, { targetPlayerId: 99999, loot: "25%", metal: 200000 });
+  const lowest = spyReportRow(9503, { targetPlayerId: 99999, loot: "25%", metal: 50000 });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(mid, highest, lowest), messagesTabs.SPY);
+
+  const order = [...document.querySelectorAll(".ogl-spyTable tbody tr")].map((tr) => tr.getAttribute("data-report-id"));
+  assert.deepEqual(order, ["9502", "9501", "9503"]);
+});
+
+test("clicking a column header re-sorts by that column and persists the choice", () => {
+  resetStore({ spyFilter: "$" });
+  document.body.innerHTML = spyPageChrome();
+  const lowFleet = spyReportRow(9511, { targetPlayerId: 99999, fleetFilter: "x", fleetValue: "100" });
+  const highFleet = spyReportRow(9512, { targetPlayerId: 99999, fleetFilter: "x", fleetValue: "999999" });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(lowFleet, highFleet), messagesTabs.SPY);
+
+  document.querySelector('.ogl-spyTable thead th[data-filter="FLEET"]').click();
+
+  assert.equal(OGBIData.options.spyFilter, "FLEET", "the choice is persisted, not just applied in memory");
+  const order = [...document.querySelectorAll(".ogl-spyTable tbody tr")].map((tr) => tr.getAttribute("data-report-id"));
+  assert.deepEqual(order, ["9512", "9511"], "FLEET sorts highest fleet first");
+});
+
+test("a report with unreadable fleet/defense data gets a 'No data' label and danger styling", () => {
+  // Was a KNOWN BUG: the danger check compared against the literal "No Data"
+  // (capital D) while SpyReport.js only ever produces "No data" (lowercase d), so
+  // the comparison never matched and the report - arguably the riskiest kind, since
+  // the player has no idea what is actually there - looked identical to a report
+  // that revealed 0 fleet and 0 defense. The cell also rendered blank rather than
+  // the "No data" label, since toFormattedNumber("No data", ...) returns undefined
+  // for non-numeric input. Fixed by matching the real sentinel string and by
+  // special-casing it before formatting.
+  resetStore();
+  document.body.innerHTML = spyPageChrome();
+  const report = spyReportRow(9521, { targetPlayerId: 99999, fleetFilter: "-", defenseFilter: "-" });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+
+  const row = document.querySelector('.ogl-spyTable tbody tr[data-report-id="9521"]');
+  assert.equal(row.cells[6].textContent, "No data");
+  assert.ok(row.cells[6].classList.contains("ogl-care"), "unknown fleet gets the warning class");
+  assert.equal(row.cells[7].textContent, "No data");
+  assert.ok(row.cells[7].classList.contains("ogl-danger"), "unknown defense gets the warning class");
+});
+
+test("the gain column is flagged ogl-good only once the loot clears the configured limit", () => {
+  resetStore({ rvalLimit: 20000 });
+  document.body.innerHTML = spyPageChrome();
+  const above = spyReportRow(9531, { targetPlayerId: 99999, loot: "25%", metal: 100000 }); // renta 25000
+  const below = spyReportRow(9532, { targetPlayerId: 99999, loot: "25%", metal: 20000 }); // renta 5000
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(above, below), messagesTabs.SPY);
+
+  const aboveRow = document.querySelector('.ogl-spyTable tbody tr[data-report-id="9531"]');
+  const belowRow = document.querySelector('.ogl-spyTable tbody tr[data-report-id="9532"]');
+  assert.ok(aboveRow.cells[4].classList.contains("ogl-good"));
+  assert.equal(belowRow.cells[4].classList.contains("ogl-good"), false);
+});
+
+test("the fleet and defense columns are flagged once their debris-adjusted value clears the limit", () => {
+  resetStore({ rvalLimit: 1000 });
+  document.body.innerHTML = spyPageChrome();
+  // debrisFactor 0.3: 10000 -> 3000 (over), 100 -> 30 (under). defense compares directly to 0.
+  const risky = spyReportRow(9541, {
+    targetPlayerId: 99999,
+    fleetFilter: "x",
+    fleetValue: "10000",
+    defenseFilter: "x",
+    defenseValue: "500",
+  });
+  const safe = spyReportRow(9542, {
+    targetPlayerId: 99999,
+    fleetFilter: "x",
+    fleetValue: "100",
+    defenseFilter: "0",
+  });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(risky, safe), messagesTabs.SPY);
+
+  const riskyRow = document.querySelector('.ogl-spyTable tbody tr[data-report-id="9541"]');
+  const safeRow = document.querySelector('.ogl-spyTable tbody tr[data-report-id="9542"]');
+  assert.ok(riskyRow.cells[6].classList.contains("ogl-care"), "debris value clears the limit");
+  assert.ok(riskyRow.cells[7].classList.contains("ogl-danger"), "defense is positive");
+  assert.equal(safeRow.cells[6].classList.contains("ogl-care"), false);
+  assert.equal(safeRow.cells[7].classList.contains("ogl-danger"), false);
+});
+
+test("the cargo column carries a ship count per cargo type and links to the one currently chosen", () => {
+  resetStore({ spyFret: ship.SmallCargoShip });
+  document.body.innerHTML = spyPageChrome();
+  // Same numbers as the SpyReport calcNeededShips test: pt=10, gt=2, pf=5.
+  const report = spyReportRow(9551, {
+    targetPlayerId: 99999,
+    loot: "25%",
+    metal: 100000,
+    crystal: 50000,
+    deuterium: 20000,
+  });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+
+  const shipCell = document.querySelector('.ogl-spyTable tbody tr[data-report-id="9551"] .ogl-cargo-choice');
+  assert.equal(shipCell.getAttribute(`data-ship-${ship.SmallCargoShip}`), "10");
+  assert.equal(shipCell.getAttribute(`data-ship-${ship.LargeCargoShip}`), "2");
+  assert.equal(shipCell.getAttribute(`data-ship-${ship.Pathfinder}`), "5");
+  assert.ok(shipCell.querySelector("a").getAttribute("href").includes(`am${ship.SmallCargoShip}=10`));
+});
+
+test("the options bar toggles table visibility, append mode and auto-delete, and persists each choice", () => {
+  resetStore({ spyTableEnable: true, spyTableAppend: false, autoDeleteEnable: false });
+  document.body.innerHTML = spyPageChrome();
+  const report = spyReportRow(9561, { targetPlayerId: 99999 });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+
+  const table = document.querySelector(".ogl-spyTable");
+  assert.equal(table.classList.contains("ogl-hidden"), false);
+
+  document.querySelector(".ogl-tableOptions .icon_eye").click();
+  assert.equal(OGBIData.options.spyTableEnable, false);
+  assert.ok(table.classList.contains("ogl-hidden"));
+
+  document.querySelector(".ogl-tableOptions .icon_plus").click();
+  assert.equal(OGBIData.options.spyTableAppend, true);
+
+  document.querySelector(".ogl-tableOptions .icon_trash").click();
+  assert.equal(OGBIData.options.autoDeleteEnable, true);
+  // Toggling auto-delete forces a clean(true) + reload, which rebuilds the table
+  // from the same cached message list rather than leaving it torn down.
+  assert.ok(document.querySelector(".ogl-spyTable"), "the table was rebuilt after the reload");
+});
+
+test("on the trash tab, a restore button replaces the delete button", () => {
+  resetStore();
+  document.body.innerHTML = spyPageChrome({ trash: true });
+  const report = spyReportRow(9571, { targetPlayerId: 99999 });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.TRASH);
+
+  assert.equal(document.querySelector(".ogl-spyTable tbody button.icon_trash"), null);
+  assert.ok(document.querySelector(".ogl-spyTable tbody button.icon_restore"));
+});
+
+test("clicking delete queues exactly that report, hides its row and sends its id through flagDeleted", (t) => {
+  resetStore();
+  document.body.innerHTML = spyPageChrome();
+  const report = spyReportRow(9601, { targetPlayerId: 99999, fleetFilter: "0", defenseFilter: "0" });
+
+  installJQueryStub();
+  let capturedIds;
+  globalThis.ogame = {
+    messages: {
+      flagDeleted: (fakeBtn) => {
+        capturedIds = globalThis.$(fakeBtn).data("messageId");
+      },
+    },
+  };
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+  const row = document.querySelector('.ogl-spyTable tbody tr[data-report-id="9601"]');
+
+  // #flagDeleted() leaves a real 10s safety-net setTimeout pending until the server
+  // confirms - mock it so the click below schedules a fake timer instead of a real
+  // one that would otherwise keep the process (and this test's now-torn-down
+  // browser globals) alive for a real 10 seconds after the test ends.
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  try {
+    row.querySelector("button.icon_trash").click();
+
+    assert.deepEqual(capturedIds, ["9601"]);
+    assert.ok(row.classList.contains("hide"), "the row is hidden optimistically, before any server confirmation");
+  } finally {
+    t.mock.timers.reset();
+  }
+});
+
+test("a server-confirmed delete also removes the native message list item", (t) => {
+  resetStore();
+  document.body.innerHTML = spyPageChrome();
+  const report = spyReportRow(9602, { targetPlayerId: 99999, fleetFilter: "0", defenseFilter: "0" });
+  document.querySelector(".messagesHolder").appendChild(report); // real messages live under .messagesHolder
+
+  const $ = installJQueryStub();
+  globalThis.ogame = {
+    messages: {
+      flagDeleted: (fakeBtn) => {
+        $(fakeBtn).data("messageId"); // real ogame.messages.flagDeleted reads it; we don't need the value here
+      },
+    },
+  };
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+
+  // #flagDeleted() leaves a real 10s safety-net setTimeout pending regardless of
+  // whether $._trigger("ajaxSuccess", ...) below logically settles it - settling
+  // only short-circuits the callback body, it does not clearTimeout() the handle,
+  // so mock it too or the process waits out the real 10s before this file can exit.
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  document.querySelector(".ogl-spyTable tbody button.icon_trash").click();
+
+  assert.ok(document.querySelector(".messagesHolder .msg[data-msg-id='9602']"), "not removed before confirmation");
+
+  $._trigger(
+    "ajaxSuccess",
+    {},
+    { responseJSON: { status: "success" } },
+    { url: "index.php?page=ingame&component=fleetdispatch&action=flagDeleted&asJson=1", data: "messageIds[]=9602" }
+  );
+
+  assert.equal(
+    document.querySelector(".messagesHolder .msg[data-msg-id='9602']"),
+    null,
+    "ogame.messages.flagDeleted only cleans up a single-id selector, so the analyzer removes the batch itself"
+  );
+  t.mock.timers.reset();
+});
+
+test("a flagDeleted call that throws synchronously reverts the optimistic hide", () => {
+  resetStore();
+  document.body.innerHTML = spyPageChrome();
+  const report = spyReportRow(9603, { targetPlayerId: 99999, fleetFilter: "0", defenseFilter: "0" });
+
+  installJQueryStub();
+  globalThis.ogame = {
+    messages: {
+      flagDeleted: () => {
+        throw new Error("boom");
+      },
+    },
+  };
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+  const row = document.querySelector('.ogl-spyTable tbody tr[data-report-id="9603"]');
+
+  assert.doesNotThrow(() => row.querySelector("button.icon_trash").click());
+  assert.equal(row.classList.contains("hide"), false, "the failed delete was undone rather than left misleading");
+});
+
+test("auto-delete queues a report below the limit without any click, in the same batch delete path", (t) => {
+  resetStore({ autoDeleteEnable: true, rvalLimit: 100000 });
+  document.body.innerHTML = spyPageChrome();
+  // fleet/defense 0, loot 1% of 1000 = renta 10 - well under the 100000 limit.
+  const report = spyReportRow(9701, {
+    targetPlayerId: 99999,
+    fleetFilter: "0",
+    defenseFilter: "0",
+    loot: "1%",
+    metal: 1000,
+  });
+
+  installJQueryStub();
+  let capturedIds;
+  globalThis.ogame = {
+    messages: {
+      flagDeleted: (fakeBtn) => {
+        capturedIds = globalThis.$(fakeBtn).data("messageId");
+      },
+    },
+  };
+
+  // auto-delete fires #flagDeleted() during analyze() itself, leaving a real 10s
+  // safety-net setTimeout pending - mock it so it doesn't keep the process alive
+  // for a real 10 seconds after this test's browser globals are torn down.
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  try {
+    new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+
+    assert.deepEqual(capturedIds, ["9701"], "queued and sent without the player clicking anything");
+    const row = document.querySelector('.ogl-spyTable tbody tr[data-report-id="9701"]');
+    assert.ok(row.classList.contains("hide"));
+  } finally {
+    t.mock.timers.reset();
+  }
+});
+
+test("#ptreSpy is a no-op when no PTRE team key is configured", () => {
+  resetStore({ ptreTK: null });
+  document.body.innerHTML = spyPageChrome();
+  const report = spyReportRow(9801, { targetPlayerId: 12345 }); // would match playerId if ptreSpy ran
+
+  assert.doesNotThrow(() => new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY));
+  assert.equal(OGBIData.spies, undefined, "nothing was ever written - the guard returns before touching it");
 });

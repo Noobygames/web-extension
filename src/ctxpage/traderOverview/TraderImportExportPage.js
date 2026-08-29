@@ -98,25 +98,25 @@ class TraderImportExportPage {
     };
     const isObsolete = () => {
       const now = new Date();
-      const nextReminder = new Date(OGBIData._json.reminders["importExport"].next);
+      const nextReminder = new Date(OGBIData.json.reminders["importExport"].next);
       return nextReminder < now;
     };
 
     const updateReminder = (date, mustRemind, rarity = null) => {
-      const importExportData = OGBIData._json.reminders["importExport"] || {};
+      const importExportData = OGBIData.json.reminders["importExport"] || {};
       importExportData.next = date;
       importExportData.mustRemind = mustRemind;
       if (rarity) importExportData.rarity = rarity;
 
-      OGBIData._json.reminders["importExport"] = importExportData;
+      OGBIData.json.reminders["importExport"] = importExportData;
       OGBIData.Save();
     };
 
     // Initialize reminder if not set
-    if (!OGBIData._json.reminders["importExport"]) updateReminder(new Date(0).toISOString(), false);
+    if (!OGBIData.json.reminders["importExport"]) updateReminder(new Date(0).toISOString(), false);
 
     const remind = () => {
-      if (OGBIData._json.reminders["importExport"].mustRemind) {
+      if (OGBIData.json.reminders["importExport"].mustRemind) {
         this.logger.debug("Showing import/export reminder");
 
         const menuItem =

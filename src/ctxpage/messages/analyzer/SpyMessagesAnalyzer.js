@@ -548,17 +548,28 @@ class SpyMessagesAnalyzer {
 
       bodyRow.appendChild(perHourCol);
 
-      const fleetCol = createDOM("td", {}, toFormattedNumber(report.fleet, null, true));
+      // report.fleet/report.defense are either a number or the sentinel string
+      // "No data" (SpyReport.js) when OGame didn't reveal it. toFormattedNumber()
+      // returns undefined (a blank cell) for that string, so it needs its own text.
+      const fleetCol = createDOM(
+        "td",
+        {},
+        report.fleet === "No data" ? report.fleet : toFormattedNumber(report.fleet, null, true)
+      );
       if (
-        Math.round(report.fleet * OGBIData.universeSettingsTooltip.debrisFactor) >= OGBIData.options.rvalLimit ||
-        report.fleet === "No Data"
+        report.fleet === "No data" ||
+        Math.round(report.fleet * OGBIData.universeSettingsTooltip.debrisFactor) >= OGBIData.options.rvalLimit
       ) {
         fleetCol.classList.add("ogl-care");
       }
       bodyRow.appendChild(fleetCol);
 
-      const defCol = createDOM("td", {}, toFormattedNumber(report.defense, null, true));
-      if (report.defense > 0 || report.defense === "No Data") defCol.classList.add("ogl-danger");
+      const defCol = createDOM(
+        "td",
+        {},
+        report.defense === "No data" ? report.defense : toFormattedNumber(report.defense, null, true)
+      );
+      if (report.defense === "No data" || report.defense > 0) defCol.classList.add("ogl-danger");
       bodyRow.appendChild(defCol);
 
       const shipCol = createDOM("td", { class: "ogl-cargo-choice" });

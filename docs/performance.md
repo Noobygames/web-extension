@@ -246,7 +246,8 @@ reload. `ogCore.js` prints:
 
 - a timeline: module evaluation, DOM ready, `init()`, `start()`, the DOMPurify wait;
 - one row per `start()` step that took more than 0.5 ms (`perf.instrumentMethods`);
-- totals for `ogk-data`: parse time, number of writes, time spent in them, and the blob size.
+- totals for `ogk-data` (hot) and, since the Phase C split below, `ogk-history` (cold): parse
+  time, number of writes, time spent in them, and the blob size, for each.
 
 That last table is the one to look at before attacking the store: it answers "how big is the blob
 really, and how many of the 82 writes actually happen on this page" with numbers instead of
@@ -271,14 +272,44 @@ OGBIData.sideStalk.splice(1, 1); // in-place mutation - must NOT persist
 ```
 
 With synchronous write-through the mutation is not persisted, which is the documented contract
-(`CLAUDE.md`, and the `TRAP:` tests in `test/util/OGBIData.test.js`). With a deferred flush the
+(`CLAUDE.md`, and the `TRAP:` tests in `test/util/OGIData.test.js`). With a deferred flush the
 pending write picks up the mutation and persists it — so whether an in-place mutation sticks starts
 depending on flush timing. That is a subtle, silent source of half-written state, and it is not
 worth 250 ms.
 
-**The safe way to get this win** is to reduce the number of `saveData()` calls rather than to defer
-them, or to shrink the blob (`spies` dominates it). Both are larger changes that need their own
-review; neither is a mechanical edit.
+**The safe way to get this win**, this doc concluded, was to reduce the number of `saveData()`
+calls rather than to defer them, or to shrink the blob (`spies` dominates it) — see the fix below.
+
+### The blob split (refactoring-new.md Phase C)
+
+`OGBIData` now keeps two blobs, not one: `localStorage["ogk-data"]` (hot — `options`, `empire`,
+`markers`, `needs`, `sideStalk`, every progress/timestamp field, everything else) and
+`localStorage["ogk-history"]` (cold — `spies`, `expeditions`, `combats`, `harvests`,
+`discoveries`, their `*Sums`, `translations`; pure history, written only when a message is
+analysed). `spies` alone was most of the 428 KB the section above measured, so the hot half an
+established account actually writes 80+ times per page load is now tens of KB, not hundreds.
+
+The external interface is exactly what it was before the split — one `OGBIData.json`, the same ~28
+accessors, the same write-through and TRAP contracts — so nothing outside `src/store/OGBIData.js`
+changed. Internally, `Save()` also tracks whether the cold half was actually touched since its last
+write and skips re-serialising it when not: `updateProductionProgress()` (`ctxpage/empire/production.js`),
+the function this section's 250 ms figure was mostly about, never touches a cold field, so its
+boot-path `Save()` call is now hot-only automatically - no change needed in that file.
+
+`node scripts/bench.mjs store` reproduces the win against a synthetic 251 KB pre-split blob (the
+same shape `docs/testing.md`'s benchmarks use) - not a live-page measurement, but the same
+methodology this whole doc is built on:
+
+```
+store: Save() serialising the whole pre-split blob (before Phase C)    1052.086 us/op
+store: Save() after the split, no cold field touched (Phase C)            4.961 us/op
+(Save() speedup after the split: 212.1x)
+```
+
+Comfortably past the phase's 5x exit criterion. What is **not** done: an `ogi-perf` before/after
+capture on a real, established account's OGame page — that needs a live browser this environment
+does not have. The number above is a reproducible lower bound in the same spirit as the rest of
+this document, not a replacement for that capture.
 
 ### Other candidates checked and left alone
 

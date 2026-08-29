@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import { setupBrowser } from "../helpers/globals.js";
 
 const STORAGE_KEY = "ogk-data";
+const HISTORY_KEY = "ogk-history";
 
 // A single shared instance, like the real page has, reset between tests through
 // the `json` setter. Construction-time behaviour lives in
@@ -21,19 +22,25 @@ bootstrap.cleanup();
 async function withOGBIData(seed, run) {
   const browser = setupBrowser();
   try {
+    // The `json` setter already splits the seed across both halves and persists
+    // both - nothing further to write here.
     OGBIData.json = seed ?? {};
-    globalThis.localStorage.removeItem(STORAGE_KEY);
-    if (seed !== undefined) globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
     await run(OGBIData, browser);
   } finally {
     browser.cleanup();
   }
 }
 
-/** Reads the blob straight out of localStorage, bypassing the singleton. */
+/**
+ * Reads the blob straight out of localStorage, bypassing the singleton - merging
+ * ogk-data (hot) and ogk-history (cold) back into one object, since OGBIData.json
+ * presents them as one to every caller.
+ */
 function stored() {
-  const raw = globalThis.localStorage.getItem(STORAGE_KEY);
-  return raw === null ? null : JSON.parse(raw);
+  const hotRaw = globalThis.localStorage.getItem(STORAGE_KEY);
+  const coldRaw = globalThis.localStorage.getItem(HISTORY_KEY);
+  if (hotRaw === null && coldRaw === null) return null;
+  return { ...(hotRaw ? JSON.parse(hotRaw) : {}), ...(coldRaw ? JSON.parse(coldRaw) : {}) };
 }
 
 test("assigning through a setter writes to localStorage immediately", async () => {
@@ -61,6 +68,56 @@ test("the json setter replaces the whole blob and persists it", async () => {
 
     assert.deepEqual(stored(), { playerId: 2, empire: [] });
     assert.equal(OGBIData.playerId, 2);
+  });
+});
+
+/**
+ * Counts `localStorage.setItem(key, ...)` calls made while `fn` runs. Patches the
+ * Storage prototype, not the instance: jsdom's `localStorage` is Proxy-backed and
+ * treats an instance-level `localStorage.setItem = ...` assignment as writing a
+ * storage entry literally named "setItem", not a method override.
+ */
+function countSetItemCalls(key, fn) {
+  const proto = Object.getPrototypeOf(globalThis.localStorage);
+  const original = proto.setItem;
+  let count = 0;
+  proto.setItem = function (k, v) {
+    if (k === key) count++;
+    return original.call(this, k, v);
+  };
+  try {
+    fn();
+  } finally {
+    proto.setItem = original;
+  }
+  return count;
+}
+
+test("Save() does not re-serialize ogk-history when no cold field changed", async () => {
+  await withOGBIData({ spies: { 1: {} } }, (OGBIData) => {
+    OGBIData.options = { fret: 1 }; // a hot setter, unrelated to the cold half
+
+    const historyWrites = countSetItemCalls(HISTORY_KEY, () => OGBIData.Save());
+    assert.equal(historyWrites, 0, "nothing cold changed, so ogk-history must not be re-written");
+  });
+});
+
+test("Save() re-serializes ogk-history once a cold field is set through the json proxy", async () => {
+  await withOGBIData({}, (OGBIData) => {
+    OGBIData.json.spies = { 1: {} };
+
+    const historyWrites = countSetItemCalls(HISTORY_KEY, () => OGBIData.Save());
+    assert.equal(historyWrites, 1);
+    assert.deepEqual(stored().spies, { 1: {} });
+  });
+});
+
+test("a dedicated cold setter clears the dirty flag, so a later Save() skips ogk-history again", async () => {
+  await withOGBIData({}, (OGBIData) => {
+    OGBIData.spies = { 1: {} }; // dedicated setter: already persisted cold itself
+
+    const historyWrites = countSetItemCalls(HISTORY_KEY, () => OGBIData.Save());
+    assert.equal(historyWrites, 0, "the dedicated setter already flushed ogk-history; Save() has nothing new to do");
   });
 });
 

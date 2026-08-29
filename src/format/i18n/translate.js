@@ -198,6 +198,7 @@ class Translator {
       translations.language = currentLanguage();
 
       OGBIData.json.translations = translations;
+      OGBIData.Save();
 
       this.logger.debug(`Translations (${currentLanguage()}) updated`);
     } else {
@@ -220,6 +221,7 @@ class Translator {
           translations.lfTypeNames[lfName.textContent.trim()] = lifeformIcon.classList[1];
         });
         OGBIData.json.translations = translations;
+        OGBIData.Save();
         // last fetch has to be from current planet/moon else Ogame switches on next refresh
         if (currentPosition.isMoon) fetch(currentPosition.planet.querySelector(".moonlink").href);
       });
