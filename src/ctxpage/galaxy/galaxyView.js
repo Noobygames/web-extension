@@ -1,6 +1,7 @@
 import * as DOM from "../../ui/dom.js";
 import { createDOM } from "../../ui/dom.js";
 import * as wait from "../../platform/wait.js";
+import { getLogger } from "../../platform/logger.js";
 import * as ptreService from "../../integrations/ptre/service.js";
 import Translator from "../../format/i18n/translate.js";
 import OGBIData from "../../store/OGBIData.js";
@@ -12,6 +13,8 @@ import { renderPlanet } from "./renderPlanet.js";
 import { pageContextRequest } from "../../platform/bridge.js";
 import { addTemplateSelector } from "../fleetdispatch/templates.js";
 import { addMarkerUI, generateHiscoreLink, getMarkedPlayers, highlightTarget, stalk, targetList } from "./index.js";
+
+const logger = getLogger("galaxyView");
 
 /**
  * Everything OGI draws into OGame's galaxy view: the per-row tooltips and markers,
@@ -136,11 +139,14 @@ function onGalaxyUpdate(context) {
     callback(galaxy, system);
   };
 
-  wait.waitForQuerySelector("#galaxyLoading[style='display: none;']").then(() => {
-    if (!document.querySelector(".ogl-colors")) {
-      callback(galaxy, system);
-    }
-  });
+  wait
+    .waitForQuerySelector("#galaxyLoading[style='display: none;']")
+    .then(() => {
+      if (!document.querySelector(".ogl-colors")) {
+        callback(galaxy, system);
+      }
+    })
+    .catch(() => logger.warn("#galaxyLoading never hid - skipping redirect fix"));
 }
 
 function applyTargetClaims(context, galaxy, system) {

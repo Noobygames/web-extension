@@ -175,7 +175,12 @@ function expedition(context) {
         btn.classList.remove("ogl-active");
       });
 
-      await wait.waitFor(() => !fleetDispatcher.loading);
+      try {
+        await wait.waitFor(() => !fleetDispatcher.loading);
+      } catch {
+        logger.warn("fleetDispatcher stayed loading - expedition button click ignored");
+        return;
+      }
       document.querySelector("#resetall").click();
       fleetState.expeditionMode = true;
       fleetState.collectMode = false;
@@ -436,7 +441,11 @@ function expedition(context) {
 
         // number of expeditions in the same expedition system, including the one we are going to send
         let sameExpeditionDestination = 1;
-        await wait.waitFor(() => document.querySelector("#eventContent") !== null);
+        try {
+          await wait.waitFor(() => document.querySelector("#eventContent") !== null);
+        } catch {
+          logger.warn("#eventContent did not appear - skipping same-destination expedition check");
+        }
         document.querySelectorAll(".eventFleet td.destCoords").forEach((coords) => {
           if (
             coords.textContent.trim() == "[" + originSystem + ":16]" &&

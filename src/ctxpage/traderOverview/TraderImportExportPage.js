@@ -130,15 +130,33 @@ class TraderImportExportPage {
               addHint(importExportShop.querySelector("h2"));
             } else if (importExportReminderMode == 2) addHint(importExportShop);
             importExportShop.addEventListener("click", () => {
-              wait.waitForQuerySelector("#div_importexport", 250, 10000).then((traderImportExportDiv) => {
-                const importExportStatus = this.#isImportExportActive(traderImportExportDiv);
-                if (importExportStatus.active) {
-                  // Import/export is active, wee need to detect when user clicks the take button
-                  const paymentElement = traderImportExportDiv.querySelector(".payment");
-                  const payButton = traderImportExportDiv.querySelector("a.pay ");
-                  if (payButton && paymentElement && paymentElement.style.display === "block") {
-                    payButton.addEventListener("click", () => {
-                      wait.waitForQuerySelector("a.bargain.import_bargain.take", 250, 10000).then((takeButton) => {
+              wait
+                .waitForQuerySelector("#div_importexport", 250, 10000)
+                .then((traderImportExportDiv) => {
+                  const importExportStatus = this.#isImportExportActive(traderImportExportDiv);
+                  if (importExportStatus.active) {
+                    // Import/export is active, wee need to detect when user clicks the take button
+                    const paymentElement = traderImportExportDiv.querySelector(".payment");
+                    const payButton = traderImportExportDiv.querySelector("a.pay ");
+                    if (payButton && paymentElement && paymentElement.style.display === "block") {
+                      payButton.addEventListener("click", () => {
+                        wait
+                          .waitForQuerySelector("a.bargain.import_bargain.take", 250, 10000)
+                          .then((takeButton) => {
+                            addHint(takeButton);
+                            //take button is now available, we can update the reminder (in case user does not take it now), and add a listener to it
+                            updateReminder(getNextReminderDate(), true);
+                            takeButton.addEventListener("click", () => {
+                              // User has clicked the import/export take, do not remind for a while
+                              updateReminder(getNextReminderDate(), false);
+                            });
+                          })
+                          .catch(() => this.logger.warn("import/export take button did not appear in time"));
+                      });
+                    } else {
+                      // No pay button, probably an active import/export ready to take
+                      const takeButton = traderImportExportDiv.querySelector("a.bargain.import_bargain.take");
+                      if (takeButton) {
                         addHint(takeButton);
                         //take button is now available, we can update the reminder (in case user does not take it now), and add a listener to it
                         updateReminder(getNextReminderDate(), true);
@@ -146,26 +164,14 @@ class TraderImportExportPage {
                           // User has clicked the import/export take, do not remind for a while
                           updateReminder(getNextReminderDate(), false);
                         });
-                      });
-                    });
-                  } else {
-                    // No pay button, probably an active import/export ready to take
-                    const takeButton = traderImportExportDiv.querySelector("a.bargain.import_bargain.take");
-                    if (takeButton) {
-                      addHint(takeButton);
-                      //take button is now available, we can update the reminder (in case user does not take it now), and add a listener to it
-                      updateReminder(getNextReminderDate(), true);
-                      takeButton.addEventListener("click", () => {
-                        // User has clicked the import/export take, do not remind for a while
-                        updateReminder(getNextReminderDate(), false);
-                      });
+                      }
                     }
+                  } else {
+                    // Import/export is not active, do not remind for a while
+                    updateReminder(getNextReminderDate(), false);
                   }
-                } else {
-                  // Import/export is not active, do not remind for a while
-                  updateReminder(getNextReminderDate(), false);
-                }
-              });
+                })
+                .catch(() => this.logger.warn("#div_importexport did not appear in time"));
             });
           }
         } else {

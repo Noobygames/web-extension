@@ -2,6 +2,7 @@ import * as DOM from "../../ui/dom.js";
 import { createDOM } from "../../ui/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
 import * as wait from "../../platform/wait.js";
+import { getLogger } from "../../platform/logger.js";
 import Translator from "../../format/i18n/translate.js";
 import OGBIData from "../../store/OGBIData.js";
 import AllianceClass from "../../game/allianceClass.js";
@@ -27,6 +28,8 @@ import {
   roiPlasmatechnology,
 } from "../../game/gameFormulas.js";
 import { isBuildPage, isLeveledBuildingPage, isResearchPage } from "../../ogame/pages.js";
+
+const logger = getLogger("technoDetail");
 
 /**
  * The detail panel OGame opens for a building or a technology, with OGI's additions:
@@ -246,11 +249,14 @@ function technoDetail(context) {
             consDiv.appendChild(satsSpan);
             satsSpan.addEventListener("click", () => {
               document.querySelector(".solarSatellite.hasDetails span").click();
-              wait.waitForQuerySelector("#technologydetails[data-technology-id='212']", 10, 2000).then(() => {
-                let satsInput = document.querySelector("#build_amount");
-                satsInput.value = satsNeeded;
-                satsInput.dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowDown" }));
-              });
+              wait
+                .waitForQuerySelector("#technologydetails[data-technology-id='212']", 10, 2000)
+                .then(() => {
+                  let satsInput = document.querySelector("#build_amount");
+                  satsInput.value = satsNeeded;
+                  satsInput.dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowDown" }));
+                })
+                .catch(() => logger.warn("solar satellite panel did not open in time"));
             });
           }
           prodDiv.html(
@@ -725,12 +731,15 @@ function technoDetail(context) {
                 energyDiv.appendChild(satsSpan);
                 satsSpan.addEventListener("click", () => {
                   document.querySelector(".solarSatellite.hasDetails span").click();
-                  wait.waitForQuerySelector("#technologydetails[data-technology-id='212']").then(() => {
-                    let satsInput = document.querySelector("#build_amount");
-                    satsInput.focus();
-                    satsInput.value = satsNeeded;
-                    satsInput.dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowDown" }));
-                  });
+                  wait
+                    .waitForQuerySelector("#technologydetails[data-technology-id='212']")
+                    .then(() => {
+                      let satsInput = document.querySelector("#build_amount");
+                      satsInput.focus();
+                      satsInput.value = satsNeeded;
+                      satsInput.dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowDown" }));
+                    })
+                    .catch(() => logger.warn("solar satellite panel did not open in time"));
                 });
               }
             }

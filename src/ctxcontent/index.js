@@ -88,7 +88,8 @@ window.addEventListener(
         }
         clone.requestId = request.requestId;
         window.dispatchEvent(new CustomEvent("ogi-players-rep", { detail: clone }));
-      });
+      })
+      .catch(() => mainLogger.warn("dataHelper not ready in time for ogi-players request"));
   },
   false
 );

@@ -339,13 +339,16 @@ class OGBeyondInfinity {
     OGBIData.Save();
     listenKeyboard(this.pageContext());
 
-    wait.waitForQuerySelector("#eventContent").then(() => {
-      eventBox(this.pageContext());
-      flyingFleet(this.planetBarContext());
-      updateFlyings(this.planetBarContext());
-      updatePlanets_IncomingHostileFleet(this.planetBarContext());
-      updatePlanets_FleetActivity(this.planetBarContext());
-    });
+    wait
+      .waitForQuerySelector("#eventContent")
+      .then(() => {
+        eventBox(this.pageContext());
+        flyingFleet(this.planetBarContext());
+        updateFlyings(this.planetBarContext());
+        updatePlanets_IncomingHostileFleet(this.planetBarContext());
+        updatePlanets_FleetActivity(this.planetBarContext());
+      })
+      .catch(() => logger.warn("#eventContent did not appear in time"));
     this.#startFleetDispatchPage();
     this.messagesAnalyzer();
     cleanupMessages(this.pageContext());
@@ -409,9 +412,9 @@ class OGBeyondInfinity {
     if (OGBIData.json.options.pantryKey) {
       // Only players who configured a Pantry bucket ever need this, and it pulls
       // LZString's loader with it. Phase 5 of refactoring.md.
-      loadChunk("pantry", () => import("./ctxpage/pantry/index.js")).then((module) =>
-        module?.checkPantrySync(this.pageContext(), OGBIData.json.options.pantryKey)
-      );
+      loadChunk("pantry", () => import("./ctxpage/pantry/index.js"))
+        .then((module) => module?.checkPantrySync(this.pageContext(), OGBIData.json.options.pantryKey))
+        .catch((error) => logger.warn("pantry sync skipped", error));
     }
 
     /*Fix banner styles for messages, premium and shop page*/
@@ -796,12 +799,14 @@ class OGBeyondInfinity {
       const module = await loadChunk("stats", () => import("./ctxpage/stats/index.js"));
       if (!module) return;
       await dataReady;
-      module.statistics({
-        playerClass: this.playerClass,
-        hasLifeforms: this.hasLifeforms,
-        universe: this.universe,
-        playerBonuses: this.playerBonuses(),
-      });
+      module
+        .statistics({
+          playerClass: this.playerClass,
+          hasLifeforms: this.hasLifeforms,
+          universe: this.universe,
+          playerBonuses: this.playerBonuses(),
+        })
+        .catch((error) => logger.warn("statistics popup failed to open", error));
     });
   }
 
@@ -1295,20 +1300,29 @@ class OGBeyondInfinity {
     [202, 203, 219, 209, 212].forEach((id) => {
       if (url.searchParams.has(`techId${id}`)) {
         let needed = Number(url.searchParams.get(`techId${id}`));
-        wait.waitForQuerySelector(`.hasDetails[data-technology='${id}'] span`).then(() => {
-          document.querySelector(`.hasDetails[data-technology='${id}'] span`).click();
-        });
-        wait.waitForQuerySelector(`#technologydetails[data-technology-id='${id}']`).then(() => {
-          let input = document.querySelector("#build_amount");
-          input.focus();
-          input.value = needed;
-          input.dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowDown" }));
-        });
+        wait
+          .waitForQuerySelector(`.hasDetails[data-technology='${id}'] span`)
+          .then(() => {
+            document.querySelector(`.hasDetails[data-technology='${id}'] span`).click();
+          })
+          .catch(() => logger.warn(`checkRedirect: no .hasDetails for technology ${id} on this page`));
+        wait
+          .waitForQuerySelector(`#technologydetails[data-technology-id='${id}']`)
+          .then(() => {
+            let input = document.querySelector("#build_amount");
+            input.focus();
+            input.value = needed;
+            input.dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowDown" }));
+          })
+          .catch(() => logger.warn(`checkRedirect: technology detail panel ${id} did not open in time`));
       }
     });
     if (technoDetails) {
       let selector = `.technology[data-technology='${technoDetails}'] span`;
-      wait.waitForQuerySelector(selector).then(() => document.querySelector(selector).click());
+      wait
+        .waitForQuerySelector(selector)
+        .then(() => document.querySelector(selector).click())
+        .catch(() => logger.warn(`checkRedirect: no technology element for ${technoDetails} on this page`));
     }
   }
 
