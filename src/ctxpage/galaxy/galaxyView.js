@@ -298,7 +298,8 @@ function attachSpyReportTooltip(cell, coords, type) {
 /** Past this age the snapshot is treated as stale enough to suggest a fresh probe. */
 const STALE_REPORT_MINUTES = 60;
 
-function buildSpyReportTooltipContent(report) {
+/** Also used by `raidList.js` (same cached-report shape) so both hovers show the same content. */
+export function buildSpyReportTooltipContent(report) {
   const container = createDOM("div", { class: "ogl-spyReportCacheTooltip" });
 
   container.appendChild(createDOM("div", { class: "splitline" }, Translator.translate(354)));

@@ -166,6 +166,22 @@ test("the date cell's color follows the spy table's activity thresholds, not the
   assert.ok(dateCellOf("Safe").classList.contains("ogl-good"), "activity >= 60 is good");
 });
 
+test("hovering a row shows the same cached-report tooltip as the galaxy-view hover", () => {
+  seed({
+    "1:1:5#1": entry({ playerName: "Hovered", metal: 12345 }),
+  });
+
+  const row = raidList().querySelector("tbody tr");
+  row.dispatchEvent(new Event("mouseover", { bubbles: true }));
+
+  const tooltip = document.querySelector(".ogl-tooltip");
+  assert.ok(tooltip, "a tooltip is attached to the page");
+  assert.ok(tooltip.querySelector(".ogl-spyReportCacheTooltip"), "it shows the cached-report content");
+  assert.ok(tooltip.textContent.includes("Hovered"));
+
+  tooltip.remove();
+});
+
 test("no cached reports at all shows the empty state, not an empty table", () => {
   seed({});
 

@@ -1,4 +1,5 @@
 import { createDOM } from "../../ui/dom.js";
+import { tooltip } from "../../ui/tooltip.js";
 import Translator from "../../format/i18n/translate.js";
 import DateTime from "../../format/dateTime.js";
 import { toFormattedNumber } from "../../format/numbers.js";
@@ -7,6 +8,7 @@ import OGBIData from "../../store/OGBIData.js";
 import { getAllSpyReports, estimateResourcesNow } from "../../store/spyReportCache.js";
 import { flightContext, estimateTarget } from "../../game/targetProfitability.js";
 import { byProfitPerHour } from "../../game/farmEvaluator.js";
+import { buildSpyReportTooltipContent } from "./galaxyView.js";
 
 /**
  * The raid list: every already-spied target ranked by profit/hour, opened from the
@@ -60,6 +62,8 @@ function evaluatedTargets(onlyInactive) {
 function buildRow(index, row) {
   const { entry } = row;
   const tr = createDOM("tr");
+  // Same hover tooltip as the galaxy-view cache marker (`galaxyView.js`), same cached-report shape.
+  tr.addEventListener("mouseover", () => tooltip(tr, buildSpyReportTooltipContent(entry), true, false, 50));
 
   tr.appendChild(createDOM("td", {}, `${index + 1}`));
 
