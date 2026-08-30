@@ -5,6 +5,21 @@ All credits go to [Ogame Infinity](https://github.com/ogame-infinity/web-extensi
 
 This repository contains the monolithic code mess for the Ogame Beyond Infinity extension.
 
+### What's different from upstream Ogame Infinity
+
+| Area              | What changed                                                                                      |
+| ------------------ | -------------------------------------------------------------------------------------------------- |
+| Architecture       | Monolithic `ogCore.js` split into modules (`ctxpage/`, `game/`, `store/`, `ui/`, `format/`, `platform/`); one file per module, bundled at build time |
+| Performance        | Removed a permanent 100ms DOM poll, killed redundant re-parsing on every cargo calc, faster startup draw order |
+| New features       | Raid list (best profit/hour targets), spy-report cache with resource-now estimate + stale warning, harvest planner, expedition slot balancing, alliance target claims in galaxy view, active-planet counter |
+| Notifications      | Rewritten fleet-arrival/browser notification system: scheduling, dedup, sync across tabs |
+| Galaxy data        | Dedicated galaxy storage with per-(galaxy,system) diff snapshots, instead of piggybacking the general data blob |
+| Fleet dispatch     | Fixed cargo-capacity math (hyperspace + miner-class bonuses now applied), donut-system distance fix, empty/inactive system display |
+| Dev tooling        | Makefile, `node:test` + jsdom test suite, ESLint/Prettier gate, benchmarks, permanent local install, docs under `docs/` |
+| OGame version      | v13+ only, v12 support dropped |
+
+Fast-moving fork — expect this list to lag behind `master`.
+
 Note: since version 2.3.7 the `src/` folder can no longer be loaded directly as an unpacked extension — it needs a build step first. See [Local development](#local-development).
 
 ## Downloads
