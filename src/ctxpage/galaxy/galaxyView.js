@@ -17,7 +17,7 @@ import { tooltip } from "../../ui/tooltip.js";
 import DateTime from "../../format/dateTime.js";
 import { toFormattedNumber } from "../../format/numbers.js";
 import planetType from "../../game/planetType.js";
-import { getSpyReport } from "../../store/spyReportCache.js";
+import { getSpyReport, estimateResourcesNow } from "../../store/spyReportCache.js";
 
 const logger = getLogger("galaxyView");
 
@@ -295,6 +295,9 @@ function attachSpyReportTooltip(cell, coords, type) {
   cell.addEventListener("mouseover", () => tooltip(cell, buildSpyReportTooltipContent(report), true, false, 50));
 }
 
+/** Past this age the snapshot is treated as stale enough to suggest a fresh probe. */
+const STALE_REPORT_MINUTES = 60;
+
 function buildSpyReportTooltipContent(report) {
   const container = createDOM("div", { class: "ogl-spyReportCacheTooltip" });
 
@@ -331,6 +334,32 @@ function buildSpyReportTooltipContent(report) {
       `${Translator.translate(40)}: ${toFormattedNumber(report.total, null, true)}`
     )
   );
+
+  const estimate = estimateResourcesNow(report);
+  if (estimate) {
+    container.appendChild(createDOM("div", { class: "splitline" }, `~ ${Translator.translate(355)}`));
+    container.appendChild(
+      createDOM(
+        "div",
+        { class: "ogl-metal" },
+        `${Translator.translate(0, "res")}: ~${toFormattedNumber(estimate.metal, null, true)}`
+      )
+    );
+    container.appendChild(
+      createDOM(
+        "div",
+        { class: "ogl-crystal" },
+        `${Translator.translate(1, "res")}: ~${toFormattedNumber(estimate.crystal, null, true)}`
+      )
+    );
+    container.appendChild(
+      createDOM(
+        "div",
+        { class: "ogl-deut" },
+        `${Translator.translate(2, "res")}: ~${toFormattedNumber(estimate.deut, null, true)}`
+      )
+    );
+  }
   container.appendChild(
     createDOM(
       "div",
@@ -349,6 +378,11 @@ function buildSpyReportTooltipContent(report) {
       }`
     )
   );
+
+  const ageMinutes = (Date.now() - report.timestamp) / 60000;
+  if (ageMinutes > STALE_REPORT_MINUTES) {
+    container.appendChild(createDOM("div", { class: "ogl-danger" }, Translator.translate(356)));
+  }
 
   return container;
 }

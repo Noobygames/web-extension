@@ -436,5 +436,9 @@ export default Object.freeze({
     352: "jamais",
     353: "(indisponible)",
     354: "Rapport d'espionnage en cache",
+    355: "Estimé maintenant",
+    356: "Rapport ancien - espionner à nouveau",
+    357: "Liste de raid",
+    358: "Inactifs seulement",
   },
 });

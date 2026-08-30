@@ -436,5 +436,9 @@ export default Object.freeze({
     352: "never",
     353: "(unavailable)",
     354: "Cached spy report",
+    355: "Estimated now",
+    356: "Report is old - spy again",
+    357: "Raid list",
+    358: "Only inactive",
   },
 });

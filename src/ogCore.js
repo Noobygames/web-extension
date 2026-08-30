@@ -725,6 +725,14 @@ class OGBeyondInfinity {
     let overViewBtn = harvestOptions.appendChild(
       DOM.createDOM("div", { class: "ogl-option ogl-overview-icon tooltip", title: Translator.translate(5) })
     );
+    let raidBtn = harvestOptions.appendChild(
+      DOM.createDOM("div", { class: "ogl-option ogl-raid-icon tooltip", title: Translator.translate(357) })
+    );
+    raidBtn.addEventListener("click", async () => {
+      const module = await loadChunk("raid", () => import("./ctxpage/galaxy/raidList.js"));
+      if (!module) return;
+      popupUtil.popup(false, module.raidList());
+    });
     if (OGBIData.json.options.targetList) {
       targetListButton.classList.add("ogl-active");
       targetList(this.galaxyContext(), true);

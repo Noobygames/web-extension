@@ -18,8 +18,8 @@ import PlayerClass from "../../../game/playerClass.js";
 import OgamePageData from "../../../ogame/pageData.js";
 import OGBIData from "../../../store/OGBIData.js";
 import Translator from "../../../format/i18n/translate.js";
-import { evaluateTarget } from "../../../game/farmEvaluator.js";
 import { formatDuration } from "../../../game/fleetFlight.js";
+import { flightContext, estimateTarget } from "../../../game/targetProfitability.js";
 import { recordSpyReport } from "../../../store/spyReportCache.js";
 
 class SpyMessagesAnalyzer {
@@ -185,71 +185,17 @@ class SpyMessagesAnalyzer {
   #flightContextCache = null;
 
   /**
-   * Own planets as flight origins, plus the universe geometry the distance formula needs.
-   * Everything comes from data the page already holds - no request is made for any of it.
+   * Own planets, universe geometry and configured farm ship - see
+   * `game/targetProfitability.js` for why this is not computed inline anymore.
+   * Cached per table build; `#cargoChoice()` clears it when the farm ship changes.
    */
   #flightContext() {
-    if (this.#flightContextCache) return this.#flightContextCache;
-
-    const origins = [];
-    (OGBIData.empire || []).forEach((planet) => {
-      // a moon shares its planet's coordinates, so it adds no separate origin
-      const parsed = this.#parseCoords(planet.coordinates);
-      if (parsed) origins.push(parsed);
-    });
-
-    const json = OGBIData.json;
-    const settings = json.universeSettingsTooltip || {};
-
-    // The cargo already chosen for this table decides the flight time, so the estimate matches
-    // the fleet the player intends to send rather than some notional ship.
-    const chosen = (json.ships || {})[OGBIData.options.spyFret];
-
-    this.#flightContextCache = {
-      origins,
-      shipSpeed: Number(chosen?.speed) || 0,
-      fleetSpeedFactor: Number(json.speedFleetWar) || 1,
-      cargoCapacity: Number(chosen?.cargoCapacity) || 0,
-      fuelConsumption: Number(chosen?.fuelConsumption) || 0,
-      universe: {
-        galaxies: settings.galaxies,
-        systems: settings.systems,
-        donutGalaxy: settings.donutGalaxy,
-        donutSystem: settings.donutSystem,
-      },
-    };
-
+    if (!this.#flightContextCache) this.#flightContextCache = flightContext();
     return this.#flightContextCache;
   }
 
-  #parseCoords(raw) {
-    const parts = String(raw || "")
-      .replace(/[[\]]/g, "")
-      .split(":");
-    if (parts.length !== 3) return null;
-
-    const [galaxy, system, position] = parts.map(Number);
-    if ([galaxy, system, position].some((n) => !Number.isFinite(n))) return null;
-
-    return { galaxy, system, position };
-  }
-
   #flightOf(report) {
-    const target = this.#parseCoords(report.coords);
-    if (!target) return { profitPerHour: 0, durationSeconds: Infinity, origin: null, distance: Infinity };
-
-    const context = this.#flightContext();
-
-    return evaluateTarget({
-      target,
-      origins: context.origins,
-      loot: report.renta,
-      shipSpeed: context.shipSpeed,
-      fleetSpeedFactor: context.fleetSpeedFactor,
-      universe: context.universe,
-      cargoCapacity: context.cargoCapacity,
-      fuelConsumption: context.fuelConsumption,
-    });
+    return estimateTarget(report.coords, report.renta, this.#flightContext());
   }
 
   #profitPerHour(report) {

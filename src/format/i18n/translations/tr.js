@@ -436,5 +436,9 @@ export default Object.freeze({
     352: "hiçbir zaman",
     353: "(kullanılamıyor)",
     354: "Önbelleğe alınmış casusluk raporu",
+    355: "Şu an tahmini",
+    356: "Rapor eski - tekrar casusluk yap",
+    357: "Baskın listesi",
+    358: "Sadece pasif olanlar",
   },
 });

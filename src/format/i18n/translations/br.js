@@ -436,5 +436,9 @@ export default Object.freeze({
     352: "nunca",
     353: "(indisponível)",
     354: "Relatório de espionagem em cache",
+    355: "Estimado agora",
+    356: "Relatório antigo - espionar novamente",
+    357: "Lista de invasão",
+    358: "Somente inativos",
   },
 });

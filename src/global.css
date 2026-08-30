@@ -4015,6 +4015,37 @@ div[data-raw-depletion="4"] + .msgHead a.txt_link {
   border-color: #ca8e4c;
 }
 
+.ogl-raid-icon {
+  cursor: pointer;
+  height: 100%;
+  position: relative;
+  width: 100%;
+  background: #1b1b1b !important;
+}
+
+.ogl-raid-icon:before {
+  background: #000;
+  border-radius: 50%;
+  border: 6px double #c75817;
+  box-sizing: border-box;
+  content: "";
+  height: 15px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 15px;
+}
+
+.ogl-raidList {
+  min-width: 460px;
+  max-width: 90vw;
+}
+
+.ogl-raidList .ogl-spyTableScroll {
+  max-height: 60vh;
+}
+
 .ogl-overview-icon {
   background: url("chrome-extension://__MSG_@@extension_id__/assets/images/menuicons.png") 161px -92px;
   background-size: calc(23px * 14) !important;

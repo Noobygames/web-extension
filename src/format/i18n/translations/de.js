@@ -436,5 +436,9 @@ export default Object.freeze({
     352: "nie",
     353: "(nicht verfügbar)",
     354: "Gecachter Spähbericht",
+    355: "Geschätzt jetzt",
+    356: "Bericht veraltet - erneut spähen",
+    357: "Raid-Liste",
+    358: "Nur Inaktive",
   },
 });
