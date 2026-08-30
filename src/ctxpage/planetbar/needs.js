@@ -188,8 +188,14 @@ function displayLocks(planet, isMoon) {
   sidePlanetDiv.querySelectorAll(".ogl-sideLockRemove").forEach((e) => e.remove());
 
   if (sidePlanetDiv.querySelector(".ogl-sideLock")) {
-    const deleteAllEmpty = createDOM("button", { class: "ogl-sideLockRemove tooltip" });
-    const deleteAllFilled = createDOM("button", { class: "ogl-sideLockRemove ogl-sideLockRemoveFilled tooltip" });
+    const deleteAllEmpty = createDOM("button", {
+      class: "ogl-sideLockRemove tooltip",
+      title: Translator.translate(338),
+    });
+    const deleteAllFilled = createDOM("button", {
+      class: "ogl-sideLockRemove ogl-sideLockRemoveFilled tooltip",
+      title: Translator.translate(339),
+    });
     sidePlanetDiv.append(deleteAllEmpty, deleteAllFilled);
     const deleteAll = (condition) => {
       for (const key in needs) {

@@ -59,7 +59,13 @@ function minesLevel(context) {
         deut = planet[3];
       }
     });
-    let div = createDOM("div", { class: "ogl-mines" });
+    let div = createDOM("div", {
+      class: "ogl-mines",
+      title: `${Translator.translate(0, "res")} - ${Translator.translate(1, "res")} - ${Translator.translate(
+        2,
+        "res"
+      )}`,
+    });
     div.textContent = `${toFormattedNumber(metal)}-${toFormattedNumber(crystal)}-${toFormattedNumber(deut)}`;
     planet.querySelector(".planetlink").appendChild(div);
   });

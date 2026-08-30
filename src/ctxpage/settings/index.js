@@ -97,16 +97,16 @@ function welcome(context) {
   keyHelp.appendChild(createDOM("div"));
   keyHelp.appendChild(createDOM("div", { class: "ogl-option ogl-search-icon" }));
   keyHelp.appendChild(createDOM("div", {}, "Open the player search"));
-  keyHelp.appendChild(createDOM("div", { class: "ogl-keyboard" }, "f"));
+  keyHelp.appendChild(createDOM("div"));
   keyHelp.appendChild(createDOM("div", { class: "ogl-option ogl-statistics-icon" }));
   keyHelp.appendChild(createDOM("div", {}, "Open the statistics panel"));
-  keyHelp.appendChild(createDOM("div", { class: "ogl-keyboard" }, "s"));
+  keyHelp.appendChild(createDOM("div"));
   keyHelp.appendChild(createDOM("div", { class: "ogl-option ogl-empire-icon" }));
   keyHelp.appendChild(createDOM("div", {}, "Open the empire view"));
-  keyHelp.appendChild(createDOM("div", { class: "ogl-keyboard" }, "e"));
+  keyHelp.appendChild(createDOM("div"));
   keyHelp.appendChild(createDOM("div", { class: "ogl-option ogl-targetIcon" }));
   keyHelp.appendChild(createDOM("div", {}, "Open the target list"));
-  keyHelp.appendChild(createDOM("div", { class: "ogl-keyboard" }, "d"));
+  keyHelp.appendChild(createDOM("div"));
   keyHelp.appendChild(createDOM("div", { class: "ogl-option ogl-syncOption" }));
   keyHelp.appendChild(createDOM("div", {}, "Settings"));
   container.appendChild(
@@ -214,7 +214,11 @@ function settings(context) {
   let optiondiv = featureSettings.appendChild(
     createDOM(
       "span",
-      { style: "display: flex;justify-content: space-between; align-items: center;" },
+      {
+        class: "tooltip",
+        title: Translator.translate(279),
+        style: "display: flex;justify-content: space-between; align-items: center;",
+      },
       Translator.translate(187)
     )
   );
@@ -233,7 +237,11 @@ function settings(context) {
   optiondiv = featureSettings.appendChild(
     createDOM(
       "span",
-      { style: "display: flex;justify-content: space-between; align-items: center;" },
+      {
+        class: "tooltip",
+        title: Translator.translate(280),
+        style: "display: flex;justify-content: space-between; align-items: center;",
+      },
       Translator.translate(222)
     )
   );
@@ -249,7 +257,11 @@ function settings(context) {
   optiondiv = featureSettings.appendChild(
     createDOM(
       "span",
-      { style: "display: flex;justify-content: space-between; align-items: center;" },
+      {
+        class: "tooltip",
+        title: Translator.translate(281),
+        style: "display: flex;justify-content: space-between; align-items: center;",
+      },
       Translator.translate(33)
     )
   );
@@ -286,7 +298,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="fleet-activity">${Translator.translate(
+      `<label for="fleet-activity" title="${Translator.translate(282)}">${Translator.translate(
         134
       )}</label>\n        <input type="checkbox" id="fleet-activity" name="fleet-activity" ${
         OGBIData.json.options.fleetActivity ? "checked" : ""
@@ -301,7 +313,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="progress-indicator">${Translator.translate(
+      `<label for="progress-indicator" title="${Translator.translate(283)}">${Translator.translate(
         146
       )}</label>\n        <input type="checkbox" id="progress-indicator" name="progress-indicator" ${
         OGBIData.json.options.showProgressIndicators ? "checked" : ""
@@ -316,7 +328,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="fleet-activity">${Translator.translate(
+      `<label for="fleet-activity" title="${Translator.translate(284)}">${Translator.translate(
         138
       )}</label>\n        <input type="checkbox" id="nav-arrows" name="fleet-activity" ${
         OGBIData.json.options.navigationArrows ? "checked" : ""
@@ -333,7 +345,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="wide-layout">${Translator.translate(
+      `<label for="wide-layout" title="${Translator.translate(285)}">${Translator.translate(
         251
       )}</label>\n        <input type="checkbox" id="wide-layout" name="wide-layout" ${
         getOption("wideLayoutEnable") ? "checked" : ""
@@ -349,7 +361,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="wide-zoom">${Translator.translate(
+      `<label for="wide-zoom" title="${Translator.translate(286)}">${Translator.translate(
         252
       )}</label>\n        <input type="checkbox" id="wide-zoom" name="wide-zoom" ${
         getOption("wideZoomEnable") ? "checked" : ""
@@ -464,7 +476,9 @@ function settings(context) {
   });
 
   featureSettings.appendChild(createDOM("h2", {}, Translator.translate(275)));
-  optiondiv = featureSettings.appendChild(DOM.createDOM("span", {}, Translator.translate(181)));
+  optiondiv = featureSettings.appendChild(
+    DOM.createDOM("span", { class: "tooltip", title: Translator.translate(287) }, Translator.translate(181))
+  );
   const standardUnitInput = DOM.createDOM("select", { class: "ogl-selectInput tooltip" });
   standardUnitInput.append(
     DOM.createDOM("option", { value: "-1" }, Translator.translate(173)),
@@ -476,7 +490,13 @@ function settings(context) {
   optiondiv.appendChild(standardUnitInput);
 
   /* ICONS SETTINGS*/
-  featureSettings.appendChild(DOM.createDOM("h1", { style: "margin-top: 10px;" }, Translator.translate(221)));
+  featureSettings.appendChild(
+    DOM.createDOM(
+      "h1",
+      { class: "tooltip", title: Translator.translate(288), style: "margin-top: 10px;" },
+      Translator.translate(221)
+    )
+  );
 
   const addIconModeChoice = (parent, labelText, iconClass, value) => {
     const label = parent.appendChild(DOM.createDOM("span", {}, labelText));
@@ -540,7 +560,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="expeditions">${Translator.translate(16)}</label>
+      `<label for="expeditions" title="${Translator.translate(289)}">${Translator.translate(16)}</label>
       <input type="checkbox" id="expeditions" name="expeditions">`
     )
   );
@@ -548,7 +568,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="discoveries">${Translator.translate(167)}</label>
+      `<label for="discoveries" title="${Translator.translate(290)}">${Translator.translate(167)}</label>
       <input type="checkbox" id="discoveries" name="discoveries">`
     )
   );
@@ -556,7 +576,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="combats">${Translator.translate(17)}</label>
+      `<label for="combats" title="${Translator.translate(291)}">${Translator.translate(17)}</label>
       <input type="checkbox" id="combats" name="combats">`
     )
   );
@@ -564,7 +584,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="targets">${Translator.translate(18)}</label>
+      `<label for="targets" title="${Translator.translate(292)}">${Translator.translate(18)}</label>
       <input type="checkbox" id="targets" name="targets">`
     )
   );
@@ -572,7 +592,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="spies">${Translator.translate(191)}</label>
+      `<label for="spies" title="${Translator.translate(293)}">${Translator.translate(191)}</label>
       <input type="checkbox" id="spies" name="spies">`
     )
   );
@@ -580,7 +600,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="scan">${Translator.translate(19)}</label>
+      `<label for="scan" title="${Translator.translate(294)}">${Translator.translate(19)}</label>
       <input type="checkbox" id="scan" name="scan">`
     )
   );
@@ -588,7 +608,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="galaxy_reset">${Translator.translate(226)}</label>
+      `<label for="galaxy_reset" title="${Translator.translate(295)}">${Translator.translate(226)}</label>
       <input type="checkbox" id="galaxy_reset" name="galaxy_reset">`
     )
   );
@@ -596,7 +616,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="options">${Translator.translate(20)}</label>
+      `<label for="options" title="${Translator.translate(296)}">${Translator.translate(20)}</label>
       <input type="checkbox" id="options" name="options ">`
     )
   );
@@ -604,7 +624,7 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="temp">${Translator.translate(21)}</label>
+      `<label for="temp" title="${Translator.translate(297)}">${Translator.translate(21)}</label>
       <input type="checkbox" id="temp" name="temp" checked>`
     )
   );
@@ -612,9 +632,9 @@ function settings(context) {
     DOM.createDOMSanitized(
       "div",
       { class: "ogi-checkbox" },
-      `<label for="purge">${Translator.translate(22)}<span class="${size.other > 3 ? "undermark" : "overmark"}"> (${
-        size.other
-      }Mb)</span></label>
+      `<label for="purge" title="${Translator.translate(298)}">${Translator.translate(22)}<span class="${
+        size.other > 3 ? "undermark" : "overmark"
+      }"> (${size.other}Mb)</span></label>
       <input type="checkbox" id="purge" name="purge">`
     )
   );
@@ -644,7 +664,13 @@ function settings(context) {
     const data = Object.assign({}, OGBIData.json);
     download(data, `oginfinity-${OgamePageData.gameLang}-${context.universe}.data`);
   });
-  let resetBtn = dataBtns.appendChild(createDOM("button", { class: "btn_blue ogl-btn_red" }, Translator.translate(26)));
+  let resetBtn = dataBtns.appendChild(
+    createDOM(
+      "button",
+      { class: "btn_blue ogl-btn_red tooltip", title: Translator.translate(299) },
+      Translator.translate(26)
+    )
+  );
   scrollBody.appendChild(createDOM("div", { style: "width: 1px; background: #10171d;" }));
 
   let settingDiv = scrollBody.appendChild(createDOM("div"));
@@ -864,7 +890,7 @@ function settings(context) {
 
   // ---------- PTRE section (dedicated) ----------
   let ptreSection = settingDiv.appendChild(createDOM("div", { style: "display: grid;" }));
-  ptreSection.appendChild(createDOM("h1", {}, "PTRE settings"));
+  ptreSection.appendChild(createDOM("h1", { class: "tooltip", title: Translator.translate(300) }, "PTRE settings"));
 
   const savedPtreKey = OGBIData.json.options.ptreTK;
   const ptreEnabled =
@@ -947,7 +973,7 @@ function settings(context) {
   let keys = settingDiv.appendChild(createDOM("div", { style: "display: grid;" }));
   keys.appendChild(createDOM("h1", {}, Translator.translate(147)));
   let pantry = keys.appendChild(
-    createDOM("span")
+    createDOM("span", { class: "tooltip", title: Translator.translate(301) })
       .appendChild(createDOM("a", { href: "https://getpantry.cloud/", target: "_blank" }, "Pantry"))
       .parentElement.appendChild(document.createTextNode(" Key"))
       .parentElement.appendChild(createDOM("small", {}, " (Cloud Sync beta)")).parentElement

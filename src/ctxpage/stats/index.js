@@ -1,5 +1,6 @@
 import { tabs } from "../../ui/tabs.js";
 import * as popupUtil from "../../ui/popup.js";
+import { loading } from "../../ui/loading.js";
 import Translator from "../../format/i18n/translate.js";
 import dataHelper from "../../integrations/dataHelper.js";
 import * as wait from "../../platform/wait.js";
@@ -30,6 +31,10 @@ import { roiStats } from "./roiStats.js";
  */
 async function statistics(context) {
   statsState.context = context;
+
+  // getPlayer() and, on first use, chart.min.js injection both take a beat -
+  // show the spinner right away instead of leaving the click looking dead.
+  loading();
 
   let showStats = async () => {
     let player = await dataHelper.getPlayer(playerId);

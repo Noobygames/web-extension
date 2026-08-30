@@ -2,6 +2,7 @@ import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js"
 import OGBIData from "../../store/OGBIData.js";
 import ogiMode from "../../ogame/ogiMode.js";
 import debounce from "../../platform/debounce.js";
+import { loadChunk } from "../../platform/loadChunk.js";
 
 /**
  * The keyboard shortcuts: planet and moon navigation, the resource fillers, the
@@ -30,6 +31,13 @@ function keyboardActions(context) {
     if (event.key == "Escape") {
       if (OGBIData.json.welcome) return;
       closeDialog();
+    }
+    // The welcome popup's own shortcuts list advertises "Ctrl/Cmd + ?" to bring it
+    // back up, but nothing ever bound that key - once a first-run player closed it,
+    // the shortcuts list was gone for good with no way to see it again.
+    if ((event.ctrlKey || event.metaKey) && event.key == "?") {
+      event.preventDefault();
+      loadChunk("settings", () => import("../settings/index.js")).then((module) => module?.welcome(context));
     }
     if (context.page == "galaxy") {
       if (document.activeElement.getAttribute("type") == "search") {

@@ -42,7 +42,7 @@ function targetList(context, show) {
     let header = div.appendChild(createDOM("div", { class: "ogk-controls" }));
     let markers = header.appendChild(createDOM("div"));
     ["red", "orange", "yellow", "green", "blue", "violet", "gray", "brown"].forEach((color) => {
-      let toggle = createDOM("div", { class: "tooltip ogl-toggle", title: Translator.translate(40) });
+      let toggle = createDOM("div", { class: "tooltip ogl-toggle", title: Translator.translate(325) });
       toggle.setAttribute("data-toggle", color);
       markers.appendChild(toggle);
       if (!OGBIData.json.options.hiddenTargets[color]) toggle.classList.add("ogl-active");
@@ -59,7 +59,13 @@ function targetList(context, show) {
       });
     });
     let filterTabs = header.appendChild(createDOM("div", { class: "ogl-tabList", style: "margin-bottom: 5px;" }));
-    let tabG = filterTabs.appendChild(createDOM("div", { class: "ogl-tab" + (!galaxy ? " ogl-active" : "") }, "Gs"));
+    let tabG = filterTabs.appendChild(
+      createDOM(
+        "div",
+        { class: "tooltip ogl-tab" + (!galaxy ? " ogl-active" : ""), title: Translator.translate(326) },
+        "Gs"
+      )
+    );
     tabG.addEventListener("click", () => {
       if (OGBIData.json.targetTabs.g == -1) {
         OGBIData.json.targetTabs.g = 0;
@@ -79,7 +85,13 @@ function targetList(context, show) {
       }
       checkEmpty(galaxy, system);
     });
-    let tabS = filterTabs.appendChild(createDOM("div", { class: "ogl-tab" + (!system ? " ogl-active" : "") }, "Ss"));
+    let tabS = filterTabs.appendChild(
+      createDOM(
+        "div",
+        { class: "tooltip ogl-tab" + (!system ? " ogl-active" : ""), title: Translator.translate(327) },
+        "Ss"
+      )
+    );
     tabS.addEventListener("click", () => {
       if (OGBIData.json.targetTabs.s == -1) {
         OGBIData.json.targetTabs.s = 0;

@@ -10,6 +10,7 @@ import OGBIData from "../../store/OGBIData.js";
 import { loading } from "../../ui/loading.js";
 import { action } from "../../integrations/ptre/ptre.js";
 import Translator from "../../format/i18n/translate.js";
+import { probingWarning } from "../settings/probingWarning.js";
 
 const rawUrl = new URL(window.location.href);
 const page = rawUrl.searchParams.get("component") || rawUrl.searchParams.get("page");
@@ -320,15 +321,25 @@ export function stalk(sender, player, delay = undefined) {
     );
     const actions = content.appendChild(createDOM("div", { class: "ogi-actions" }));
     actions.replaceChildren(
-      createDOM("a", { href: `${generateIgnoreLink(p.id)}`, class: "icon icon_against" }),
-      createDOM("a", { href: `${generateBuddyLink(p.id)}`, class: "icon icon_user overlay buddyrequest" })
+      createDOM("a", {
+        href: `${generateIgnoreLink(p.id)}`,
+        class: "icon icon_against",
+        title: Translator.translate(316),
+      }),
+      createDOM("a", {
+        href: `${generateBuddyLink(p.id)}`,
+        class: "icon icon_user overlay buddyrequest",
+        title: Translator.translate(317),
+      })
     );
     initBuddyRequestForm();
-    const msgBtn = actions.appendChild(createDOM("a", { class: "icon icon_chat" }));
+    const msgBtn = actions.appendChild(createDOM("a", { class: "icon icon_chat", title: Translator.translate(318) }));
     msgBtn.addEventListener("click", () => {
       sendMessage(p.id);
     });
-    const actBtn = actions.appendChild(createDOM("a", { style: "margin-left: 10px", class: "ogl-text-btn" }, "⚠"));
+    const actBtn = actions.appendChild(
+      createDOM("a", { style: "margin-left: 10px", class: "ogl-text-btn", title: Translator.translate(319) }, "⚠")
+    );
     let first = false;
     actBtn.addEventListener("click", (e) => {
       // Add player to History in order to send his activities. filter(), not
@@ -383,7 +394,7 @@ export function stalk(sender, player, delay = undefined) {
     content.appendChild(createDOM("hr"));
     const list = content.appendChild(createDOM("div", { class: "ogl-stalkPlanets", "player-id": p.id }));
     const count = content.appendChild(createDOM("div", { class: "ogl-fullGrid ogl-right" }));
-    const sideStalk = content.appendChild(createDOM("a", { class: "ogl-pin" }));
+    const sideStalk = content.appendChild(createDOM("a", { class: "ogl-pin", title: Translator.translate(320) }));
     if (OGBIData.sideStalk.includes(parseInt(p.id))) {
       sideStalk.classList.add("ogl-active");
     }
@@ -559,14 +570,14 @@ export function update(planets) {
     const planetDiv = a.appendChild(createDOM("div", { class: "ogl-planet-div" }));
     const planetIcon = planetDiv.appendChild(createDOM("div", { class: "ogl-planet" }));
     let panel = planetDiv.appendChild(createDOM("div", { class: "ogl-planet-hover" }));
-    let plaspy = panel.appendChild(createDOM("button", { class: "icon_eye" }));
+    let plaspy = panel.appendChild(createDOM("button", { class: "icon_eye", title: Translator.translate(259) }));
 
-    /*    plaspy.addEventListener("click", (e) => {
-      // sendShipsWithPopup(6, coords[0], coords[1], coords[2], 0, json.spyProbes);
-      // disable direct probing in stalks and target list until complete removal or GF start to wake up
-      this.probingWarning();
+    // Direct probing from stalks is forbidden (AGENTS.md 1.5.1) - same inert-icon
+    // treatment as galaxy/renderPlanet.js, not silently doing nothing on click.
+    plaspy.addEventListener("click", (e) => {
+      probingWarning();
       e.stopPropagation();
-    }); */
+    });
 
     planetDiv.appendChild(createDOM("div", { class: "ogl-planet-act" }));
     a.appendChild(createDOM("span", {}, planet.coords));
@@ -587,14 +598,13 @@ export function update(planets) {
     moonDiv.appendChild(createDOM("div", { class: "ogl-moon-act" }));
     const mIcon = moonDiv.appendChild(createDOM("div", { class: "ogl-moon" }));
     panel = moonDiv.appendChild(createDOM("div", { class: "ogl-moon-hover" }));
-    plaspy = panel.appendChild(createDOM("button", { class: "icon_eye" }));
+    plaspy = panel.appendChild(createDOM("button", { class: "icon_eye", title: Translator.translate(259) }));
 
-    /*    plaspy.addEventListener("click", (e) => {
-      // sendShipsWithPopup(6, coords[0], coords[1], coords[2], 3, json.spyProbes);
-      // disable direct probing in stalks and target list until complete removal or GF start to wake up
-      this.probingWarning();
+    // Same as the planet eye icon above: inert by design (AGENTS.md 1.5.1), not silent.
+    plaspy.addEventListener("click", (e) => {
+      probingWarning();
       e.stopPropagation();
-    }); */
+    });
 
     a.addEventListener("click", (event) => {
       if (
@@ -721,12 +731,14 @@ export function side(playerId) {
       });
     } else {
       watchlistBtn = sideStalk.appendChild(
-        createDOM("a", { class: "ogl-text-btn material-icons", title: "History" }, "history")
+        createDOM("a", { class: "ogl-text-btn material-icons", title: Translator.translate(321) }, "history")
       );
-      actBtn = sideStalk.appendChild(createDOM("a", { class: "ogl-text-btn material-icons", title: "" }, "warning"));
+      actBtn = sideStalk.appendChild(
+        createDOM("a", { class: "ogl-text-btn material-icons", title: Translator.translate(319) }, "warning")
+      );
       if (OGBIData.options.ptreTK) {
         ptreBtn = sideStalk.appendChild(
-          createDOM("a", { class: "ogl-text-btn ogl-ptre-acti tooltip", title: "Display PTRE data" }, "PTRE")
+          createDOM("a", { class: "ogl-text-btn ogl-ptre-acti tooltip", title: Translator.translate(322) }, "PTRE")
         );
       }
       removeBtn = sideStalk.appendChild(

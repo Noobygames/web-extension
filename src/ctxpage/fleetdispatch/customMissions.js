@@ -154,6 +154,7 @@ function customMissions(context) {
               : "largeCargo";
 
           let optionsDiv = createDOM("div", { class: `${optionClass} ogk-customMission-options-3l` });
+          optionsDiv.appendChild(createDOM("div", { class: "ogk-expedition-explain" }, Translator.translate(312)));
           const optionsDivFleet = optionsDiv.appendChild(createDOM("div", { class: "ogk-customMission-options-5c" }));
           const optionsDivMission = optionsDiv.appendChild(createDOM("div", { class: "ogk-customMission-options-6c" }));
           const optionsDivSettings = optionsDiv.appendChild(
@@ -163,6 +164,7 @@ function customMissions(context) {
             createDOM("button", {
               class: `${customMissionClass} ${missionClass} ${shipClass}`,
               "data-marked": OGBIData.json.options.customMissions[customMissionId].color,
+              title: Translator.translate(312),
             })
           );
 
@@ -173,13 +175,25 @@ function customMissions(context) {
                 : shipId == "sendall"
                 ? "ogl-option choice sendall"
                 : `ogl-option ogl-fleet-ship choice ogl-fleet-${shipId}`;
+            const fleetChoiceTitle =
+              shipId == "select-most"
+                ? Translator.translate(302)
+                : shipId == "sendall"
+                ? Translator.translate(303)
+                : Translator.translate(304);
             return optionsDivFleet.appendChild(
               createDOM("div", {
                 class: `${shipClass} ${
                   OGBIData.json.options.customMissions[customMissionId].ship === shipId ? "highlight" : ""
                 }`,
+                title: fleetChoiceTitle,
               })
             );
+          };
+          const missionChoiceTitle = {
+            6: Translator.translate(273),
+            3: Translator.translate(201),
+            4: Translator.translate(202),
           };
           const createMissionChoice = (mission) => {
             return optionsDivMission.appendChild(
@@ -187,6 +201,7 @@ function customMissions(context) {
                 class: `ogl-option choice-mission-icon ogl-mission-${mission} ${
                   OGBIData.json.options.customMissions[customMissionId].mission === mission ? "highlight" : ""
                 }`,
+                title: missionChoiceTitle[mission],
               })
             );
           };
@@ -229,6 +244,7 @@ function customMissions(context) {
               class: `ogl-option choice-target ${
                 OGBIData.json.options.customMissions[customMissionId].target[currentId].type == 3 ? "moon" : "planet"
               }`,
+              title: Translator.translate(305),
             })
           );
 
@@ -237,12 +253,16 @@ function customMissions(context) {
             createDOM("div", {
               class: `ogl-option choice-customMission-icon choice-color`,
               "data-marked": OGBIData.json.options.customMissions[customMissionId].color,
+              title: Translator.translate(306),
             })
           );
 
           //rotation choice
           const rotation = optionsDivSettings.appendChild(
-            createDOM("div", { class: "ogl-option choice-customMission-icon customMission-rotation" })
+            createDOM("div", {
+              class: "ogl-option choice-customMission-icon customMission-rotation",
+              title: Translator.translate(307),
+            })
           );
           rotation.classList.toggle("highlight", OGBIData.json.options.customMissions[customMissionId].rotation);
           rotation.addEventListener("click", () => {
@@ -297,6 +317,7 @@ function customMissions(context) {
           );
           const keepSpeedIcon = createDOM("div", {
             class: "ogl-option choice-customMission-icon customMission-keep-speed",
+            title: Translator.translate(308),
           });
           keepSpeedIcon.appendChild(svg1);
 
@@ -311,7 +332,10 @@ function customMissions(context) {
 
           //resources choice
           const resources = optionsDivSettings.appendChild(
-            createDOM("div", { class: "ogl-option choice-customMission-icon customMission-resources" })
+            createDOM("div", {
+              class: "ogl-option choice-customMission-icon customMission-resources",
+              title: Translator.translate(309),
+            })
           );
           resources.classList.toggle("highlight", OGBIData.json.options.customMissions[customMissionId].resources);
           resources.addEventListener("click", () => {
@@ -416,7 +440,9 @@ function customMissions(context) {
 
             let container = DOM.createDOM("div", { class: "ogk-customMission-colorChoice" });
             colors.forEach((colorName) => {
-              const circle = container.appendChild(createDOM("div", { "data-marked": colorName }));
+              const circle = container.appendChild(
+                createDOM("div", { "data-marked": colorName, title: Translator.translate(323) })
+              );
               container.appendChild(circle);
               if (OGBIData.json.options.customMissions[customMissionId].color == colorName) {
                 circle.classList.add("ogl-active");
@@ -683,6 +709,7 @@ function collect(context) {
     !fleetDispatcher.isOnVacation
   ) {
     let cargoChoice = createDOM("div", { class: "ogk-collect-cargo" });
+    cargoChoice.appendChild(createDOM("div", { class: "ogk-expedition-explain" }, Translator.translate(310)));
     let btnCollect = document.querySelector("#allornone .secondcol").appendChild(
       createDOM("button", {
         class: `ogl-collect ${OGBIData.json.options.collect.mission == 4 ? "statio" : ""} ${
@@ -692,6 +719,7 @@ function collect(context) {
             ? "pathFinder"
             : "largeCargo"
         }`,
+        title: Translator.translate(310),
       })
     );
     let sc = cargoChoice.appendChild(
@@ -699,6 +727,7 @@ function collect(context) {
         class: `ogl-option ogl-fleet-ship choice ogl-fleet-202 ${
           OGBIData.json.options.collect.ship == 202 ? "highlight" : ""
         }`,
+        title: Translator.translate(304),
       })
     );
     let lc = cargoChoice.appendChild(
@@ -706,6 +735,7 @@ function collect(context) {
         class: `ogl-option ogl-fleet-ship choice ogl-fleet-203 ${
           OGBIData.json.options.collect.ship == 203 ? "highlight" : ""
         }`,
+        title: Translator.translate(304),
       })
     );
     let pf = cargoChoice.appendChild(
@@ -713,6 +743,7 @@ function collect(context) {
         class: `ogl-option ogl-fleet-ship choice ogl-fleet-219 ${
           OGBIData.json.options.collect.ship == 219 ? "highlight" : ""
         }`,
+        title: Translator.translate(304),
       })
     );
     let tr = cargoChoice.appendChild(
@@ -720,6 +751,7 @@ function collect(context) {
         class: `ogl-option choice-mission-icon ogl-mission-3 ${
           OGBIData.json.options.collect.mission == 3 ? "highlight" : ""
         }`,
+        title: Translator.translate(201),
       })
     );
     let dp = cargoChoice.appendChild(
@@ -727,11 +759,13 @@ function collect(context) {
         class: `ogl-option choice-mission-icon ogl-mission-4 ${
           OGBIData.json.options.collect.mission == 4 ? "highlight" : ""
         }`,
+        title: Translator.translate(202),
       })
     );
     let tgt = cargoChoice.appendChild(
       createDOM("div", {
         class: `ogl-option choice-target ${OGBIData.json.options.collect.target.type == 3 ? "moon" : "planet"}`,
+        title: Translator.translate(311),
       })
     );
 

@@ -9,6 +9,7 @@ import DateTime from "../../../format/dateTime.js";
 import { toFormattedNumber } from "../../../format/numbers.js";
 import { calcNeededShips } from "../../../game/calcNeededShips.js";
 import * as ptreService from "../../../integrations/ptre/service.js";
+import { isAbortError } from "../../../platform/abort.js";
 import planetType from "../../../game/planetType.js";
 import Markerui from "../../../ui/markers.js";
 import Player from "../../stalk/player.js";
@@ -51,7 +52,9 @@ class SpyMessagesAnalyzer {
 
     this.#spyReports = {};
 
-    document.querySelector(".ogl-spyTable")?.remove();
+    // Removing the scroll wrapper takes the table inside it with it - removing
+    // just the table would leave an empty wrapper behind on every clean+rebuild.
+    (document.querySelector(".ogl-spyTableScroll") ?? document.querySelector(".ogl-spyTable"))?.remove();
     document.querySelector(".ogl-tableOptions")?.remove();
   }
 
@@ -78,8 +81,16 @@ class SpyMessagesAnalyzer {
 
     if (!table) {
       const target = document.querySelector("#messages .messagePaginator");
+      // Only the rows scroll internally, capped well short of the viewport -
+      // the header row (column names, per-column sort) stays visible via
+      // `position: sticky` instead of scrolling away on a long report list.
+      // Self-contained on purpose: it caps against this wrapper's own height,
+      // not the viewport, so it never has to guess where OGame's own fixed
+      // top bar ends.
+      const scrollWrapper = createDOM("div", { class: "ogl-spyTableScroll" });
       table = createDOM("table", { class: "ogl-spyTable" });
-      target.parentNode.insertBefore(table, target);
+      scrollWrapper.appendChild(table);
+      target.parentNode.insertBefore(scrollWrapper, target);
 
       this.#spyTableOptions(table);
       this.#spyTableHeader(table);
@@ -99,7 +110,14 @@ class SpyMessagesAnalyzer {
       if (!report.targetIsSelf) this.#spyReports[report.id] = report;
     });
 
-    if (Object.keys(this.#spyReports).length === 0) return;
+    if (Object.keys(this.#spyReports).length === 0) {
+      if (!table.querySelector("tbody")) {
+        const body = table.appendChild(createDOM("tbody"));
+        const row = body.appendChild(createDOM("tr"));
+        row.appendChild(createDOM("td", { colspan: "8", class: "ogl-spyTable-empty" }, Translator.translate(345)));
+      }
+      return;
+    }
 
     this.#spyTableBody(table);
   }
@@ -153,7 +171,11 @@ class SpyMessagesAnalyzer {
 
     tableOptions.appendChild(createDOM("div", { style: "height:1px;width:20px;" }));
 
-    table.parentNode.insertBefore(tableOptions, table);
+    // Inserted before the scroll wrapper, not the table itself, so the toolbar
+    // stays outside the scrolling area (always visible) rather than scrolling
+    // away with the rows.
+    const scrollWrapper = table.closest(".ogl-spyTableScroll") ?? table.parentNode;
+    scrollWrapper.parentNode.insertBefore(tableOptions, scrollWrapper);
   }
 
   #flightContextCache = null;
@@ -673,10 +695,14 @@ class SpyMessagesAnalyzer {
 
       const optCol = createDOM("td", { class: "ogl-spyOptions" });
 
-      const optColButton = createDOM("button", { class: "icon icon_maximize overlay", href: report.detailLink });
+      const optColButton = createDOM("button", {
+        class: "icon icon_maximize overlay",
+        href: report.detailLink,
+        title: Translator.translate(329),
+      });
       optCol.appendChild(optColButton);
 
-      const optColSimButton = createDOM("a", { class: "ogl-text-btn" }, "T");
+      const optColSimButton = createDOM("a", { class: "ogl-text-btn", title: Translator.translate(330) }, "T");
       const currentPlanet = (
         document.querySelector("#planetList .active") ?? document.querySelector("#planetList .planetlink")
       ).parentNode;
@@ -729,7 +755,7 @@ class SpyMessagesAnalyzer {
       optCol.appendChild(optColSimButton);
 
       if (OGBIData.options.ptreTK) {
-        const optColPtreButton = createDOM("a", { class: "ogl-text-btn" }, "P");
+        const optColPtreButton = createDOM("a", { class: "ogl-text-btn", title: Translator.translate(331) }, "P");
         optCol.appendChild(optColPtreButton);
 
         optColPtreButton.addEventListener("click", () => {
@@ -745,17 +771,22 @@ class SpyMessagesAnalyzer {
       const optColAttackButton = createDOM("a", {
         class: "icon ogl-icon-attack",
         href: `?${attackQueryString.toString()}`,
+        title: Translator.translate(200),
       });
       optCol.appendChild(optColAttackButton);
 
-      const optColSpyButton = createDOM("button", { class: "icon icon_eye", onclick: report.spyLink });
+      const optColSpyButton = createDOM("button", {
+        class: "icon icon_eye",
+        onclick: report.spyLink,
+        title: Translator.translate(332),
+      });
       optCol.appendChild(optColSpyButton);
 
       if (
         this.#tabId === messagesTabs.SPY &&
         !document.querySelector('.messagesTrashcanBtns button.custom_btn[disabled="disabled"]')
       ) {
-        const optColDeleteButton = createDOM("button", { class: "icon icon_trash" });
+        const optColDeleteButton = createDOM("button", { class: "icon icon_trash", title: Translator.translate(333) });
         optColDeleteButton.setAttribute("data-id", report.id);
         optColDeleteButton.addEventListener("click", () => {
           this.reportsToDelete.push({ report, row: bodyRow });
@@ -778,7 +809,10 @@ class SpyMessagesAnalyzer {
           this.reportsToDelete.push({ report, row: bodyRow });
         }
       } else if (document.querySelector('.messagesTrashcanBtns button.custom_btn[disabled="disabled"]')) {
-        const optColRestoreButton = createDOM("button", { class: "icon icon_restore" });
+        const optColRestoreButton = createDOM("button", {
+          class: "icon icon_restore",
+          title: Translator.translate(334),
+        });
         optColRestoreButton.setAttribute("data-id", report.id);
 
         optColRestoreButton.addEventListener("click", () => {
@@ -1069,7 +1103,10 @@ class SpyMessagesAnalyzer {
     });
 
     if (Object.keys(ptreJSON).length > 0) {
-      ptreService.importPlayerActivity(OgamePageData.gameLang, universe, ptreJSON).catch(() => {});
+      ptreService.importPlayerActivity(OgamePageData.gameLang, universe, ptreJSON).catch((reason) => {
+        // A page change aborting the request is expected, not a sync failure.
+        if (!isAbortError(reason)) this.#logger.warn("PTRE activity sync failed", reason);
+      });
     }
   }
 }

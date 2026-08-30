@@ -205,8 +205,49 @@ test("side(playerId) renders the compact panel with its buttons and the player's
     assert.ok(panel);
     assert.ok(panel.querySelector(".ogi-title").textContent.includes("Bar"));
     assert.equal(panel.querySelectorAll(".ogl-stalkPlanets a").length, 1);
-    assert.ok(panel.querySelector('a[title="History"]'), "the watchlist button is present");
+    assert.ok(
+      Array.from(panel.querySelectorAll("a.material-icons")).find((el) => el.textContent === "history"),
+      "the watchlist button is present"
+    );
     assert.equal(panel.querySelector(".ogl-ptre-acti"), null, "no PTRE button without options.ptreTK");
+  } finally {
+    browser.cleanup();
+    delete globalThis.localTime;
+  }
+});
+
+test("the planet's inert probe icon shows the compliance notice instead of doing nothing", async () => {
+  const browser = setupBrowser({ html: `<div id="links"></div>` });
+  try {
+    OGBIData.json = {
+      sideStalk: [],
+      options: { sideStalkVisible: true },
+      playerMarkers: {},
+      markers: {},
+      searchHistory: [],
+    };
+    globalThis.localTime = Date.now();
+    respondWithPlayers({
+      700: {
+        id: 700,
+        name: "Bar",
+        status: "",
+        lastUpdate: Date.now(),
+        planets: { 1: { id: "9101", coords: "3:4:5", moon: null, deleted: false, scanned: false } },
+      },
+    });
+
+    stalkPanel.side(700);
+    await tick();
+
+    // AGENTS.md 1.5.1: direct probing outside the galaxy view/inbox is forbidden, so this
+    // icon must never send a probe - clicking it has to explain that instead of doing
+    // nothing at all, which is how it silently regressed before (dead commented-out listener).
+    document.querySelector(".ogl-stalkPlanets .icon_eye").dispatchEvent(new window.Event("click", { bubbles: true }));
+
+    const dialog = document.querySelector(".ogl-dialog");
+    assert.ok(dialog, "clicking the probe icon opens the compliance notice popup");
+    assert.match(dialog.textContent, /direct probing/i);
   } finally {
     browser.cleanup();
     delete globalThis.localTime;
@@ -315,7 +356,11 @@ test("the watchlist button shows the historic list, and clicking an older entry 
 
     assert.deepEqual(OGBIData.sideStalk, [710, 711]);
 
-    document.querySelector('a[title="History"]').dispatchEvent(new Event("click", { bubbles: true, cancelable: true }));
+    // Selects on the Material Icons ligature text (always "history", unlike the
+    // now-localized title) rather than a hardcoded English title.
+    Array.from(document.querySelectorAll("a.material-icons"))
+      .find((el) => el.textContent === "history")
+      .dispatchEvent(new Event("click", { bubbles: true, cancelable: true }));
     await tick(); // each row's name/rank fills in asynchronously via player.get(id).then(...)
 
     const title = document.querySelector(".ogl-sideStalk .title");
@@ -361,7 +406,11 @@ test("removing one entry from the historic list replaces just that row, leaving 
     stalkPanel.side(721);
     await tick();
 
-    document.querySelector('a[title="History"]').dispatchEvent(new Event("click", { bubbles: true, cancelable: true }));
+    // Selects on the Material Icons ligature text (always "history", unlike the
+    // now-localized title) rather than a hardcoded English title.
+    Array.from(document.querySelectorAll("a.material-icons"))
+      .find((el) => el.textContent === "history")
+      .dispatchEvent(new Event("click", { bubbles: true, cancelable: true }));
     await tick(); // each row's name/rank fills in asynchronously via player.get(id).then(...)
 
     const rows = document.querySelectorAll(".ogi-sideStalkList > .ogl-player");

@@ -516,7 +516,9 @@ function utilities(context) {
 
         let eventDate = convertToDate(fleet.querySelector(".timer").getAttribute("data-tooltip-title"));
 
-        const notifyMeButton = fleet.appendChild(createDOM("button", { class: "notify-me-button" }));
+        const notifyMeButton = fleet.appendChild(
+          createDOM("button", { class: "notify-me-button", title: Translator.translate(337) })
+        );
 
         if (Notifier.IsFleetArrivalNotificationScheduled(id, isBack)) {
           notifyMeButton.classList.add("active");

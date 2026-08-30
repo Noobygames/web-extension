@@ -1,5 +1,6 @@
 import { createDOM } from "./dom.js";
 import OGBIData from "../store/OGBIData.js";
+import Translator from "../format/i18n/translate.js";
 
 const senders = [];
 let keepTooltip = OGBIData.keepTooltip || true;
@@ -22,7 +23,7 @@ export function tooltip(sender, content, autoHide, side, timer, mouseoverEnable 
   }
 
   tooltip = document.body.appendChild(createDOM("div", { class: "ogl-tooltip" }));
-  const close = tooltip.appendChild(createDOM("a", { class: "close-tooltip" }));
+  const close = tooltip.appendChild(createDOM("a", { class: "close-tooltip", title: Translator.translate(340) }));
   close.addEventListener("click", (e) => {
     e.stopPropagation();
     tooltip.classList.remove("ogl-active");

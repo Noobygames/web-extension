@@ -2,6 +2,7 @@ import { getOption, setOption } from "../conf-options.js";
 import { createDOM } from "../../ui/dom.js";
 import { getLogger } from "../../platform/logger.js";
 import OGBIData from "../../store/OGBIData.js";
+import Translator from "../../format/i18n/translate.js";
 
 class OverviewPage {
   logger;
@@ -44,7 +45,10 @@ class OverviewPage {
       const detailWrapper = planet.querySelector("#detailWrapper");
 
       // create the toggle planet details button
-      const togglePlanetDataButton = createDOM("div", { class: "togglePlanetDetails" });
+      const togglePlanetDataButton = createDOM("div", {
+        class: "togglePlanetDetails",
+        title: Translator.translate(328),
+      });
       togglePlanetDataButton.addEventListener("click", () => {
         this.#updatePlanetOverviewDisplay(planet, true);
       });

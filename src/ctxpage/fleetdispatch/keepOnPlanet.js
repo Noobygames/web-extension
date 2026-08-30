@@ -41,7 +41,7 @@ function keepOnPlanetDialog(coords, btn, context) {
     container.appendChild(createDOM("hr"));
   }
   let box = createDOM("div", { class: "ogk-keep-dialog" });
-  box.appendChild(createDOM("h1", {}, Translator.translate(28)));
+  box.appendChild(createDOM("h1", { class: "tooltip", title: Translator.translate(313) }, Translator.translate(28)));
   let boxResources = box.appendChild(
     createDOM("div", { class: `ogk-keep-dialog-resources${coords ? " ogk-keep-dialog-resources-coord" : ""}` })
   );
@@ -145,7 +145,7 @@ function keepOnPlanetDialog(coords, btn, context) {
   }
 
   box.appendChild(createDOM("hr"));
-  box.appendChild(createDOM("h1", {}, Translator.translate(29)));
+  box.appendChild(createDOM("h1", { class: "tooltip", title: Translator.translate(313) }, Translator.translate(29)));
 
   let boxFleet = box.appendChild(
     createDOM("div", { class: `ogk-keep-dialog-fleet${coords ? " ogk-keep-dialog-fleet-coord" : ""}` })

@@ -205,7 +205,12 @@ function technoDetail(context) {
               `?page=ingame&component=supplies&cp=${context.current.id}&techId212=${satsNeeded}`;
             let satsSpan = createDOM("span");
             satsSpan.replaceChildren(
-              createDOM("a", { href: `${link}`, "tech-id": "212", class: "ogl-option ogl-solar-satellite" }),
+              createDOM("a", {
+                href: `${link}`,
+                "tech-id": "212",
+                class: "ogl-option ogl-solar-satellite",
+                title: Translator.translate(336),
+              }),
               createDOM("span", {}, `+${toFormattedNumber(satsNeeded)}`)
             );
             consDiv.appendChild(satsSpan);
@@ -243,7 +248,11 @@ function technoDetail(context) {
             let satsNeeded = Math.ceil(Math.floor(-diff / (1 + energyBonus)) / Math.floor((temp + 140) / 6));
             let satsSpan = createDOM("span");
             satsSpan.replaceChildren(
-              createDOM("a", { "tech-id": "212", class: "ogl-option ogl-solar-satellite" }),
+              createDOM("a", {
+                "tech-id": "212",
+                class: "ogl-option ogl-solar-satellite",
+                title: Translator.translate(336),
+              }),
               createDOM("span", {}, `+${toFormattedNumber(satsNeeded)}`)
             );
             consDiv.appendChild(satsSpan);
@@ -516,7 +525,12 @@ function technoDetail(context) {
               `?page=ingame&component=supplies&cp=${context.current.id}&techId212=${satsNeeded}`;
             let satsSpan = createDOM("span");
             satsSpan.replaceChildren(
-              createDOM("a", { href: `${link}`, "tech-id": "212", class: "ogl-option ogl-solar-satellite" }),
+              createDOM("a", {
+                href: `${link}`,
+                "tech-id": "212",
+                class: "ogl-option ogl-solar-satellite",
+                title: Translator.translate(336),
+              }),
               createDOM("span", {}, `+${toFormattedNumber(satsNeeded)}`)
             );
             energy.appendChild(satsSpan);
@@ -635,7 +649,7 @@ function technoDetail(context) {
           let infoDiv = document
             .querySelector("#technologydetails .sprite_large")
             .appendChild(createDOM("div", { class: "ogk-tech-controls" }));
-          lock = infoDiv.appendChild(createDOM("a", { class: "icon icon_lock" }));
+          lock = infoDiv.appendChild(createDOM("a", { class: "icon icon_lock", title: Translator.translate(314) }));
           lock.addEventListener("click", () => {
             lockListener();
           });
@@ -696,7 +710,11 @@ function technoDetail(context) {
                 let satsNeeded = Math.ceil(-Number(currentEnergy) / (1 + energyBonus) / Math.floor((temp + 140) / 6));
                 let satsSpan = createDOM("span");
                 satsSpan.replaceChildren(
-                  createDOM("a", { "tech-id": "212", class: "ogl-option ogl-solar-satellite" }),
+                  createDOM("a", {
+                    "tech-id": "212",
+                    class: "ogl-option ogl-solar-satellite",
+                    title: Translator.translate(336),
+                  }),
                   createDOM("span", {}, `+${toFormattedNumber(satsNeeded)}`)
                 );
                 energyDiv.appendChild(satsSpan);
@@ -725,7 +743,11 @@ function technoDetail(context) {
                 let satsNeeded = Math.ceil(-diff / (1 + energyBonus) / Math.floor((temp + 140) / 6));
                 let satsSpan = createDOM("span");
                 satsSpan.replaceChildren(
-                  createDOM("a", { "tech-id": "212", class: "ogl-option ogl-solar-satellite" }),
+                  createDOM("a", {
+                    "tech-id": "212",
+                    class: "ogl-option ogl-solar-satellite",
+                    title: Translator.translate(336),
+                  }),
                   createDOM("span", {}, `+${toFormattedNumber(satsNeeded)}`)
                 );
                 energyDiv.appendChild(satsSpan);
@@ -802,7 +824,7 @@ function technoDetail(context) {
           let lvlFromTo = titleDiv.appendChild(createDOM("div"));
           titleDiv.appendChild(createDOM("div", {}, Translator.translate(39)));
           let helpNode = document.querySelector(".txt_box .details").cloneNode(true);
-          lock = infoDiv.appendChild(createDOM("a", { class: "icon icon_lock" }));
+          lock = infoDiv.appendChild(createDOM("a", { class: "icon icon_lock", title: Translator.translate(314) }));
           lock.addEventListener("click", () => {
             lockListener();
           });
@@ -848,9 +870,11 @@ function technoDetail(context) {
               .appendChild(createDOM("div", { class: "overmark" }, "resources not correct, try to update LF bonus"));
 
           updateResearchDetails(technologyId, baseLvl, tolvl);
-          let previous = infoDiv.appendChild(createDOM("a", { class: "icon icon_skip_back" }));
+          let previous = infoDiv.appendChild(
+            createDOM("a", { class: "icon icon_skip_back", title: Translator.translate(315) })
+          );
           let lvlSpan = infoDiv.appendChild(createDOM("span", { class: "ogk-lvl" }, toFormattedNumber(tolvl)));
-          let next = infoDiv.appendChild(createDOM("a", { class: "icon icon_skip" }));
+          let next = infoDiv.appendChild(createDOM("a", { class: "icon icon_skip", title: Translator.translate(315) }));
           let textLvl = document.querySelector(".costs p");
           next.addEventListener("click", () => {
             tolvl += 1;

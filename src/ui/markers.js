@@ -3,6 +3,7 @@ import { tooltip } from "./tooltip.js";
 import Player from "../ctxpage/stalk/player.js";
 import OGBIData from "../store/OGBIData.js";
 import * as stalk from "../ctxpage/stalk/stalkPanel.js";
+import Translator from "../format/i18n/translate.js";
 
 const colors = ["red", "orange", "yellow", "green", "blue", "violet", "gray", "brown"];
 
@@ -11,7 +12,7 @@ function addPlayer(parent, playerId) {
   const playerMarkers = OGBIData.playerMarkers;
 
   colors.forEach((color) => {
-    const circle = div.appendChild(createDOM("div", { "data-marker": color }));
+    const circle = div.appendChild(createDOM("div", { "data-marker": color, title: Translator.translate(323) }));
     div.appendChild(circle);
 
     if (playerMarkers[playerId] && playerMarkers[playerId].color === color) {
@@ -110,7 +111,7 @@ function add(coords, parent, id) {
   const markers = OGBIData.markers;
 
   colors.forEach((color) => {
-    const circle = div.appendChild(createDOM("div", { "data-marker": color }));
+    const circle = div.appendChild(createDOM("div", { "data-marker": color, title: Translator.translate(323) }));
     div.appendChild(circle);
     if (markers[coords] && markers[coords].color === color) {
       circle.classList.add("ogl-active");

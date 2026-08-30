@@ -2648,11 +2648,28 @@ div[data-raw-depletion="4"] + .msgHead a.txt_link {
   top: 1px;
 }
 
+.ogl-spyTableScroll {
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.ogl-spyTable-empty {
+  padding: 12px;
+  text-align: center;
+  color: #9099a3;
+}
+
 .ogl-spyTable {
   border-spacing: 0 1px;
   font-size: 11px;
   text-align: center;
   width: 100%;
+}
+
+.ogl-spyTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .ogl-spyTable figure {
@@ -8432,6 +8449,12 @@ span.resbuttons {
   filter: brightness(1.3) !important;
 }
 
+.ptreFrames .ogl_button.ogl_active {
+  background: linear-gradient(0deg, #283546, #3a4d66) !important;
+  border-color: var(--textcyan) !important;
+  color: #fff !important;
+}
+
 .ogl_fleet {
   color: var(--fleet) !important;
 }
@@ -9643,6 +9666,13 @@ body.no-commander .contentBoxBody {
   padding: 12px;
   text-align: center;
   color: #9099a3;
+}
+
+.ogl-mines-legend {
+  font-size: 11px;
+  font-style: italic;
+  color: #9099a3;
+  margin-bottom: 6px;
 }
 
 .ogl-harvest-table {

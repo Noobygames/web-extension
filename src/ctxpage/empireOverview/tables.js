@@ -14,6 +14,7 @@ import flying from "../../ogame/fleetMovements.js";
 /** The four tables the overview popup shows, one per tab. */
 function minesOverview(context) {
   let content = createDOM("div", { class: "ogl-mines-content" });
+  content.appendChild(createDOM("div", { class: "ogl-mines-legend" }, Translator.translate(346)));
   let table = content.appendChild(createDOM("table", { class: "ogl-fleet-table" }));
   let header = table.appendChild(createDOM("tr"));
   header.appendChild(createDOM("th"));

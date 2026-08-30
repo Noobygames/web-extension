@@ -217,9 +217,9 @@ function betterFleetDispatcher(context) {
         value: fleetDispatcher.targetPlanet.position,
       })
     );
-    let planet = coords.appendChild(createDOM("a", { class: "ogl-planet-icon" }));
-    let moon = coords.appendChild(createDOM("a", { class: "ogl-moon-icon" }));
-    let debris = coords.appendChild(createDOM("a", { class: "ogl-debris-icon" }));
+    let planet = coords.appendChild(createDOM("a", { class: "ogl-planet-icon", title: Translator.translate(42) }));
+    let moon = coords.appendChild(createDOM("a", { class: "ogl-moon-icon", title: Translator.translate(194) }));
+    let debris = coords.appendChild(createDOM("a", { class: "ogl-debris-icon", title: Translator.translate(76) }));
     planet.addEventListener("click", () => {
       fleetDispatcher.targetPlanet.type = fleetDispatcher.fleetHelper.PLANETTYPE_PLANET;
       fleetDispatcher.fetchTargetPlayerData();
@@ -908,11 +908,19 @@ function betterFleetDispatcher(context) {
     let metalReal = metalBtn.appendChild(createDOM("span", { class: "ogk-real-cargo ogk-metal" }, "-"));
     let btns = metalBtn.appendChild(createDOM("div", { class: "ogl-actions" }));
     let selectMinMetal = btns.appendChild(
-      createDOM("img", { src: "https://gf2.geo.gfsrv.net/cdn10/45494a6e18d52e5c60c8fb56dfbcc4.gif" })
+      createDOM("img", {
+        src: "https://gf2.geo.gfsrv.net/cdn10/45494a6e18d52e5c60c8fb56dfbcc4.gif",
+        title: Translator.translate(341),
+      })
     );
-    let selectMostMetal = btns.appendChild(createDOM("a", { class: "select-most-min" }));
+    let selectMostMetal = btns.appendChild(
+      createDOM("a", { class: "select-most-min", title: Translator.translate(343) })
+    );
     let selectMaxMetal = btns.appendChild(
-      createDOM("img", { src: "https://gf3.geo.gfsrv.net/cdnea/fa0c8ee62604e3af52e6ef297faf3c.gif" })
+      createDOM("img", {
+        src: "https://gf3.geo.gfsrv.net/cdnea/fa0c8ee62604e3af52e6ef297faf3c.gif",
+        title: Translator.translate(342),
+      })
     );
     let crystalBtn = resFiller.appendChild(createDOM("div"));
     crystalBtn.appendChild(createDOM("div", { class: "resourceIcon crystal" }));
@@ -921,11 +929,19 @@ function betterFleetDispatcher(context) {
     let crystalReal = crystalBtn.appendChild(createDOM("span", { class: "ogk-real-cargo ogk-crystal" }, "-"));
     let crystalBtns = crystalBtn.appendChild(createDOM("div", { class: "ogl-actions" }));
     let selectMinCrystal = crystalBtns.appendChild(
-      createDOM("img", { src: "https://gf2.geo.gfsrv.net/cdn10/45494a6e18d52e5c60c8fb56dfbcc4.gif" })
+      createDOM("img", {
+        src: "https://gf2.geo.gfsrv.net/cdn10/45494a6e18d52e5c60c8fb56dfbcc4.gif",
+        title: Translator.translate(341),
+      })
     );
-    let selectMostCrystal = crystalBtns.appendChild(createDOM("a", { class: "select-most-min" }));
+    let selectMostCrystal = crystalBtns.appendChild(
+      createDOM("a", { class: "select-most-min", title: Translator.translate(343) })
+    );
     let selectMaxCrystal = crystalBtns.appendChild(
-      createDOM("img", { src: "https://gf3.geo.gfsrv.net/cdnea/fa0c8ee62604e3af52e6ef297faf3c.gif" })
+      createDOM("img", {
+        src: "https://gf3.geo.gfsrv.net/cdnea/fa0c8ee62604e3af52e6ef297faf3c.gif",
+        title: Translator.translate(342),
+      })
     );
     let deutBtn = resFiller.appendChild(createDOM("div"));
     deutBtn.appendChild(createDOM("div", { class: "resourceIcon deuterium" }));
@@ -934,11 +950,19 @@ function betterFleetDispatcher(context) {
     let deutReal = deutBtn.appendChild(createDOM("span", { class: "ogk-real-cargo ogk-deut" }, "-"));
     let deutBtns = deutBtn.appendChild(createDOM("div", { class: "ogl-actions" }));
     let selectMinDeut = deutBtns.appendChild(
-      createDOM("img", { src: "https://gf2.geo.gfsrv.net/cdn10/45494a6e18d52e5c60c8fb56dfbcc4.gif" })
+      createDOM("img", {
+        src: "https://gf2.geo.gfsrv.net/cdn10/45494a6e18d52e5c60c8fb56dfbcc4.gif",
+        title: Translator.translate(341),
+      })
     );
-    let selectMostDeut = deutBtns.appendChild(createDOM("a", { class: "select-most-min" }));
+    let selectMostDeut = deutBtns.appendChild(
+      createDOM("a", { class: "select-most-min", title: Translator.translate(343) })
+    );
     let selectMaxDeut = deutBtns.appendChild(
-      createDOM("img", { src: "https://gf3.geo.gfsrv.net/cdnea/fa0c8ee62604e3af52e6ef297faf3c.gif" })
+      createDOM("img", {
+        src: "https://gf3.geo.gfsrv.net/cdnea/fa0c8ee62604e3af52e6ef297faf3c.gif",
+        title: Translator.translate(342),
+      })
     );
     if (!context.isMobile) {
       (context.hasLifeforms

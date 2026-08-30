@@ -1,6 +1,7 @@
 import { createDOM } from "./dom.js";
 import OGBIData from "../store/OGBIData.js";
 import PlayerClass from "../game/playerClass.js";
+import Translator from "../format/i18n/translate.js";
 
 let resolvedPlayerClass = null;
 
@@ -42,7 +43,7 @@ export function popup(header, content) {
   let dialog = overlay.querySelector(".ogl-dialog");
   if (!dialog) {
     dialog = overlay.appendChild(createDOM("div", { class: "ogl-dialog" }));
-    let close = dialog.appendChild(createDOM("div", { class: "close-tooltip" }));
+    let close = dialog.appendChild(createDOM("div", { class: "close-tooltip", title: Translator.translate(340) }));
     close.addEventListener("click", () => {
       let welcome = OGBIData.welcome;
       if (welcome) {

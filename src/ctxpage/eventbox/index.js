@@ -252,7 +252,7 @@ function eventBox(context) {
     context.expeditionImpact(OGBIData.json.options.eventBoxExps);
   };
   let addRefreshButton = () => {
-    let refreshBtn = createDOM("a", { class: "icon icon_reload" });
+    let refreshBtn = createDOM("a", { class: "icon icon_reload", title: Translator.translate(23) });
     $("#eventHeader").prepend(refreshBtn);
     refreshBtn.addEventListener("click", () => {
       $.get(

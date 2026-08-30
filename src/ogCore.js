@@ -1250,6 +1250,7 @@ class OGBeyondInfinity {
       mode: this.mode,
       rawURL: this.rawURL,
       universe: this.universe,
+      commander: this.commander,
       univerviewLang: this.univerviewLang,
       planetList: this.planetList,
       playerClass: this.playerClass,

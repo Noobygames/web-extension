@@ -4,6 +4,8 @@ import Translator from "../../format/i18n/translate.js";
 import { createDOM } from "../../ui/dom.js";
 import { formatToUnits } from "../../format/numbers.js";
 import { popup } from "../../ui/popup.js";
+import { loading } from "../../ui/loading.js";
+import { isAbortError } from "../../platform/abort.js";
 import OGBIData from "../../store/OGBIData.js";
 
 const universe = window.location.host.replace(/\D/g, "");
@@ -18,6 +20,8 @@ export function action(frame, player) {
     popup(null, container);
     return;
   }
+
+  loading();
 
   let cleanPlayerName = encodeURIComponent(player.name);
   ptreService
@@ -75,8 +79,13 @@ export function action(frame, player) {
         container.appendChild(createDOM("div", { class: "splitLine" }));
         container.appendChild(createDOM("div", { class: "ptreFrames" }));
 
+        // Otherwise nothing shows which timeframe is currently displayed - action()
+        // rebuilds this whole popup from scratch on every click, so the previous
+        // click's visual state does not survive on its own.
         ["last24h", "2days", "3days", "week", "2weeks", "month"].forEach((f) => {
-          let btn = container.querySelector(".ptreFrames").appendChild(createDOM("div", { class: "ogl_button" }, f));
+          let btn = container
+            .querySelector(".ptreFrames")
+            .appendChild(createDOM("div", { class: `ogl_button${f === frame ? " ogl_active" : ""}` }, f));
           btn.addEventListener("click", () => action(f, player));
         });
 
@@ -120,6 +129,12 @@ export function action(frame, player) {
           container.querySelector(".ptreActivities > span").textContent = result.activity_array.message;
         }
       } else container.textContent = result.message;
+      popup(null, container);
+    })
+    .catch((reason) => {
+      // A page change aborting the request is expected, not a failure to report.
+      if (isAbortError(reason)) return;
+      container.textContent = Translator.translate(344);
       popup(null, container);
     });
 }

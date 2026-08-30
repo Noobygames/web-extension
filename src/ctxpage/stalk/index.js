@@ -8,6 +8,7 @@ import dataHelper from "../../integrations/dataHelper.js";
 import markerui from "../../ui/markers.js";
 import { generateMMORPGLink } from "../../integrations/mmorpgStats.js";
 import { generateHiscoreLink, highlightTarget, stalk } from "../galaxy/index.js";
+import Translator from "../../format/i18n/translate.js";
 
 /**
  * Looking at other players: the search box, the stalk panel on the left, and the
@@ -85,6 +86,7 @@ function playerSearch(context, show, name) {
             class: "ogl-ptre",
             href: generatePTRELink(context, player.id),
             target: generatePTRELink(context, player.id),
+            title: Translator.translate(322),
           },
           "P"
         )
@@ -96,11 +98,12 @@ function playerSearch(context, show, name) {
         class: "ogl-mmorpgstats",
         href: generateMMORPGLink(context.universe, player.id),
         target: generateMMORPGLink(context.universe, player.id),
+        title: Translator.translate(324),
       })
     );
-    let pinBtn = btns.appendChild(createDOM("a", { class: "ogl-pin" }));
+    let pinBtn = btns.appendChild(createDOM("a", { class: "ogl-pin", title: Translator.translate(320) }));
 
-    let chat = btns.appendChild(createDOM("a", { class: "icon icon_chat" }));
+    let chat = btns.appendChild(createDOM("a", { class: "icon icon_chat", title: Translator.translate(318) }));
     pinBtn.addEventListener("click", () => {
       sideStalk(context, player.id);
     });
