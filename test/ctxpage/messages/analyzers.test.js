@@ -608,6 +608,59 @@ test("clicking a column header re-sorts by that column and persists the choice",
   assert.deepEqual(order, ["9512", "9511"], "FLEET sorts highest fleet first");
 });
 
+test("row numbers still track sort order when a second page of messages arrives in append mode", () => {
+  // Was a bug: re-sorting reordered every row in the DOM, but only ever set the "#"
+  // cell on a row the first time it was created - a row reused from an earlier
+  // analyze() call kept whatever number it got back then, even after moving.
+  resetStore({ spyTableAppend: true, spyFilter: "FLEET" });
+  document.body.innerHTML = spyPageChrome();
+  const analyzer = new SpyMessagesAnalyzer();
+  const first = spyReportRow(9601, { targetPlayerId: 99999, fleetFilter: "x", fleetValue: "100" });
+  analyzer.analyze(spyCallableOf(first), messagesTabs.SPY);
+
+  const second = spyReportRow(9602, { targetPlayerId: 99999, fleetFilter: "x", fleetValue: "999999" });
+  // A second page of messages arriving in append mode - not a header click, so the
+  // table is never torn down. #9602 has to sort ahead of #9601, and the row numbers
+  // have to move with them.
+  analyzer.analyze(spyCallableOf(first, second), messagesTabs.SPY);
+
+  const rows = [...document.querySelectorAll(".ogl-spyTable tbody tr")];
+  assert.deepEqual(
+    rows.map((tr) => tr.getAttribute("data-report-id")),
+    ["9602", "9601"],
+    "FLEET sorts highest first"
+  );
+  assert.deepEqual(
+    rows.map((tr) => tr.cells[0].textContent),
+    ["1", "2"],
+    "the # column follows the sorted order, not the order the rows were created in"
+  );
+});
+
+test("clicking a sort header does not revert an option changed after the table was built", () => {
+  // Was a bug: the click handler closed over an OGBIData.options snapshot taken when
+  // the header was built, then wrote that whole snapshot back on click - silently
+  // undoing any other option changed in the meantime (this table can live across many
+  // analyze() calls in append mode, so "in the meantime" could be a while).
+  resetStore({ spyFilter: "$", spyFret: ship.SmallCargoShip });
+  document.body.innerHTML = spyPageChrome();
+  const report = spyReportRow(9611, { targetPlayerId: 99999, fleetFilter: "x", fleetValue: "100" });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+
+  // Something else changes spyFret after the table (and its header click handlers)
+  // were built - e.g. the player picked a different cargo ship.
+  OGBIData.options = { ...OGBIData.options, spyFret: ship.LargeCargoShip };
+
+  document.querySelector('.ogl-spyTable thead th[data-filter="FLEET"]').click();
+
+  assert.equal(
+    OGBIData.options.spyFret,
+    ship.LargeCargoShip,
+    "a stale options snapshot from table-build time must not overwrite a later change"
+  );
+});
+
 test("a report with unreadable fleet/defense data gets a 'No data' label and danger styling", () => {
   // Was a KNOWN BUG: the danger check compared against the literal "No Data"
   // (capital D) while SpyReport.js only ever produces "No data" (lowercase d), so

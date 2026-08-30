@@ -270,11 +270,18 @@ class SpyMessagesAnalyzer {
 
     header.querySelectorAll("th").forEach((th) => {
       const filter = th.getAttribute("data-filter");
-      const options = OGBIData.options;
-      if (options.spyFilter === filter) th.classList.add("ogl-active");
+      if (OGBIData.options.spyFilter === filter) th.classList.add("ogl-active");
 
-      th.addEventListener("click", () => {
+      th.addEventListener("click", (event) => {
         if (filter) {
+          // Injected into #messages, next to OGame's own message list - without this,
+          // the click bubbles into whatever native handling lives up there.
+          event.stopPropagation();
+
+          // Read fresh, not a snapshot from table build time: this table can live
+          // across many analyze() calls in append mode, and a stale snapshot here
+          // would silently overwrite any other option changed since then.
+          const options = OGBIData.options;
           options.spyFilter = filter;
           header.querySelector("th.ogl-active")?.classList?.remove("ogl-active");
           th.classList.add("ogl-active");
@@ -412,9 +419,6 @@ class SpyMessagesAnalyzer {
       table.appendChild(body);
     }
 
-    const row = body.querySelectorAll("tr").length;
-    let index = 0;
-
     const compare = (a, b) => {
       if (isNaN(a)) a = -1;
       if (isNaN(b)) b = -1;
@@ -445,6 +449,13 @@ class SpyMessagesAnalyzer {
       let bodyRow = body.querySelector(`[data-report-id="${report.id}"]`);
 
       if (bodyRow) {
+        // Moving an expanded row without closing it first would leave its
+        // renta-breakdown rows behind at the old position, detached from it.
+        if (bodyRow.getAttribute("data") === "expanded") {
+          bodyRow.setAttribute("data", "closed");
+          document.querySelectorAll("tr.spyTable-extended").forEach((e) => e.remove());
+        }
+
         body.appendChild(bodyRow);
 
         return;
@@ -453,9 +464,7 @@ class SpyMessagesAnalyzer {
       bodyRow = createDOM("tr", { data: "closed", "data-report-id": report.id });
       body.appendChild(bodyRow);
 
-      index++;
-
-      const indexCol = createDOM("td", {}, row + index);
+      const indexCol = createDOM("td");
 
       if (report.isNew) {
         indexCol.classList.add("ogi-new");
@@ -939,6 +948,18 @@ class SpyMessagesAnalyzer {
         rentaDisplay();
       });
     });
+
+    // The loop above reorders every row - reused and newly created alike - to match
+    // the current sort, but only ever set the "#" cell on a row the first time it was
+    // created. Renumber here so it always matches what's on screen, instead of a
+    // reused row keeping the number it got under a previous sort. Filtered to rows
+    // with a data-report-id: the renta-breakdown detail rows a click can insert have
+    // none, and are not part of this numbering.
+    Array.from(body.children)
+      .filter((row) => row.hasAttribute("data-report-id"))
+      .forEach((row, i) => {
+        if (row.firstElementChild) row.firstElementChild.textContent = i + 1;
+      });
 
     this.deleteReports();
   }
