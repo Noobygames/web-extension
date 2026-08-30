@@ -428,5 +428,12 @@ export default Object.freeze({
     344: "Falha ao carregar dados. Tente novamente.",
     345: "Nenhum relatório de espionagem aqui.",
     346: "Cada célula: estoque atual, depois produção por hora / dia / semana.",
+    347: "Manter",
+    348: "Formato de chave de equipe PTRE inválido. Deve ser parecido com: TM-XXXX-XXXX-XXXX-XXXX",
+    349: "Última atualização da API",
+    350: "Número de sistemas",
+    351: "Tamanho do armazenamento",
+    352: "nunca",
+    353: "(indisponível)",
   },
 });

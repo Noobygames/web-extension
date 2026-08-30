@@ -428,5 +428,12 @@ export default Object.freeze({
     344: "Laden fehlgeschlagen. Bitte erneut versuchen.",
     345: "Keine Spionageberichte hier.",
     346: "Jede Zelle: aktueller Bestand, dann Produktion pro Stunde / Tag / Woche.",
+    347: "Behalten",
+    348: "Ungültiges PTRE Team Key Format. Sollte so aussehen: TM-XXXX-XXXX-XXXX-XXXX",
+    349: "Letztes API-Update",
+    350: "Anzahl Systeme",
+    351: "Speichergröße",
+    352: "nie",
+    353: "(nicht verfügbar)",
   },
 });

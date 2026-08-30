@@ -117,7 +117,7 @@ function eventBox(context) {
   let addOptions = () => {
     let header = document.querySelector("#eventHeader");
     let div = header.appendChild(createDOM("div"));
-    div.appendChild(createDOM("span", {}, "Keep"));
+    div.appendChild(createDOM("span", {}, Translator.translate(347)));
     let keep = div.appendChild(createDOM("input", { type: "checkbox" }));
     if (OGBIData.json.options.eventBoxKeep) keep.checked = true;
     div.appendChild(createDOM("span", {}, Translator.translate(41)));
@@ -202,13 +202,19 @@ function eventBox(context) {
       );
     });
   };
+  // Original opacity per row, read once - needed to restore a neighbor row
+  // (not just the hovered one) to its own value instead of a wrong one.
+  let originalOpacity = (node) => {
+    if (node.dataset.oglOrigOpacity === undefined) node.dataset.oglOrigOpacity = node.style.opacity;
+    return node.dataset.oglOrigOpacity;
+  };
   let addHover = () => {
     document.querySelectorAll("#eventContent .eventFleet").forEach((line) => {
       let previous = Number(line.getAttribute("id").replace("eventRow-", "")) - 1;
       let next = Number(line.getAttribute("id").replace("eventRow-", "")) + 1;
       let previousNode = document.querySelector("#eventRow-" + previous);
       let nextNode = document.querySelector("#eventRow-" + next);
-      let opacity = line.style.opacity;
+      let opacity = originalOpacity(line);
       line.addEventListener("mouseover", () => {
         line.style.setProperty("background-color", "#353535", "important");
         line.style.setProperty("opacity", "1", "important");
@@ -223,10 +229,13 @@ function eventBox(context) {
       });
       line.addEventListener("mouseout", () => {
         line.style.setProperty("background-color", "inherit");
-        if (previousNode) previousNode.style.setProperty("background-color", "inherit");
+        if (previousNode) {
+          previousNode.style.setProperty("background-color", "inherit");
+          previousNode.style.setProperty("opacity", originalOpacity(previousNode));
+        }
         if (nextNode) {
           nextNode.style.setProperty("background-color", "inherit");
-          nextNode.style.setProperty("opacity", "0.5");
+          nextNode.style.setProperty("opacity", originalOpacity(nextNode));
         }
         line.style.setProperty("opacity", opacity, "important");
       });

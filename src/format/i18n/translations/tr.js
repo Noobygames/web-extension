@@ -428,5 +428,12 @@ export default Object.freeze({
     344: "Veriler yüklenemedi. Lütfen tekrar deneyin.",
     345: "Burada casusluk raporu yok.",
     346: "Her hücre: mevcut stok, ardından saatlik / günlük / haftalık üretim.",
+    347: "Sakla",
+    348: "Geçersiz PTRE Takım Anahtarı biçimi. Şöyle görünmeli: TM-XXXX-XXXX-XXXX-XXXX",
+    349: "Son API güncellemesi",
+    350: "Sistem sayısı",
+    351: "Depolama boyutu",
+    352: "hiçbir zaman",
+    353: "(kullanılamıyor)",
   },
 });

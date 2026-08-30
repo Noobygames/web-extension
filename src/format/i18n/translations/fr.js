@@ -428,5 +428,12 @@ export default Object.freeze({
     344: "Échec du chargement. Veuillez réessayer.",
     345: "Aucun rapport d'espionnage ici.",
     346: "Chaque cellule : stock actuel, puis production horaire / journalière / hebdomadaire.",
+    347: "Conserver",
+    348: "Format de clé d'équipe PTRE invalide. Il doit ressembler à : TM-XXXX-XXXX-XXXX-XXXX",
+    349: "Dernière mise à jour API",
+    350: "Nombre de systèmes",
+    351: "Taille de stockage",
+    352: "jamais",
+    353: "(indisponible)",
   },
 });

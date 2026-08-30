@@ -938,35 +938,35 @@ function settings(context) {
   // via the page->content bridge - the value reflects the current in-memory store
   // at the moment the settings modal opens.
   let ptreLastApiUpdateRow = ptreSection.appendChild(createDOM("span"));
-  ptreLastApiUpdateRow.textContent = "Last API update: ...";
+  ptreLastApiUpdateRow.textContent = `${Translator.translate(349)}: ...`;
   let ptreSystemCountRow = ptreSection.appendChild(createDOM("span"));
-  ptreSystemCountRow.textContent = "Systems count: ...";
+  ptreSystemCountRow.textContent = `${Translator.translate(350)}: ...`;
   let ptreStorageSizeRow = ptreSection.appendChild(createDOM("span"));
-  ptreStorageSizeRow.textContent = "Storage size: ...";
+  ptreStorageSizeRow.textContent = `${Translator.translate(351)}: ...`;
   pageContextRequest("ptre", "galaxyInfo")
     .then((r) => {
       const n = r?.response?.systemCount ?? 0;
-      ptreSystemCountRow.textContent = `Systems count: ${n}`;
+      ptreSystemCountRow.textContent = `${Translator.translate(350)}: ${n}`;
       const ts = r?.response?.lastGalaxyUpdateTS ?? -1;
       if (ts > 0) {
         const d = new Date(ts * 1000);
         const formatted = d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-        ptreLastApiUpdateRow.textContent = `Last API update: ${formatted}`;
+        ptreLastApiUpdateRow.textContent = `${Translator.translate(349)}: ${formatted}`;
       } else {
-        ptreLastApiUpdateRow.textContent = "Last API update: never";
+        ptreLastApiUpdateRow.textContent = `${Translator.translate(349)}: ${Translator.translate(352)}`;
       }
       const bytes = r?.response?.storageBytes ?? 0;
       let sizeStr;
       if (bytes >= 1024 * 1024) sizeStr = `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
       else if (bytes >= 1024) sizeStr = `${(bytes / 1024).toFixed(1)} KB`;
       else sizeStr = `${bytes} B`;
-      ptreStorageSizeRow.textContent = `Storage size: ${sizeStr}`;
+      ptreStorageSizeRow.textContent = `${Translator.translate(351)}: ${sizeStr}`;
     })
     .catch((err) => {
       console.warn("[OGI][PTRE] galaxyInfo failed", err);
-      ptreSystemCountRow.textContent = "Systems count: (unavailable)";
-      ptreLastApiUpdateRow.textContent = "Last API update: (unavailable)";
-      ptreStorageSizeRow.textContent = "Storage size: (unavailable)";
+      ptreSystemCountRow.textContent = `${Translator.translate(350)}: ${Translator.translate(353)}`;
+      ptreLastApiUpdateRow.textContent = `${Translator.translate(349)}: ${Translator.translate(353)}`;
+      ptreStorageSizeRow.textContent = `${Translator.translate(351)}: ${Translator.translate(353)}`;
     });
 
   settingDiv.appendChild(createDOM("hr"));
@@ -1014,7 +1014,7 @@ function settings(context) {
       // "turn PTRE off" and gets no error; anything else that does not match the
       // format does.
       if (ptreInput.value) {
-        ptreKeyError.textContent = "Invalid PTRE Team Key format. It should look like: TM-XXXX-XXXX-XXXX-XXXX";
+        ptreKeyError.textContent = Translator.translate(348);
         ptreKeyError.style.display = "block";
       } else {
         ptreKeyError.style.display = "none";
@@ -1043,7 +1043,7 @@ function settings(context) {
     document.querySelector(".ogl-dialog .close-tooltip").click();
   });
   resetBtn.addEventListener("click", () => {
-    let reset = confirm("Are you sure ? :)");
+    let reset = confirm(Translator.translate(197));
     if (reset) {
       let json = {};
       if (!cacheBox.children[1].checked) {

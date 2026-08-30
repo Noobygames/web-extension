@@ -428,5 +428,12 @@ export default Object.freeze({
     344: "Failed to load data. Please try again.",
     345: "No spy reports here.",
     346: "Each cell: current stock, then hourly / daily / weekly production.",
+    347: "Keep",
+    348: "Invalid PTRE Team Key format. It should look like: TM-XXXX-XXXX-XXXX-XXXX",
+    349: "Last API update",
+    350: "Systems count",
+    351: "Storage size",
+    352: "never",
+    353: "(unavailable)",
   },
 });
