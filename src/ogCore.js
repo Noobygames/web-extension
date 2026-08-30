@@ -196,6 +196,7 @@ class OGBeyondInfinity {
     OGBIData.json.discoveriesSums = OGBIData.json.discoveriesSums || {};
     OGBIData.json.discoveries = OGBIData.json.discoveries || {};
     OGBIData.json.spies = OGBIData.json.spies || {};
+    OGBIData.json.spyReportCache = OGBIData.json.spyReportCache || {};
     OGBIData.json.flying = OGBIData.json.flying || {
       metal: 0,
       crystal: 0,
@@ -965,7 +966,7 @@ class OGBeyondInfinity {
     const module = await loadChunk("fleetdispatch", () => import("./ctxpage/fleetdispatch/index.js"));
     if (!module) return;
 
-    module.cacheShipData();
+    module.cacheShipData({ playerClass: this.playerClass });
     module.neededCargo(this.fleetContext());
     module.preselectShips(this.fleetContext());
     module.expedition(this.fleetContext());

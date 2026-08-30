@@ -435,5 +435,6 @@ export default Object.freeze({
     351: "Tamanho do armazenamento",
     352: "nunca",
     353: "(indisponível)",
+    354: "Relatório de espionagem em cache",
   },
 });

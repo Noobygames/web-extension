@@ -20,6 +20,7 @@ import OGBIData from "../../../store/OGBIData.js";
 import Translator from "../../../format/i18n/translate.js";
 import { evaluateTarget } from "../../../game/farmEvaluator.js";
 import { formatDuration } from "../../../game/fleetFlight.js";
+import { recordSpyReport } from "../../../store/spyReportCache.js";
 
 class SpyMessagesAnalyzer {
   #logger;
@@ -107,7 +108,10 @@ class SpyMessagesAnalyzer {
 
       const report = new SpyReport(message);
 
-      if (!report.targetIsSelf) this.#spyReports[report.id] = report;
+      if (!report.targetIsSelf) {
+        this.#spyReports[report.id] = report;
+        recordSpyReport(report);
+      }
     });
 
     if (Object.keys(this.#spyReports).length === 0) {

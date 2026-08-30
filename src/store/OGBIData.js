@@ -26,6 +26,7 @@ const COLD_FIELDS = new Set([
   "discoveriesSums",
   "combatsSums",
   "translations",
+  "spyReportCache",
 ]);
 
 class OGBIData {
@@ -115,6 +116,15 @@ class OGBIData {
   }
   set spies(spies) {
     this.#cold.spies = spies;
+
+    this.#saveCold();
+  }
+  /** Espionage snapshots kept for the galaxy-view hover, keyed by coords+planetType. */
+  get spyReportCache() {
+    return this.#cold.spyReportCache;
+  }
+  set spyReportCache(spyReportCache) {
+    this.#cold.spyReportCache = spyReportCache;
 
     this.#saveCold();
   }

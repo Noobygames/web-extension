@@ -435,5 +435,6 @@ export default Object.freeze({
     351: "Storage size",
     352: "never",
     353: "(unavailable)",
+    354: "Cached spy report",
   },
 });

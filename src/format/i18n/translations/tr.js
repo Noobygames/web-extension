@@ -435,5 +435,6 @@ export default Object.freeze({
     351: "Depolama boyutu",
     352: "hiçbir zaman",
     353: "(kullanılamıyor)",
+    354: "Önbelleğe alınmış casusluk raporu",
   },
 });

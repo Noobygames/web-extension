@@ -435,5 +435,6 @@ export default Object.freeze({
     351: "Speichergröße",
     352: "nie",
     353: "(nicht verfügbar)",
+    354: "Gecachter Spähbericht",
   },
 });

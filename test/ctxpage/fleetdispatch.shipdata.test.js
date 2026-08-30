@@ -22,6 +22,7 @@ import { setupBrowser } from "../helpers/globals.js";
 const bootstrap = setupBrowser();
 const OGBIData = (await import("../../src/store/OGBIData.js")).default;
 const { cacheShipData, mapShipsData } = await import("../../src/ctxpage/fleetdispatch/shipData.js");
+const PlayerClass = (await import("../../src/game/playerClass.js")).default;
 bootstrap.cleanup();
 
 /** Two rows of OGame's own table, in the shape the game publishes. */
@@ -56,6 +57,90 @@ test("the mapping keeps the name-to-id direction the lookups depend on", () => {
     cargoCapacity: 25000,
     speed: 7500,
     fuelConsumption: 50,
+  });
+});
+
+/**
+ * The bug this section covers: `cargoCapacity` used to be stored as
+ * `baseCargoCapacity` verbatim, so every cargo suggestion in the extension read low
+ * for any player with Hyperspace Technology or the Miner class - which is most
+ * players, not an edge case.
+ *
+ * `cargoHyperspaceTechMultiplier` is a percent-per-level integer on a live
+ * serverData.xml (`5`, meaning 5% per level), while
+ * `minerBonusIncreasedCargoCapacityForTradingShips` is already a fraction (`0.25`).
+ * The two tests below pin that each is applied on its own scale, not both the same way.
+ */
+test("Hyperspace Technology raises cargo capacity by a percentage per level", () => {
+  const { ships } = mapShipsData(SHIPS_DATA, { hyperspaceTechLevel: 10, cargoHyperspaceTechMultiplier: 5 });
+
+  // 25000 * (1 + 10 * 5 / 100) = 37500
+  assert.equal(ships[203].cargoCapacity, 37500);
+  assert.equal(ships[202].cargoCapacity, 7500);
+});
+
+test("the Miner cargo bonus is a fraction applied as-is, not divided by 100", () => {
+  const { ships } = mapShipsData(SHIPS_DATA, { playerClass: PlayerClass.MINER, minerCargoBonus: 0.25 });
+
+  assert.equal(ships[203].cargoCapacity, 31250);
+});
+
+test("the Miner cargo bonus only applies to trading ships, not every ship", () => {
+  const shipsData = {
+    ...SHIPS_DATA,
+    219: { name: "Pathfinder", baseCargoCapacity: 10000, speed: 12000, fuelConsumption: 300 },
+  };
+  const { ships } = mapShipsData(shipsData, { playerClass: PlayerClass.MINER, minerCargoBonus: 0.25 });
+
+  assert.equal(ships[219].cargoCapacity, 10000);
+});
+
+test("a non-Miner class never gets the trading-ship cargo bonus", () => {
+  const { ships } = mapShipsData(SHIPS_DATA, { playerClass: PlayerClass.WARRIOR, minerCargoBonus: 0.25 });
+
+  assert.equal(ships[203].cargoCapacity, 25000);
+});
+
+test("both bonuses stack, floored once at the end", () => {
+  const { ships } = mapShipsData(SHIPS_DATA, {
+    hyperspaceTechLevel: 10,
+    cargoHyperspaceTechMultiplier: 5,
+    playerClass: PlayerClass.MINER,
+    minerCargoBonus: 0.25,
+  });
+
+  // 25000 * 1.5 * 1.25 = 46875
+  assert.equal(ships[203].cargoCapacity, 46875);
+});
+
+test("cacheShipData reads the Hyperspace Technology level out of this batch's apiTechData", async () => {
+  await withPage(async () => {
+    OGBIData.json = { ...CACHED, cargoHyperspaceTechMultiplier: 5 };
+    globalThis.fleetDispatcher = {
+      fleetHelper: { shipsData: SHIPS_DATA },
+      apiTechData: [
+        [114, 10],
+        [115, 15],
+      ],
+    };
+
+    await cacheShipData({ waitFor: () => Promise.resolve(true) });
+
+    assert.equal(OGBIData.ships[203].cargoCapacity, 37500);
+  });
+});
+
+test("cacheShipData applies the Miner trading-ship bonus when told the player is Miner", async () => {
+  await withPage(async () => {
+    OGBIData.json = {
+      ...CACHED,
+      trashsimSettings: { minerBonusIncreasedCargoCapacityForTradingShips: "0.25" },
+    };
+    globalThis.fleetDispatcher = { fleetHelper: { shipsData: SHIPS_DATA }, apiTechData: [[115, 15]] };
+
+    await cacheShipData({ waitFor: () => Promise.resolve(true), playerClass: PlayerClass.MINER });
+
+    assert.equal(OGBIData.ships[203].cargoCapacity, 31250);
   });
 });
 

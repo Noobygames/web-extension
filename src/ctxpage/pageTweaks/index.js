@@ -360,7 +360,15 @@ function utilities(context) {
       tooltipDiv.append(
         DOM.createDOM("hr"),
         DOM.createDOM("div", {}, Translator.translate(47)).appendChild(
-          DOM.createDOM("span", {}, toFormattedNumber(data[id].baseCargoCapacity, 0))
+          // data[id].baseCargoCapacity is the raw value the game publishes, before the
+          // Hyperspace Technology and Miner-class bonuses OGBIData.json.ships applies
+          // (see ctxpage/fleetdispatch/shipData.js) - showing it here would tell the
+          // player a capacity lower than what they actually have.
+          DOM.createDOM(
+            "span",
+            {},
+            toFormattedNumber(OGBIData.json.ships?.[id]?.cargoCapacity ?? data[id].baseCargoCapacity, 0)
+          )
         ).parentElement,
         DOM.createDOM("div", {}, Translator.translate(48)).appendChild(
           DOM.createDOM("span", {}, toFormattedNumber(data[id].speed, 0))

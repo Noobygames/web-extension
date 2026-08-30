@@ -13,6 +13,11 @@ import { renderPlanet } from "./renderPlanet.js";
 import { pageContextRequest } from "../../platform/bridge.js";
 import { addTemplateSelector } from "../fleetdispatch/templates.js";
 import { addMarkerUI, generateHiscoreLink, getMarkedPlayers, highlightTarget, stalk, targetList } from "./index.js";
+import { tooltip } from "../../ui/tooltip.js";
+import DateTime from "../../format/dateTime.js";
+import { toFormattedNumber } from "../../format/numbers.js";
+import planetType from "../../game/planetType.js";
+import { getSpyReport } from "../../store/spyReportCache.js";
 
 const logger = getLogger("galaxyView");
 
@@ -105,6 +110,7 @@ function onGalaxyUpdate(context) {
     preselectTemplate();
     addGalaxyMarkers(context);
     addGalaxyTooltips(context);
+    addSpyReportHover();
     highlightTarget(context);
     scan(context);
     applyTargetClaims(context, galaxy, system);
@@ -259,6 +265,92 @@ function addGalaxyMarkers(context) {
   });
 
   if (markersChanged) OGBIData.Save();
+}
+
+/**
+ * Shows the last cached espionage report for a coordinate on hover, read from
+ * `spyReportCache` (fed by every spy report already in the player's own inbox -
+ * see SpyMessagesAnalyzer). Display only: no probe or other game action is
+ * attached to a coordinate here (AGENTS.md 1.5.1) - sending a new probe still
+ * only happens through the game's own galaxy-view probe icon.
+ */
+function addSpyReportHover() {
+  document.querySelectorAll("#galaxyContent .galaxyRow.ctContentRow").forEach((row, index) => {
+    const coords = galaxy + ":" + system + ":" + Number(index + 1);
+
+    attachSpyReportTooltip(row.querySelector(".cellPlanet"), coords, planetType.planet);
+
+    const moonCell = row.querySelector(".cellMoon");
+    if (moonCell && moonCell.children.length !== 0) attachSpyReportTooltip(moonCell, coords, planetType.moon);
+  });
+}
+
+function attachSpyReportTooltip(cell, coords, type) {
+  if (!cell) return;
+
+  const report = getSpyReport(coords, type);
+  if (!report) return;
+
+  cell.classList.add("ogl-hasSpyReportCache");
+  cell.addEventListener("mouseover", () => tooltip(cell, buildSpyReportTooltipContent(report), true, false, 50));
+}
+
+function buildSpyReportTooltipContent(report) {
+  const container = createDOM("div", { class: "ogl-spyReportCacheTooltip" });
+
+  container.appendChild(createDOM("div", { class: "splitline" }, Translator.translate(354)));
+  container.appendChild(createDOM("div", {}, `${report.playerName} ${report.status || ""}`.trim()));
+  container.appendChild(
+    createDOM("div", {}, `${Translator.translate(97)}: ${DateTime.timeSince(new Date(report.timestamp))}`)
+  );
+  container.appendChild(
+    createDOM(
+      "div",
+      { class: "ogl-metal" },
+      `${Translator.translate(0, "res")}: ${toFormattedNumber(report.metal, null, true)}`
+    )
+  );
+  container.appendChild(
+    createDOM(
+      "div",
+      { class: "ogl-crystal" },
+      `${Translator.translate(1, "res")}: ${toFormattedNumber(report.crystal, null, true)}`
+    )
+  );
+  container.appendChild(
+    createDOM(
+      "div",
+      { class: "ogl-deut" },
+      `${Translator.translate(2, "res")}: ${toFormattedNumber(report.deut, null, true)}`
+    )
+  );
+  container.appendChild(
+    createDOM(
+      "div",
+      { class: "splitline" },
+      `${Translator.translate(40)}: ${toFormattedNumber(report.total, null, true)}`
+    )
+  );
+  container.appendChild(
+    createDOM(
+      "div",
+      {},
+      `${Translator.translate(63)}: ${
+        report.fleet === "No data" ? report.fleet : toFormattedNumber(report.fleet, null, true)
+      }`
+    )
+  );
+  container.appendChild(
+    createDOM(
+      "div",
+      {},
+      `${Translator.translate(54)}: ${
+        report.defense === "No data" ? report.defense : toFormattedNumber(report.defense, null, true)
+      }`
+    )
+  );
+
+  return container;
 }
 
 function getActivity(context, row) {

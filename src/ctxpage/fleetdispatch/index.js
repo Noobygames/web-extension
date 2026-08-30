@@ -551,7 +551,10 @@ function selectBestCargoShip(context, preferredShipId = null) {
             cargoShipsOnPlanet[ship]
           );
           selectShips(context, ship, numShips);
-          resources -= (getShipsData()?.[ship]?.baseCargoCapacity ?? 0) * numShips;
+          // Must match what calcNeededShips() just divided by (OGBIData.json.ships[id].cargoCapacity,
+          // bonus-adjusted) - not the raw baseCargoCapacity the game publishes - or this under-subtracts
+          // and the next cargo type in the loop gets over-selected.
+          resources -= (OGBIData.json.ships?.[ship]?.cargoCapacity ?? 0) * numShips;
           if (resources <= 0) {
             enoughCargo = true;
             return;

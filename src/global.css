@@ -4286,6 +4286,10 @@ div[data-raw-depletion="4"] + .msgHead a.txt_link {
   max-width: 145px;
 }
 
+#galaxyContent .ogl-hasSpyReportCache {
+  cursor: help;
+}
+
 div.ogi-movement .ogi-movement-target .ogi-movement-target-coords span,
 #galaxyContent .ctContentRow .cellMoon .moon,
 #galaxyContent .ctContentRow .cellMoon .moon_a,
