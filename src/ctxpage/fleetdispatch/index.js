@@ -8,6 +8,7 @@ export { expedition } from "./expedition.js";
 export { collect, customMissions } from "./customMissions.js";
 export { cacheShipData } from "./shipData.js";
 import { getLogger } from "../../platform/logger.js";
+import { waitFor } from "../../platform/wait.js";
 import { getShipsData } from "../../game/shipsData.js";
 import { createDOM, createSVG } from "../../ui/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
@@ -36,6 +37,50 @@ import OGBIData from "../../store/OGBIData.js";
  */
 
 const logger = getLogger("fleetdispatch");
+
+/**
+ * Whether OGame's `fleetDispatcher` global is a usable object right now.
+ *
+ * `typeof fleetDispatcher === "undefined"` is not enough: OGame declares the variable
+ * up front and only assigns it from its own ready handler, so between those two points
+ * the global is `null` - and `typeof null` is `"object"`, so that guard passes and the
+ * very next property read throws.
+ */
+function fleetDispatcherReady() {
+  return typeof fleetDispatcher !== "undefined" && fleetDispatcher !== null;
+}
+
+/**
+ * Waits for OGame to finish constructing the dispatcher before this module touches it.
+ *
+ * Every entry point below is guarded by `context.page == "fleetdispatch"` and then reads
+ * `fleetDispatcher.shipsOnPlanet` - the page check says the page is right, not that the
+ * game has built its dispatcher yet. When it has not, the read throws
+ * `TypeError: Cannot read properties of null (reading 'shipsOnPlanet')` out of the async
+ * caller in `ogCore.js`, which surfaces as a single "Uncaught (in promise)" line and
+ * silently cancels every remaining step of the fleet-dispatch wiring - no rebuilt
+ * dispatcher, no expedition or collect shortcut, no custom missions, on a page that
+ * looks otherwise normal.
+ *
+ * Waiting rather than bailing, for the same reason `cacheShipData()` waits for
+ * `shipsData`: the usual case is "not yet", not "never". A page that genuinely has no
+ * dispatcher (the game not rendering one for this planet or account state) times out and
+ * is skipped with a log line instead of a stack trace.
+ *
+ * @param {{waitFor?: typeof wait.waitFor}} [deps] seam for tests
+ * @returns {Promise<boolean>} whether the dispatcher is there
+ */
+async function awaitFleetDispatcher({ waitFor: waitForImpl = waitFor } = {}) {
+  if (fleetDispatcherReady()) return true;
+
+  try {
+    await waitForImpl(fleetDispatcherReady);
+    return true;
+  } catch {
+    logger.warn("fleetDispatcher never appeared - skipping the fleet-dispatch wiring for this page load");
+    return false;
+  }
+}
 
 /**
  * The fleet-dispatch page.
@@ -567,6 +612,7 @@ function selectBestCargoShip(context, preferredShipId = null) {
 }
 
 export {
+  awaitFleetDispatcher,
   initFleetDispatcher,
   neededCargo,
   preselectShips,

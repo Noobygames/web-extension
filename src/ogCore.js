@@ -980,6 +980,12 @@ class OGBeyondInfinity {
     const module = await loadChunk("fleetdispatch", () => import("./ctxpage/fleetdispatch/index.js"));
     if (!module) return;
 
+    // Every call below reads OGame's `fleetDispatcher` global, which the game declares
+    // up front and assigns from its own ready handler - so on this page it can still be
+    // null here. One unguarded read then throws out of this async method as a lone
+    // "Uncaught (in promise) TypeError" and cancels the rest of the wiring silently.
+    if (!(await module.awaitFleetDispatcher())) return;
+
     module.cacheShipData({ playerClass: this.playerClass });
     module.neededCargo(this.fleetContext());
     module.preselectShips(this.fleetContext());
