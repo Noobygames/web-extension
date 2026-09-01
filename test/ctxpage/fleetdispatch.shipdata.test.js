@@ -299,3 +299,23 @@ test("a table that stays empty leaves the cached one intact", async () => {
     assert.deepEqual(OGBIData.ships, CACHED.ships);
   });
 });
+
+test("an unexpected apiTechData shape is caught and logged instead of leaking an uncaught rejection", async () => {
+  // cacheShipData() is fired from ogCore.js without await or .catch() on purpose -
+  // nothing on the boot path needs the table in the same task. Before this, any throw
+  // inside storeShipData (a shape this file has not seen yet) turned into an "Uncaught
+  // (in promise)" on every single fleet-dispatch page load instead of a logged warning.
+  await withPage(async () => {
+    OGBIData.json = { ...CACHED };
+    globalThis.fleetDispatcher = {
+      fleetHelper: { shipsData: SHIPS_DATA },
+      // Not a real Array - .find() does not exist on a plain object, so storeShipData throws.
+      apiTechData: { 0: [115, 15] },
+    };
+
+    const found = await cacheShipData({ waitFor: () => Promise.resolve(true) });
+
+    assert.equal(found, false, "a throw inside storeShipData must not look like success");
+    assert.deepEqual(OGBIData.ships, CACHED.ships, "the previous visit's table is kept, not wiped");
+  });
+});

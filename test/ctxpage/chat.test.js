@@ -198,6 +198,65 @@ test("PM button opens the game's own chat with the resolved player", async () =>
   });
 });
 
+test("openPrivateChat skips the native opener when that player's panel is already in the chat bar", async () => {
+  // Every occurrence of a sender's message gets its own PM button (enhanceMessage runs
+  // per message, not per sender), so clicking the icon on two different messages from
+  // the same person - easy while scrolling a busy chat - used to call
+  // loadChatLogWithPlayer twice for a conversation already on screen. The game builds a
+  // fresh panel rather than reusing one, so this accumulated duplicate panels over a
+  // session. The fixture already has a conversation open with player 104340.
+  await withChat(({ openPrivateChat }, { window }) => {
+    const opened = [];
+    window.ogame = { chat: { loadChatLogWithPlayer: (id) => opened.push(id) } };
+
+    openPrivateChat(104340);
+
+    assert.deepEqual(opened, [], "a panel for this player is already open - no reopen call");
+  });
+});
+
+test("openPrivateChat still opens a player with no panel in the chat bar yet", async () => {
+  await withChat(({ openPrivateChat }, { window }) => {
+    const opened = [];
+    window.ogame = { chat: { loadChatLogWithPlayer: (id) => opened.push(id) } };
+
+    openPrivateChat(999999);
+
+    assert.deepEqual(opened, [999999]);
+  });
+});
+
+test("a burst of clicks on the PM button while the lookup is pending opens the conversation only once", async () => {
+  // A click that visibly does nothing for a tick invites exactly this: an impatient
+  // player clicking again (and again) before Player.get()'s bridge round-trip
+  // resolves. Without a guard, every queued click would call openPrivateChat() again
+  // once the lookup came back - one conversation window per click.
+  await withChat(async ({ enhanceChat }, { document, window }) => {
+    const opened = [];
+    window.ogame = { chat: { loadChatLogWithPlayer: (id) => opened.push(id) } };
+
+    let requests = 0;
+    window.addEventListener("ogi-players", (event) => {
+      requests++;
+      window.dispatchEvent(
+        new window.CustomEvent("ogi-players-rep", {
+          detail: { player: { name: event.detail.id, id: 999001 }, requestId: event.detail.requestId },
+        })
+      );
+    });
+
+    enhanceChat(document);
+    const button = document.querySelector('[data-chat-id="30501"] .ogl-chat-pm');
+    button.dispatchEvent(new window.MouseEvent("click"));
+    button.dispatchEvent(new window.MouseEvent("click"));
+    button.dispatchEvent(new window.MouseEvent("click"));
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+    assert.equal(requests, 1, "only the first click's lookup went out - the rest were dropped while it was pending");
+    assert.deepEqual(opened, [999001], "the conversation opened exactly once, not once per click");
+  });
+});
+
 test("resolvePlayerId reads the ids OGame already put on the page", async () => {
   await withChat(({ resolvePlayerId }, { document, window }) => {
     // Contact list entry rendered by the chat bar.

@@ -190,11 +190,32 @@ function describeDispatcher() {
  *   `game/playerClass.js` value, needed for the Miner cargo bonus.
  * @returns {Promise<boolean>} whether the table was found and stored
  */
+/**
+ * `storeShipData()`, but a throw ends up as a logged warning instead of an uncaught
+ * rejection out of `cacheShipData()`. Callers (`ogCore.js`) fire `cacheShipData()`
+ * without awaiting or catching it, on purpose - nothing on the boot path needs the
+ * table in the same task - so an unguarded throw here had nowhere to land except the
+ * console as "Uncaught (in promise)", once per page load, for as long as whatever
+ * shape triggered it kept recurring. Same fallback as the timeout branch below: keep
+ * the previous visit's cached tables rather than lose them to a shape this file has
+ * not seen yet.
+ *
+ * @returns {boolean} whether the table was actually stored
+ */
+function tryStoreShipData(shipsData, apiTechData, playerClass) {
+  try {
+    storeShipData(shipsData, apiTechData, playerClass);
+    return true;
+  } catch (error) {
+    logger.warn("storeShipData failed on an unexpected shape - keeping cached ship data", error);
+    return false;
+  }
+}
+
 export async function cacheShipData({ waitFor = wait.waitFor, playerClass } = {}) {
   const immediate = readyShipsData();
   if (immediate) {
-    storeShipData(immediate, getApiTechData(), playerClass);
-    return true;
+    return tryStoreShipData(immediate, getApiTechData(), playerClass);
   }
 
   try {
@@ -212,8 +233,7 @@ export async function cacheShipData({ waitFor = wait.waitFor, playerClass } = {}
     return false;
   }
 
-  storeShipData(readyShipsData(), getApiTechData(), playerClass);
-  return true;
+  return tryStoreShipData(readyShipsData(), getApiTechData(), playerClass);
 }
 
 export default cacheShipData;

@@ -173,9 +173,24 @@ function fromGamePlayerList(target) {
 /**
  * Opens the game's own private chat with a player.
  *
+ * A chat message from the same sender can appear many times in one conversation's
+ * history, and every occurrence gets its own PM button (`enhanceMessage` runs once per
+ * *message*, not once per sender). Clicking the icon on two different messages from the
+ * same person - easy to do while scrolling a busy chat, not a deliberate double-click -
+ * re-invoked the game's own opener for a conversation that was already on screen.
+ * `loadChatLogWithPlayer` builds a fresh panel rather than reusing one, so repeated
+ * clicks across a session left the chat bar accumulating duplicate panels for the same
+ * few active people. Skip the reopen entirely when that player's panel is already there.
+ *
  * @param {number} playerId
  */
 export function openPrivateChat(playerId) {
+  const existing = document.getElementById("chatBar")?.querySelector(`.chat_box[data-playerid="${playerId}"]`);
+  if (existing) {
+    existing.closest(".chat_bar_list_item")?.scrollIntoView?.({ block: "nearest" });
+    return;
+  }
+
   const chat = typeof window === "undefined" ? undefined : window.ogame?.chat;
 
   if (typeof chat?.loadChatLogWithPlayer === "function") {
@@ -388,15 +403,28 @@ export function addPrivateMessageButton(message) {
     title: `${Translator.translate(255)} - ${name}`,
   });
 
+  // Guards against a burst of clicks on this one button each opening their own
+  // conversation. resolvePlayerId() is synchronous - nothing to race there,
+  // JS runs one click handler to completion before the next fires - but the
+  // Player.get() fallback below awaits the content script over the bridge,
+  // and a click that visibly does nothing for a tick invites exactly that
+  // burst: every queued click would call openPrivateChat() again once the
+  // lookup resolves.
+  let opening = false;
+
   button.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
+
+    if (opening) return;
 
     const id = resolvePlayerId(name);
     if (id) {
       openPrivateChat(id);
       return;
     }
+
+    opening = true;
 
     // Nothing local knew the name - ask the universe data the extension has
     // already cached in the content context. Still no request to the game.
@@ -414,7 +442,10 @@ export function addPrivateMessageButton(message) {
         logger.warn(`No player id found for "${name}", opening the chat page`);
         document.location = "?page=ingame&component=chat";
       })
-      .catch((error) => logger.warn(`Player lookup failed for "${name}"`, error));
+      .catch((error) => logger.warn(`Player lookup failed for "${name}"`, error))
+      .finally(() => {
+        opening = false;
+      });
   });
 
   placeButton(message, head, button);

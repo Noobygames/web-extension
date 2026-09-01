@@ -104,13 +104,23 @@ class SpyMessagesAnalyzer {
     }
 
     this.#messageCallable().forEach((message) => {
-      if (!this.#isReport(message)) return;
+      try {
+        if (!this.#isReport(message)) return;
 
-      const report = new SpyReport(message);
+        const report = new SpyReport(message);
 
-      if (!report.targetIsSelf) {
-        this.#spyReports[report.id] = report;
-        recordSpyReport(report);
+        if (!report.targetIsSelf) {
+          this.#spyReports[report.id] = report;
+          recordSpyReport(report);
+        }
+      } catch (error) {
+        // One unexpectedly shaped message (a game markup variant this parser doesn't
+        // know) must not take the rest down with it: uncaught here, this throw would
+        // escape forEach and abort the whole table build - every report after this
+        // message in the list, not just this one - and Messages.#parseMessages() has
+        // no try/catch either, so it would also skip every analyzer queued after this
+        // one for the same pass (expeditions, battle reports, harvests, trades).
+        this.#logger.warn(`Skipping unparseable message ${message.getAttribute("data-msg-id")}`, error);
       }
     });
 
@@ -756,6 +766,12 @@ class SpyMessagesAnalyzer {
 
         if (
           OGBIData.options.autoDeleteEnable &&
+          // "No data" means OGame did not reveal fleet/defense - the actual risk is
+          // unknown, not zero. parseInt("No data") || 0 would silently fold it into
+          // the safe-to-delete sum below and could auto-trash a report hiding a real
+          // fleet, so an unrevealed value must never be eligible for auto-delete.
+          report.fleet !== "No data" &&
+          report.defense !== "No data" &&
           Math.round((parseInt(report.fleet) || 0) * OGBIData.universeSettingsTooltip.debrisFactor) +
             Math.round(((parseInt(report.total) || 0) * (parseInt(report.loot) || 0)) / 100) +
             Math.round(

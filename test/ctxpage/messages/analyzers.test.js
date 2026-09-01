@@ -954,3 +954,56 @@ test("#ptreSpy is a no-op when no PTRE team key is configured", () => {
   assert.doesNotThrow(() => new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY));
   assert.equal(OGBIData.spies, undefined, "nothing was ever written - the guard returns before touching it");
 });
+
+test("auto-delete never queues a report whose fleet or defense was not revealed, even under a huge limit", () => {
+  // Was a bug: parseInt("No data") || 0 folded an *unrevealed* fleet/defense into the
+  // auto-delete sum as if it were confirmed zero, so a report that hid real danger
+  // could be silently trashed on loot alone - the opposite of what "unknown" should mean.
+  resetStore({ autoDeleteEnable: true, rvalLimit: 1e9 });
+  document.body.innerHTML = spyPageChrome();
+  const report = spyReportRow(9711, {
+    targetPlayerId: 99999,
+    fleetFilter: "-",
+    defenseFilter: "-",
+    loot: "1%",
+    metal: 1000,
+  });
+
+  installJQueryStub();
+  let called = false;
+  globalThis.ogame = {
+    messages: {
+      flagDeleted: () => {
+        called = true;
+      },
+    },
+  };
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+
+  assert.equal(called, false, "a report with unrevealed fleet/defense must never be auto-deleted");
+  const row = document.querySelector('.ogl-spyTable tbody tr[data-report-id="9711"]');
+  assert.equal(row.classList.contains("hide"), false);
+});
+
+test("one malformed report message does not take the rest of the table down with it", () => {
+  // Was a bug: new SpyReport(message) threw uncaught for any message shape it could
+  // not parse, escaping the forEach in #displaySpyTable - the whole table build (every
+  // report in the batch, not just the broken one) aborted, and since Messages.
+  // #parseMessages() has no try/catch either, every analyzer queued after this one for
+  // the same pass (expeditions, battle reports, harvests, trades) was skipped too.
+  resetStore();
+  document.body.innerHTML = spyPageChrome();
+  const good1 = spyReportRow(9721, { targetPlayerId: 99999 });
+  const broken = spyReportRow(9722, { targetPlayerId: 99999 });
+  // Corrupt it into a shape SpyReport.js cannot parse - it reads this unconditionally.
+  broken.querySelector('[onclick*="sendShipsWithPopup"]').remove();
+  const good2 = spyReportRow(9723, { targetPlayerId: 99999 });
+
+  assert.doesNotThrow(() => new SpyMessagesAnalyzer().analyze(spyCallableOf(good1, broken, good2), messagesTabs.SPY));
+
+  const ids = [...document.querySelectorAll(".ogl-spyTable tbody tr[data-report-id]")]
+    .map((tr) => tr.getAttribute("data-report-id"))
+    .sort();
+  assert.deepEqual(ids, ["9721", "9723"], "both valid reports still render around the broken one");
+});
