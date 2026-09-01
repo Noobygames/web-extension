@@ -125,7 +125,7 @@ Not covered, rough order of value:
 
 - **The extracted page modules** (`ctxpage/stats/`, `ctxpage/fleetdispatch/`, `ctxpage/galaxy/`, …). Phase 3 moved ~17k lines out of `ogCore.js`; almost none has behavioural coverage. `test/ctxpage/module-wiring.test.js` guards the wiring statically — module reachable, no binding left behind in `ogCore.js`, `this` only where an OGame object owns it — but nothing opens the pages they draw.
 - **`SpyMessagesAnalyzer`** (1k lines) and **`ExpeditionMessagesAnalyzer`** — only `support()` and `clean()` covered. Parsing paths need full spy-report and expedition-message fixtures.
-- **`ctxcontent/data-helper.js`** — `update()` orchestration and `loading` race behind issue #131.
+- **`ctxcontent/data-helper.js`** — `getPlayer()`, `filter()`, `scan()`. `update()` TTL/`loading` behaviour now in `test/ctxcontent/data-helper.update.test.js`.
 - `format/i18n/translate.js`, `ctxpage/stalk/stalkPanel.js`, `ogame/fleetMovements.js`, `ctxpage/planetbar/needs.js`.
 
 **Two of these tests read source, not behaviour.** `test/util/store-access.test.js` and

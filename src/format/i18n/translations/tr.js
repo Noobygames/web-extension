@@ -441,5 +441,13 @@ export default Object.freeze({
     357: "Baskın listesi",
     358: "Sadece pasif olanlar",
     359: "Ayarladığın kârlılık değerinin altındaki her casusluk raporunu otomatik olarak siler - rapor başına onay yok ve bu, gelecekteki raporları da silmeye devam eder. Devam edilsin mi?",
+    360: "Casusluk yapılanlar",
+    361: "Radar",
+    362: "Sabitlenenler",
+    363: "Mesafe",
+    364: "Uçuş süresi",
+    365: "Bu hedefi sabitle",
+    366: "Sabitlenenlerden çıkar",
+    367: "Galaksilerinde pasif oyuncu bulunamadı",
   },
 });

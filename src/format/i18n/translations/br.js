@@ -441,5 +441,13 @@ export default Object.freeze({
     357: "Lista de invasão",
     358: "Somente inativos",
     359: "Exclui automaticamente todo relatório de espionagem abaixo do seu valor de rentabilidade configurado - sem confirmação por relatório, e continuará excluindo relatórios futuros também. Continuar?",
+    360: "Espionados",
+    361: "Radar",
+    362: "Fixados",
+    363: "Distância",
+    364: "Tempo de voo",
+    365: "Fixar este alvo",
+    366: "Remover dos fixados",
+    367: "Nenhum jogador inativo encontrado nas suas galáxias",
   },
 });

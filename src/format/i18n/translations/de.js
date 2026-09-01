@@ -441,5 +441,13 @@ export default Object.freeze({
     357: "Raid-Liste",
     358: "Nur Inaktive",
     359: "Löscht automatisch jeden Spionagebericht unter deinem eingestellten Rentabilitätswert - ohne Rückfrage pro Bericht, und das dauerhaft auch für künftige Berichte. Fortfahren?",
+    360: "Spioniert",
+    361: "Radar",
+    362: "Gemerkt",
+    363: "Entfernung",
+    364: "Flugzeit",
+    365: "Ziel merken",
+    366: "Nicht mehr merken",
+    367: "Keine inaktiven Spieler in deinen Galaxien gefunden",
   },
 });

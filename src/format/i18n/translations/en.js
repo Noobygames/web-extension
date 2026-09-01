@@ -441,5 +441,13 @@ export default Object.freeze({
     357: "Raid list",
     358: "Only inactive",
     359: "Automatically deletes every spy report below your configured profitability value - no confirmation per report, and it keeps deleting future reports too. Continue?",
+    360: "Spied",
+    361: "Radar",
+    362: "Pinned",
+    363: "Distance",
+    364: "Flight time",
+    365: "Pin this target",
+    366: "Remove from pinned",
+    367: "No inactive players found in your galaxies",
   },
 });

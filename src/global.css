@@ -4046,6 +4046,34 @@ div[data-raw-depletion="4"] + .msgHead a.txt_link {
   max-height: 60vh;
 }
 
+.ogl-raidList .ogl-tabs {
+  margin-bottom: 8px;
+}
+
+/* Pin toggle on a radar row: a bookmark marker, not an action button. It writes to
+   local storage only - probing stays in the game's own galaxy view (AGENTS.md 1.5.1). */
+.ogl-pin {
+  cursor: pointer;
+  height: 12px;
+  margin: 0 auto;
+  opacity: 0.35;
+  width: 12px;
+  border: solid 2px #6f6f6f;
+  border-bottom-color: transparent;
+  box-sizing: border-box;
+}
+
+.ogl-pin:hover {
+  opacity: 0.75;
+}
+
+.ogl-pin.ogl-active {
+  opacity: 1;
+  border-color: #c75817;
+  border-bottom-color: transparent;
+  background: #c75817;
+}
+
 .ogl-overview-icon {
   background: url("chrome-extension://__MSG_@@extension_id__/assets/images/menuicons.png") 161px -92px;
   background-size: calc(23px * 14) !important;

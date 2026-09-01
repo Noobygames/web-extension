@@ -441,5 +441,13 @@ export default Object.freeze({
     357: "Lista de asalto",
     358: "Solo inactivos",
     359: "Elimina automáticamente cada informe de espionaje por debajo de tu valor de rentabilidad configurado - sin confirmación por informe, y seguirá eliminando informes futuros también. ¿Continuar?",
+    360: "Espiados",
+    361: "Radar",
+    362: "Fijados",
+    363: "Distancia",
+    364: "Tiempo de vuelo",
+    365: "Fijar este objetivo",
+    366: "Quitar de fijados",
+    367: "No se encontraron jugadores inactivos en tus galaxias",
   },
 });

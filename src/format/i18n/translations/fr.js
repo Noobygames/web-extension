@@ -441,5 +441,13 @@ export default Object.freeze({
     357: "Liste de raid",
     358: "Inactifs seulement",
     359: "Supprime automatiquement chaque rapport d'espionnage en dessous de votre valeur de rentabilité configurée - sans confirmation par rapport, et continuera de supprimer les rapports futurs aussi. Continuer ?",
+    360: "Espionnés",
+    361: "Radar",
+    362: "Épinglés",
+    363: "Distance",
+    364: "Temps de vol",
+    365: "Épingler cette cible",
+    366: "Retirer des épinglés",
+    367: "Aucun joueur inactif trouvé dans vos galaxies",
   },
 });

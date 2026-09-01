@@ -4,6 +4,7 @@ import { contentContextInit } from "../platform/bridge.js";
 import { suppressAbortRejections } from "../platform/abort.js";
 import * as wait from "../platform/wait.js";
 import { getExpeditionType } from "./callbacks/expedition-type.js";
+import { buildInactiveTargets } from "./callbacks/inactive-targets.js";
 import { getServerDataXml } from "./parsers/universe.data.js";
 import { DataHelper } from "./data-helper.js";
 
@@ -30,10 +31,15 @@ function processData() {
   }
   universes[UNIVERSE].init().then(() => {
     try {
-      universes[UNIVERSE].update().then(() => {
+      universes[UNIVERSE].update().then((refreshed) => {
         if (pendingPtreKey && universes[UNIVERSE]._galaxySnapshot) {
           universes[UNIVERSE].rebuildGalaxyStorage(pendingPtreKey);
         }
+        // Nothing new to persist when update() served the cached snapshot: the blob in
+        // storage is what was just restored from it, and re-serializing the whole
+        // universe on every page load is exactly what the TTL exists to avoid.
+        if (!refreshed) return;
+
         let tempSaveData = { ...universes[UNIVERSE] };
         tempSaveData.lastUpdate = universes[UNIVERSE].lastUpdate.toJSON();
         tempSaveData.lastPlanetsUpdate = universes[UNIVERSE].lastPlanetsUpdate.toJSON();
@@ -205,6 +211,16 @@ export function main(callbackToken) {
       },
       messages: {
         expeditionType: getExpeditionType,
+      },
+      universe: {
+        // Read-only view over the cached universe database (players.xml + universe.xml,
+        // already hydrated by DataHelper.update()). No fetch of its own, so opening the
+        // raid list costs no request and produces no in-game activity (AGENTS.md 4).
+        // Guarded like `ogi-players` below: `ogi-filter` has no waitFor and throws when
+        // dataHelper is still null.
+        inactives: function (galaxies = []) {
+          return wait.waitFor(() => dataHelper).then(() => buildInactiveTargets(dataHelper, galaxies));
+        },
       },
       serverData: {
         // `updateServerSettings()` (ogCore.js) fetched serverData.xml directly on

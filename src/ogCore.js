@@ -197,6 +197,7 @@ class OGBeyondInfinity {
     OGBIData.json.discoveries = OGBIData.json.discoveries || {};
     OGBIData.json.spies = OGBIData.json.spies || {};
     OGBIData.json.spyReportCache = OGBIData.json.spyReportCache || {};
+    OGBIData.json.raidPins = OGBIData.json.raidPins || [];
     OGBIData.json.flying = OGBIData.json.flying || {
       metal: 0,
       crystal: 0,

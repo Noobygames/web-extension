@@ -168,6 +168,18 @@ class OGBIData {
 
     this.#saveHot();
   }
+  /**
+   * The player's pinned farm shortlist (`store/raidPins.js`). Hot, not cold: a handful
+   * of rows, written on a click, never on message analysis.
+   */
+  get raidPins() {
+    return this.#hot.raidPins;
+  }
+  set raidPins(raidPins) {
+    this.#hot.raidPins = raidPins;
+
+    this.#saveHot();
+  }
   get searchHistory() {
     return this.#hot.searchHistory;
   }

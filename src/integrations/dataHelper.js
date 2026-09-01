@@ -35,6 +35,18 @@ const dataHelper = (function () {
     });
   }
 
+  /**
+   * Inactive players in the given galaxies, out of the universe database the content
+   * script already caches. Read-only display data for the raid list's radar tab - it
+   * triggers no fetch and no game action (AGENTS.md 1.5.1 / 4).
+   *
+   * @param {Array<number|string>} galaxies
+   * @return {Promise<Array<{playerId: number, name: string, status: string, coords: string, moon: boolean}>>}
+   */
+  function inactiveTargets(galaxies) {
+    return pageContextRequest("universe", "inactives", galaxies).then((value) => value.response);
+  }
+
   function filter(name, alliance) {
     let rid = requestId++;
     return new Promise(function (resolve, reject) {
@@ -50,7 +62,7 @@ const dataHelper = (function () {
     });
   }
 
-  return { getExpeditionType: expedition, getPlayer: Get, filter: filter };
+  return { getExpeditionType: expedition, getPlayer: Get, filter: filter, getInactiveTargets: inactiveTargets };
 })();
 
 export default dataHelper;

@@ -18,6 +18,9 @@ Declaration `callbackEvents.contentContextInit(callbackCommandMap)`
   },
   "serverData": {
     "get": "GetServerDataXmlFunction"
+  },
+  "universe": {
+    "inactives": "GetInactiveTargetsFunction"
   }
 }
 ```
@@ -93,6 +96,39 @@ How to call from the page context.
 const { response } = await callbackEvents.pageContextRequest("serverData", "get", force);
 const xml = new DOMParser().parseFromString(response, "text/xml");
 ```
+
+### GetInactiveTargetsFunction (universe.inactives)
+
+Inactive players in the given galaxies, read out of the universe database the content
+script already caches (`players.xml` + `universe.xml`, hydrated by `DataHelper.update()`).
+Makes **no** request of its own - opening the raid list costs nothing and produces no
+in-game activity (AGENTS.md 4). Display data only; no probe or fleet action is attached
+to it (AGENTS.md 1.5.1).
+
+Guarded by `wait.waitFor(() => dataHelper)`, so a call that arrives before the universe
+finished hydrating waits instead of throwing.
+
+**Arguments**
+
+- _galaxies_ (optional, default `[]`): galaxy numbers to keep. Empty means every galaxy -
+  in a large universe that is a much bigger payload, so callers pass the galaxies the
+  player actually owns a planet in.
+
+**Result**
+
+`Array<{playerId: number, name: string, status: string, coords: string, moon: boolean}>` -
+plain primitives, since only structured-cloneable values cross this bridge. `status` is the
+`players.xml` attribute verbatim (`"i"` = 7 days inactive, `"I"` = 28 days); players
+carrying `v`, `b` or `a` are filtered out, they cannot be attacked.
+
+How to call from the page context.
+
+```js
+const { response } = await callbackEvents.pageContextRequest("universe", "inactives", [1, 4]);
+```
+
+The page-context wrapper is `dataHelper.getInactiveTargets(galaxies)`
+(`src/integrations/dataHelper.js`).
 
 ---
 
