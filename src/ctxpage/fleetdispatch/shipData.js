@@ -45,9 +45,11 @@ const TRADING_SHIPS = [ship.SmallCargoShip, ship.LargeCargoShip];
 /**
  * OGame's researched-technology pairs, as the dispatcher publishes them.
  *
- * Same lifetime as the ship table, so it is taken in the same pass.
+ * Same lifetime as the ship table, so it is taken in the same pass. Each entry is
+ * index-accessible (`tech[0]`/`tech[1]`) but not a real, iterable `Array` - destructuring
+ * one (`[id]`) throws "object is not iterable" on a live page, so read it by index only.
  *
- * @returns {Array<[number, number]> | undefined}
+ * @returns {ArrayLike<ArrayLike<number>> | undefined}
  */
 function getApiTechData() {
   if (typeof fleetDispatcher === "undefined") return undefined;
@@ -124,12 +126,12 @@ export function mapShipsData(
  * fallback for the (rare) case this particular batch does not carry id 114.
  *
  * @param {object} shipsData the game's ship table
- * @param {Array<[number, number]>} [apiTechData] the game's researched-technology pairs
+ * @param {ArrayLike<ArrayLike<number>>} [apiTechData] the game's researched-technology pairs (index-access only, see `getApiTechData`)
  * @param {number} [playerClass] `game/playerClass.js` value, for the Miner cargo bonus
  */
 function storeShipData(shipsData, apiTechData, playerClass) {
   const hyperspaceTechLevel =
-    apiTechData?.find(([id]) => Number(id) === 114)?.[1] ?? OGBIData.json.technology?.[114] ?? 0;
+    apiTechData?.find((tech) => Number(tech[0]) === 114)?.[1] ?? OGBIData.json.technology?.[114] ?? 0;
   const cargoHyperspaceTechMultiplier = Number(OGBIData.json.cargoHyperspaceTechMultiplier) || 0;
   const minerCargoBonus = Number(OGBIData.json.trashsimSettings?.minerBonusIncreasedCargoCapacityForTradingShips) || 0;
 

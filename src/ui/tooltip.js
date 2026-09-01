@@ -5,6 +5,37 @@ import Translator from "../format/i18n/translate.js";
 const senders = [];
 let keepTooltip = OGBIData.keepTooltip || true;
 let currentSender = null;
+let bodyClickBound = false;
+/** Only one tooltip is ever pending/active at a time, so one shared timer id is enough. */
+let activeTooltipTimer = null;
+
+/**
+ * Bound once, not per tooltip() call. Each call used to add its own
+ * document.body click listener and never remove it - a permanent leak that
+ * grew with every hover cycle. Reads the live ".ogl-tooltip" instead of
+ * closing over one instance, since tooltip() replaces that element on
+ * every call.
+ */
+function bindBodyClickOnce() {
+  if (bodyClickBound) return;
+  bodyClickBound = true;
+
+  document.body.addEventListener("click", (event) => {
+    const current = document.querySelector(".ogl-tooltip");
+    if (!current) return;
+
+    if (
+      !event.target.getAttribute("rel") &&
+      !event.target.closest(".tooltipRel") &&
+      !event.target.classList.contains("ogl-colors") &&
+      !current.contains(event.target)
+    ) {
+      current.classList.remove("ogl-active");
+      keepTooltip = false;
+      OGBIData.keepTooltip = keepTooltip;
+    }
+  });
+}
 
 export function tooltip(sender, content, autoHide, side, timer, mouseoverEnable = false) {
   side = side || {};
@@ -29,18 +60,7 @@ export function tooltip(sender, content, autoHide, side, timer, mouseoverEnable 
     tooltip.classList.remove("ogl-active");
   });
 
-  document.body.addEventListener("click", (event) => {
-    if (
-      !event.target.getAttribute("rel") &&
-      !event.target.closest(".tooltipRel") &&
-      !event.target.classList.contains("ogl-colors") &&
-      !tooltip.contains(event.target)
-    ) {
-      tooltip.classList.remove("ogl-active");
-      keepTooltip = false;
-      OGBIData.keepTooltip = keepTooltip;
-    }
-  });
+  bindBodyClickOnce();
 
   tooltip.classList.remove("ogl-update");
 
@@ -97,30 +117,38 @@ export function tooltip(sender, content, autoHide, side, timer, mouseoverEnable 
   tooltip.appendChild(content);
   tooltip.style.top = position.y + "px";
   tooltip.style.left = position.x + "px";
-  const tooltipTimer = setTimeout(() => tooltip.classList.add("ogl-active"), timer);
+  activeTooltipTimer = setTimeout(() => tooltip.classList.add("ogl-active"), timer);
+
+  // tooltip is a fresh element every call, so this listener has to be
+  // re-attached every time - it goes away with the node once removed, so
+  // unlike the sender listener below it does not accumulate.
+  tooltip.addEventListener("mouseleave", (e) => {
+    if (e.relatedTarget === sender || !mouseoverEnable) return;
+
+    if (autoHide) {
+      tooltip.classList.remove("ogl-active");
+    }
+
+    clearTimeout(activeTooltipTimer);
+  });
+
+  // sender stays on the page for as long as its message/row does, so this
+  // side must bind exactly once. The old code cleared "ogl-tooltipInit" in
+  // both handlers above, which defeated this very guard: every hover cycle
+  // added one more permanent mouseleave listener to `sender` that was never
+  // removed - a leak that grew with every coordinate hovered in chat.
   if (!sender.classList.contains("ogl-tooltipInit")) {
     sender.classList.add("ogl-tooltipInit");
-
-    tooltip.addEventListener("mouseleave", (e) => {
-      if (e.relatedTarget === sender || !mouseoverEnable) return;
-
-      if (autoHide) {
-        tooltip.classList.remove("ogl-active");
-        sender.classList.remove("ogl-tooltipInit");
-      }
-
-      clearTimeout(tooltipTimer);
-    });
 
     sender.addEventListener("mouseleave", (e) => {
       if (e?.relatedTarget?.classList?.contains("ogl-tooltip") && mouseoverEnable) return;
 
-      if (autoHide) {
-        tooltip.classList.remove("ogl-active");
-        sender.classList.remove("ogl-tooltipInit");
+      const current = document.querySelector(".ogl-tooltip");
+      if (autoHide && current) {
+        current.classList.remove("ogl-active");
       }
 
-      clearTimeout(tooltipTimer);
+      clearTimeout(activeTooltipTimer);
     });
   }
   return tooltip;

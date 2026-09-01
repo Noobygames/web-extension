@@ -685,7 +685,12 @@ class OGBeyondInfinity {
       if (!OGBIData.json.tchat) {
         toggleChat();
       }
-      oldfunc(elem, m, cb, uu);
+      // Must return oldfunc's result: OGame's own chat wires up the send
+      // button / live updates off the loaded conversation's return value
+      // (promise/jqXHR). Swallowing it here left every chat opened through
+      // this override - native clicks and our PM button alike - visually
+      // present but unresponsive to clicks inside it.
+      return oldfunc(elem, m, cb, uu);
     };
     let btn = document.querySelector("body").appendChild(DOM.createDOM("div", { class: "ogk-chat icon icon_chat" }));
     if (OGBIData.json.tchat) {

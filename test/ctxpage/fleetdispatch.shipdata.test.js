@@ -130,6 +130,26 @@ test("cacheShipData reads the Hyperspace Technology level out of this batch's ap
   });
 });
 
+test("apiTechData entries that are array-like but not iterable do not crash the Hyperspace level read", async () => {
+  // On a live page each entry supports tech[0]/tech[1] but has no Symbol.iterator - not
+  // a real Array. Destructuring one (`[id]`) throws "object is not iterable"; this pins
+  // the fix that reads by index instead.
+  await withPage(async () => {
+    OGBIData.json = { ...CACHED, cargoHyperspaceTechMultiplier: 5 };
+    globalThis.fleetDispatcher = {
+      fleetHelper: { shipsData: SHIPS_DATA },
+      apiTechData: [
+        { 0: 114, 1: 10, length: 2 },
+        { 0: 115, 1: 15, length: 2 },
+      ],
+    };
+
+    await cacheShipData({ waitFor: () => Promise.resolve(true) });
+
+    assert.equal(OGBIData.ships[203].cargoCapacity, 37500);
+  });
+});
+
 test("cacheShipData applies the Miner trading-ship bonus when told the player is Miner", async () => {
   await withPage(async () => {
     OGBIData.json = {
