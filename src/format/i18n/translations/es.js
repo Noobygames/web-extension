@@ -440,5 +440,6 @@ export default Object.freeze({
     356: "Informe antiguo - espiar de nuevo",
     357: "Lista de asalto",
     358: "Solo inactivos",
+    359: "Elimina automáticamente cada informe de espionaje por debajo de tu valor de rentabilidad configurado - sin confirmación por informe, y seguirá eliminando informes futuros también. ¿Continuar?",
   },
 });

@@ -146,6 +146,52 @@ test("a report with nothing lootable still parses without throwing", () => {
   assert.equal(report.pb, 0);
 });
 
+test("a message with no resource filter attributes at all - the counter-espionage-only notice #isReport() also matches - parses as a zero-loot report instead of throwing", () => {
+  // Was a bug: every resource read (`message.getAttribute(...).replace(...)`) was
+  // unguarded, so a "your probe was detected, nothing revealed" notification - which
+  // SpyMessagesAnalyzer's #isReport() deliberately still counts as spy-related via its
+  // data-raw-counterespionagechance branch - threw on the very first missing attribute.
+  // new SpyReport() never finished, so the message never became a row: out of a batch
+  // of ten probes sent at once, every detected one silently vanished instead of one
+  // in ten actually showing up.
+  resetStore();
+  document.body.innerHTML = "";
+
+  const row = spyReportRow(9006, { targetPlayerId: 99999 });
+  row.removeAttribute("data-messages-filters-loot");
+  row.removeAttribute("data-messages-filters-metal");
+  row.removeAttribute("data-messages-filters-crystal");
+  row.removeAttribute("data-messages-filters-deuterium");
+
+  const report = new SpyReport(row);
+
+  assert.equal(report.metal, 0);
+  assert.equal(report.crystal, 0);
+  assert.equal(report.deut, 0);
+  assert.equal(report.total, 0);
+  assert.equal(report.renta, 0);
+  assert.equal(report.coords, "1:2:3", "the report still carries its target - it just has nothing to loot");
+});
+
+test("a message with no rawMessageData block at all still parses instead of throwing", () => {
+  // Every fleet/defense/timestamp/apiKey read went through message.querySelector(
+  // ".rawMessageData") unguarded, repeated at each call site - a message shape missing
+  // that block entirely threw on the first of them.
+  resetStore();
+  document.body.innerHTML = "";
+
+  const row = spyReportRow(9007, { targetPlayerId: 99999, fleetFilter: "x", defenseFilter: "x" });
+  row.querySelector(".rawMessageData").remove();
+
+  const report = new SpyReport(row);
+
+  assert.equal(report.fleet, "No data");
+  assert.equal(report.defense, "No data");
+  assert.equal(report.apiKey, undefined);
+  assert.equal(report.planetTargetType, planetType.planet, "falls back to planet with no data-raw-targetplanettype");
+  assert.ok(!Number.isNaN(report.cleanDate.getTime()), "the date falls back to now rather than becoming Invalid Date");
+});
+
 // --------------------------------------------------------------------------
 // Fleet / defense: four independent code paths per field
 // --------------------------------------------------------------------------

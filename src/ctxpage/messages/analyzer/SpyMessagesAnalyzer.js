@@ -177,8 +177,15 @@ class SpyMessagesAnalyzer {
     );
     if (options.autoDeleteEnable) autoDelete.classList.add("ogl-active");
     autoDelete.addEventListener("click", () => {
+      // Turning this on starts deleting reports on every table rebuild, with no
+      // per-report confirmation - the tooltip is the only explanation, and it is
+      // one click away from three other toggle icons. Ask once, on the way in;
+      // turning it back off needs no confirmation.
+      if (!options.autoDeleteEnable && !confirm(Translator.translate(359, "text"))) return;
+
       options.autoDeleteEnable = !options.autoDeleteEnable;
       OGBIData.options = options;
+      autoDelete.classList.toggle("ogl-active", options.autoDeleteEnable);
       this.clean(true);
       window.dispatchEvent(new CustomEvent("ogi-spyTableReload"));
     });
@@ -421,498 +428,510 @@ class SpyMessagesAnalyzer {
         return;
       }
 
-      bodyRow = createDOM("tr", { data: "closed", "data-report-id": report.id });
-      body.appendChild(bodyRow);
+      // A row that throws partway through must not take every report sorted after it
+      // down with it - this loop had no per-report isolation, so one bad row (a target
+      // shape this table has not seen yet) blanked every report sorted after it, even
+      // though #displaySpyTable() above had already parsed all of them successfully.
+      try {
+        bodyRow = createDOM("tr", { data: "closed", "data-report-id": report.id });
+        body.appendChild(bodyRow);
 
-      const indexCol = createDOM("td");
+        const indexCol = createDOM("td");
 
-      if (report.isNew) {
-        indexCol.classList.add("ogi-new");
-      }
+        if (report.isNew) {
+          indexCol.classList.add("ogi-new");
+        }
 
-      if (report.attacked) {
-        bodyRow.classList.add("ogi-attacked");
-      }
+        if (report.attacked) {
+          bodyRow.classList.add("ogi-attacked");
+        }
 
-      bodyRow.appendChild(indexCol);
+        bodyRow.appendChild(indexCol);
 
-      // Date
-      const dateDetail = createDOM("div");
+        // Date
+        const dateDetail = createDOM("div");
 
-      dateDetail.appendChild(createDOM("div", undefined, report.cleanDate.toLocaleDateString()));
-      dateDetail.appendChild(createDOM("div", undefined, report.cleanDate.toLocaleTimeString()));
-      dateDetail.appendChild(createDOM("div", undefined, `${Translator.translate(137)}: ${report.activity}`));
+        dateDetail.appendChild(createDOM("div", undefined, report.cleanDate.toLocaleDateString()));
+        dateDetail.appendChild(createDOM("div", undefined, report.cleanDate.toLocaleTimeString()));
+        dateDetail.appendChild(createDOM("div", undefined, `${Translator.translate(137)}: ${report.activity}`));
 
-      const dateCol = createDOM("td", { class: "ogl-tooltipLeft ogl-date" }, DateTime.timeSince(report.cleanDate));
+        const dateCol = createDOM("td", { class: "ogl-tooltipLeft ogl-date" }, DateTime.timeSince(report.cleanDate));
 
-      dateCol.addEventListener("mouseover", () => tooltip(dateCol, dateDetail, true, false, 50));
+        dateCol.addEventListener("mouseover", () => tooltip(dateCol, dateDetail, true, false, 50));
 
-      if (report.activity <= 15) dateCol.classList.add("ogl-danger");
-      else if (report.activity < 60) dateCol.classList.add("ogl-care");
-      else dateCol.classList.add("ogl-good");
+        if (report.activity <= 15) dateCol.classList.add("ogl-danger");
+        else if (report.activity < 60) dateCol.classList.add("ogl-care");
+        else dateCol.classList.add("ogl-good");
 
-      bodyRow.appendChild(dateCol);
+        bodyRow.appendChild(dateCol);
 
-      const coordsCol = createDOM("td");
-      const coordsColLink = createDOM("a", { href: report.coordsLink });
+        const coordsCol = createDOM("td");
+        const coordsColLink = createDOM("a", { href: report.coordsLink });
 
-      const coordsColLinkSpan = createDOM("span", {}, report.coords);
-      coordsColLink.appendChild(coordsColLinkSpan);
+        const coordsColLinkSpan = createDOM("span", {}, report.coords);
+        coordsColLink.appendChild(coordsColLinkSpan);
 
-      if (report.planetTargetType === planetType.moon) {
-        const coordsColLinkMoon = createDOM("figure", { class: "planetIcon moon" });
-        coordsColLink.appendChild(coordsColLinkMoon);
-      }
+        if (report.planetTargetType === planetType.moon) {
+          const coordsColLinkMoon = createDOM("figure", { class: "planetIcon moon" });
+          coordsColLink.appendChild(coordsColLinkMoon);
+        }
 
-      coordsCol.appendChild(coordsColLink);
-      bodyRow.appendChild(coordsCol);
+        coordsCol.appendChild(coordsColLink);
+        bodyRow.appendChild(coordsCol);
 
-      const nameCol = createDOM("td", { class: "ogl-name" });
-      const nameColLink = createDOM("a", { class: report.statusCssClass }, `${report.name} ${report.status}`);
-      nameCol.appendChild(nameColLink);
-      bodyRow.appendChild(nameCol);
+        const nameCol = createDOM("td", { class: "ogl-name" });
+        const nameColLink = createDOM("a", { class: report.statusCssClass }, `${report.name} ${report.status}`);
+        nameCol.appendChild(nameColLink);
+        bodyRow.appendChild(nameCol);
 
-      const gainColTitle = createDOM("div");
-      const gainColTitleMetal = createDOM(
-        "div",
-        { class: "ogl-metal" },
-        `${Translator.translate(0, "res")} : ${toFormattedNumber(report.metal, null, true)}`
-      );
-      const gainColTitleCrystal = createDOM(
-        "div",
-        { class: "ogl-crystal" },
-        `${Translator.translate(1, "res")} : ${toFormattedNumber(report.crystal, null, true)}`
-      );
-      const gainColTitleDeut = createDOM(
-        "div",
-        { class: "ogl-deut" },
-        `${Translator.translate(2, "res")} : ${toFormattedNumber(report.deut, null, true)}`
-      );
-      const gainColTitleSplitLine = createDOM(
-        "div",
-        { class: "splitline" },
-        `${Translator.translate(40)} : ${toFormattedNumber(report.total, null, true)}`
-      );
-
-      gainColTitle.appendChild(gainColTitleMetal);
-      gainColTitle.appendChild(gainColTitleCrystal);
-      gainColTitle.appendChild(gainColTitleDeut);
-      gainColTitle.appendChild(gainColTitleSplitLine);
-
-      const gainCol = createDOM(
-        "td",
-        { class: "ogl-tooltipLeft ogl-lootable" },
-        toFormattedNumber(report.renta, null, true)
-      );
-
-      if (OGBIData.options.rvalLimit <= Math.round((report.total * report.loot) / 100)) {
-        gainCol.classList.add("ogl-good");
-      }
-
-      gainCol.addEventListener("mouseover", () => tooltip(gainCol, gainColTitle, true, false, 50));
-
-      gainCol.style.background = `linear-gradient(to right, rgba(255, 170, 204, 0.63) ${
-        report.resRatio[0]
-      }%, rgba(115, 229, 255, 0.78) ${report.resRatio[0]}%\n, rgba(115, 229, 255, 0.78) ${
-        report.resRatio[0] + report.resRatio[1]
-      }%, rgb(166, 224, 176) ${report.resRatio[2]}%)`;
-
-      bodyRow.appendChild(gainCol);
-
-      // Profit per hour: what the target is worth once the flight is paid for. Display only -
-      // it reorders the table, it never sends anything anywhere.
-      const flight = this.#flightOf(report);
-      const perHour = flight.profitPerHour;
-      const perHourCol = createDOM(
-        "td",
-        { class: "ogl-tooltipLeft ogl-lootable" },
-        perHour > 0 ? toFormattedNumber(Math.round(perHour), null, true) : "-"
-      );
-
-      if (perHour > 0) {
-        const perHourDetail = createDOM("div", { class: "ogl-perHourDetail" });
-        perHourDetail.appendChild(
-          createDOM("div", undefined, `${Translator.translate(233)}: ${formatDuration(flight.durationSeconds)}`)
+        const gainColTitle = createDOM("div");
+        const gainColTitleMetal = createDOM(
+          "div",
+          { class: "ogl-metal" },
+          `${Translator.translate(0, "res")} : ${toFormattedNumber(report.metal, null, true)}`
         );
-        if (flight.origin) {
-          // flight.origin is a plain {galaxy, system, position} object from
-          // farmEvaluator.js's nearestOrigin() - never an OGameCoordinate instance
-          // or an encoded number, so it was never a valid coordinate.toString()
-          // argument. Before Phase A.5 of refactoring-new.md, the module's empty
-          // "unsupported argument" guard silently produced the string "[undefined]"
-          // here; after that fix made the guard throw instead, this call site
-          // started throwing on every render - formatted directly instead.
-          const { galaxy, system, position } = flight.origin;
+        const gainColTitleCrystal = createDOM(
+          "div",
+          { class: "ogl-crystal" },
+          `${Translator.translate(1, "res")} : ${toFormattedNumber(report.crystal, null, true)}`
+        );
+        const gainColTitleDeut = createDOM(
+          "div",
+          { class: "ogl-deut" },
+          `${Translator.translate(2, "res")} : ${toFormattedNumber(report.deut, null, true)}`
+        );
+        const gainColTitleSplitLine = createDOM(
+          "div",
+          { class: "splitline" },
+          `${Translator.translate(40)} : ${toFormattedNumber(report.total, null, true)}`
+        );
+
+        gainColTitle.appendChild(gainColTitleMetal);
+        gainColTitle.appendChild(gainColTitleCrystal);
+        gainColTitle.appendChild(gainColTitleDeut);
+        gainColTitle.appendChild(gainColTitleSplitLine);
+
+        const gainCol = createDOM(
+          "td",
+          { class: "ogl-tooltipLeft ogl-lootable" },
+          toFormattedNumber(report.renta, null, true)
+        );
+
+        if (OGBIData.options.rvalLimit <= Math.round((report.total * report.loot) / 100)) {
+          gainCol.classList.add("ogl-good");
+        }
+
+        gainCol.addEventListener("mouseover", () => tooltip(gainCol, gainColTitle, true, false, 50));
+
+        gainCol.style.background = `linear-gradient(to right, rgba(255, 170, 204, 0.63) ${
+          report.resRatio[0]
+        }%, rgba(115, 229, 255, 0.78) ${report.resRatio[0]}%\n, rgba(115, 229, 255, 0.78) ${
+          report.resRatio[0] + report.resRatio[1]
+        }%, rgb(166, 224, 176) ${report.resRatio[2]}%)`;
+
+        bodyRow.appendChild(gainCol);
+
+        // Profit per hour: what the target is worth once the flight is paid for. Display only -
+        // it reorders the table, it never sends anything anywhere.
+        const flight = this.#flightOf(report);
+        const perHour = flight.profitPerHour;
+        const perHourCol = createDOM(
+          "td",
+          { class: "ogl-tooltipLeft ogl-lootable" },
+          perHour > 0 ? toFormattedNumber(Math.round(perHour), null, true) : "-"
+        );
+
+        if (perHour > 0) {
+          const perHourDetail = createDOM("div", { class: "ogl-perHourDetail" });
           perHourDetail.appendChild(
-            createDOM("div", undefined, `${Translator.translate(234)}: [${galaxy}:${system}:${position}]`)
+            createDOM("div", undefined, `${Translator.translate(233)}: ${formatDuration(flight.durationSeconds)}`)
           );
-        }
-        // Distance/ships/fuel breakdown, not just the final number: this formula has
-        // never been checked against a real page (fleetFlight.js is the only consumer
-        // of the OGame flight-time formula in this whole tool - everywhere else reads
-        // OGame's own displayed numbers instead of recomputing them), so a wrong input
-        // should be visible at a glance instead of requiring a console session to find.
-        perHourDetail.appendChild(
-          createDOM(
-            "div",
-            undefined,
-            `${toFormattedNumber(flight.distance, 0)} · ${flight.shipCount}x · -${toFormattedNumber(
-              Math.round(flight.fuelCost),
-              null,
-              true
-            )} ${Translator.translate(2, "res")}`
-          )
-        );
-        perHourCol.addEventListener("mouseover", () => tooltip(perHourCol, perHourDetail, true, false, 50));
-      }
-
-      bodyRow.appendChild(perHourCol);
-
-      // report.fleet/report.defense are either a number or the sentinel string
-      // "No data" (SpyReport.js) when OGame didn't reveal it. toFormattedNumber()
-      // returns undefined (a blank cell) for that string, so it needs its own text.
-      const fleetCol = createDOM(
-        "td",
-        {},
-        report.fleet === "No data" ? report.fleet : toFormattedNumber(report.fleet, null, true)
-      );
-      if (
-        report.fleet === "No data" ||
-        Math.round(report.fleet * OGBIData.universeSettingsTooltip.debrisFactor) >= OGBIData.options.rvalLimit
-      ) {
-        fleetCol.classList.add("ogl-care");
-      }
-      bodyRow.appendChild(fleetCol);
-
-      const defCol = createDOM(
-        "td",
-        {},
-        report.defense === "No data" ? report.defense : toFormattedNumber(report.defense, null, true)
-      );
-      if (report.defense === "No data" || report.defense > 0) defCol.classList.add("ogl-danger");
-      bodyRow.appendChild(defCol);
-
-      const shipCol = createDOM("td", { class: "ogl-cargo-choice" });
-      const shipId = OGBIData.options.spyFret;
-
-      const ships = {
-        smallCargo: {
-          id: ship.SmallCargoShip,
-          count: report.pt,
-        },
-        largeCargo: {
-          id: ship.LargeCargoShip,
-          count: report.gt,
-        },
-        pathFinder: {
-          id: ship.Pathfinder,
-          count: report.pf,
-        },
-      };
-
-      if (OGBIData.ships[ship.EspionageProbe].cargoCapacity) {
-        ships.probe = {
-          id: ship.EspionageProbe,
-          count: report.pb,
-        };
-      }
-
-      shipCol.setAttribute("data-coords", report.coords);
-      shipCol.setAttribute("data-planet-target-type", report.planetTargetType);
-
-      for (const shipsKey in ships) {
-        const ship = ships[shipsKey];
-
-        shipCol.setAttribute(`data-ship-${ship.id}`, ship.count);
-      }
-
-      let shipCount = 0;
-
-      if (parseInt(report.defense) === 0 && parseInt(report.fleet) === 0 && shipId === ship.EspionageProbe) {
-        shipCount = report.pb;
-      }
-
-      if (shipId === ship.SmallCargoShip) shipCount = report.pt;
-      else if (shipId === ship.LargeCargoShip) shipCount = report.gt;
-      else if (shipId === ship.Pathfinder) shipCount = report.pf;
-
-      const fleetLink = this.#fleetDispatchLink(report.coords, report.planetTargetType, shipId, shipCount);
-
-      const shipLink = createDOM("a", { href: `?${fleetLink.toString()}` }, toFormattedNumber(shipCount));
-      shipCol.appendChild(shipLink);
-      bodyRow.appendChild(shipCol);
-
-      const colorsCol = createDOM("td");
-      const colorsColContent = createDOM("div", {
-        class: "ogl-colors",
-        "data-coords": report.coords,
-        "data-context": "spytable",
-      });
-
-      colorsCol.appendChild(colorsColContent);
-
-      Player.get(report.name).then((p) => {
-        if (p.id) {
-          stalk.stalk(nameColLink, p);
-        }
-
-        Markerui.add(report.coords, colorsColContent, p.id);
-        Markerui.display(colorsColContent, report.coords);
-      });
-
-      bodyRow.appendChild(colorsCol);
-
-      const optCol = createDOM("td", { class: "ogl-spyOptions" });
-
-      const optColButton = createDOM("button", {
-        class: "icon icon_maximize overlay",
-        href: report.detailLink,
-        title: Translator.translate(329),
-      });
-      optCol.appendChild(optColButton);
-
-      const optColSimButton = createDOM("a", { class: "ogl-text-btn", title: Translator.translate(330) }, "T");
-      const currentPlanet = (
-        document.querySelector("#planetList .active") ?? document.querySelector("#planetList .planetlink")
-      ).parentNode;
-      const currentCoords = currentPlanet.querySelector(".planet-koords").textContent;
-
-      let playerClass = PlayerClass.NONE;
-
-      if (document.querySelector("#characterclass .explorer")) {
-        playerClass = PlayerClass.EXPLORER;
-      } else if (document.querySelector("#characterclass .warrior")) {
-        playerClass = PlayerClass.WARRIOR;
-      } else if (document.querySelector("#characterclass .miner")) {
-        playerClass = PlayerClass.MINER;
-      }
-
-      optColSimButton.addEventListener("click", () => {
-        if (!OGBIData.options.simulator) {
-          popup(
-            null,
-            createDOM("div", { class: "ogl-warning-dialog overmark" }, "External tool not configured in 'Settings'")
-          );
-        } else {
-          let apiTechData = {
-            109: { level: OGBIData.technology[109] },
-            110: { level: OGBIData.technology[110] },
-            111: { level: OGBIData.technology[111] },
-            115: { level: OGBIData.technology[115] },
-            117: { level: OGBIData.technology[117] },
-            118: { level: OGBIData.technology[118] },
-            114: { level: OGBIData.technology[114] },
-          };
-          let coords = currentCoords.split(":");
-          let payloadJson = {
-            0: [
-              {
-                class: playerClass,
-                research: apiTechData,
-                planet: {
-                  galaxy: coords[0],
-                  system: coords[1],
-                  position: coords[2],
-                },
-              },
-            ],
-          };
-          const base64 = btoa(JSON.stringify(payloadJson));
-          window.open(`${OGBIData.options.simulator}en?SR_KEY=${report.apiKey}#prefill=${base64}`, "_blank");
-        }
-      });
-      optCol.appendChild(optColSimButton);
-
-      if (OGBIData.options.ptreTK) {
-        const optColPtreButton = createDOM("a", { class: "ogl-text-btn", title: Translator.translate(331) }, "P");
-        optCol.appendChild(optColPtreButton);
-
-        optColPtreButton.addEventListener("click", () => {
-          ptreService
-            .importSpy(OGBIData.options.ptreTK, report.apiKey)
-            .then((result) => fadeBox(result.message_verbose, result.code !== 1))
-            .catch((reason) => fadeBox(reason, true));
-        });
-      }
-
-      const attackQueryString = this.#fleetDispatchLink(report.coords, report.planetTargetType);
-
-      const optColAttackButton = createDOM("a", {
-        class: "icon ogl-icon-attack",
-        href: `?${attackQueryString.toString()}`,
-        title: Translator.translate(200),
-      });
-      optCol.appendChild(optColAttackButton);
-
-      const optColSpyButton = createDOM("button", {
-        class: "icon icon_eye",
-        onclick: report.spyLink,
-        title: Translator.translate(332),
-      });
-      optCol.appendChild(optColSpyButton);
-
-      if (
-        this.#tabId === messagesTabs.SPY &&
-        !document.querySelector('.messagesTrashcanBtns button.custom_btn[disabled="disabled"]')
-      ) {
-        const optColDeleteButton = createDOM("button", { class: "icon icon_trash", title: Translator.translate(333) });
-        optColDeleteButton.setAttribute("data-id", report.id);
-        optColDeleteButton.addEventListener("click", () => {
-          this.reportsToDelete.push({ report, row: bodyRow });
-
-          this.deleteReports();
-        });
-        optCol.appendChild(optColDeleteButton);
-
-        if (
-          OGBIData.options.autoDeleteEnable &&
-          // "No data" means OGame did not reveal fleet/defense - the actual risk is
-          // unknown, not zero. parseInt("No data") || 0 would silently fold it into
-          // the safe-to-delete sum below and could auto-trash a report hiding a real
-          // fleet, so an unrevealed value must never be eligible for auto-delete.
-          report.fleet !== "No data" &&
-          report.defense !== "No data" &&
-          Math.round((parseInt(report.fleet) || 0) * OGBIData.universeSettingsTooltip.debrisFactor) +
-            Math.round(((parseInt(report.total) || 0) * (parseInt(report.loot) || 0)) / 100) +
-            Math.round(
-              (parseInt(report.defense) || 0) *
-                (1 - OGBIData.universeSettingsTooltip.repairFactor) *
-                OGBIData.universeSettingsTooltip.debrisFactorDef
-            ) <
-            OGBIData.options.rvalLimit
-        ) {
-          this.reportsToDelete.push({ report, row: bodyRow });
-        }
-      } else if (document.querySelector('.messagesTrashcanBtns button.custom_btn[disabled="disabled"]')) {
-        const optColRestoreButton = createDOM("button", {
-          class: "icon icon_restore",
-          title: Translator.translate(334),
-        });
-        optColRestoreButton.setAttribute("data-id", report.id);
-
-        optColRestoreButton.addEventListener("click", () => {
-          this.#flagDeleted([report.id], [bodyRow], () => {
-            window.dispatchEvent(new CustomEvent("ogi-spyTableReload"));
-          });
-        });
-        optCol.appendChild(optColRestoreButton);
-      }
-
-      bodyRow.appendChild(optCol);
-      const rentaDisplay = () => {
-        const renta = [];
-        for (let round = 0; round < 6; round++) {
-          renta[round] = Math.round((report.total * Math.pow(1 - report.loot / 100, round) * report.loot) / 100);
-        }
-
-        const line = gainCol.parentElement;
-
-        if (line.getAttribute("data") === "expanded") {
-          line.setAttribute("data", "closed");
-          document.querySelectorAll("tr.spyTable-extended").forEach((e) => e.remove());
-
-          return;
-        }
-        const expanded = document.querySelector("tr[data='expanded']");
-        if (expanded) {
-          expanded.setAttribute("data", "closed");
-          document.querySelectorAll("tr.spyTable-extended").forEach((e) => e.remove());
-        }
-        line.setAttribute("data", "expanded");
-        const nextReport = line.nextElementSibling;
-        for (let round = 1; round < renta.length; round++) {
-          const extraLine = line.parentNode.insertBefore(createDOM("tr", { class: "spyTable-extended" }), nextReport);
-          extraLine.appendChild(createDOM("td"));
-          extraLine.appendChild(createDOM("td", { class: "ogl-date" }));
-          extraLine.appendChild(createDOM("td"));
-          extraLine.appendChild(createDOM("td", { class: "ogl-name" }));
-
-          const extraDetail = createDOM("div");
-          const extraDetailMetal = createDOM(
-            "div",
-            { class: "ogl-metal" },
-            `Metal : ${toFormattedNumber(renta[round] * report.resRatio[0], null, true)}`
-          );
-          const extraDetailCrystal = createDOM(
-            "div",
-            { class: "ogl-crystal" },
-            `Crystal : ${toFormattedNumber(renta[round] * report.resRatio[1], null, true)}`
-          );
-          const extraDetailDeut = createDOM(
-            "div",
-            { class: "ogl-deut" },
-            `Deuterium : ${toFormattedNumber(renta[round] * report.resRatio[2], null, true)}`
-          );
-          const extraDetailSplitLine = createDOM(
-            "div",
-            { class: "splitline" },
-            `Total : ${toFormattedNumber(renta[round], null, true)}`
-          );
-
-          extraDetail.appendChild(extraDetailMetal);
-          extraDetail.appendChild(extraDetailCrystal);
-          extraDetail.appendChild(extraDetailDeut);
-          extraDetail.appendChild(extraDetailSplitLine);
-          const extraTotal = extraLine.appendChild(
-            createDOM("td", { class: "ogl-tooltipLeft ogl-lootable" }, toFormattedNumber(renta[round], null, true))
-          );
-          extraTotal.addEventListener("mouseover", () => tooltip(extraTotal, extraDetail, true, false, 50));
-          extraTotal.style.background = `linear-gradient(to right, rgba(255, 170, 204, 0.63) ${
-            report.resRatio[0]
-          }%, rgba(115, 229, 255, 0.78) ${report.resRatio[0]}%\n, rgba(115, 229, 255, 0.78) ${
-            report.resRatio[0] + report.resRatio[1]
-          }%, rgb(166, 224, 176) ${report.resRatio[2]}%)`;
-          if (renta[round] >= OGBIData.options.rvalLimit) extraTotal.classList.add("ogl-good");
-
-          extraLine.appendChild(createDOM("td"));
-          extraLine.appendChild(createDOM("td"));
-
-          const extraShip = extraLine.appendChild(createDOM("td", { class: "ogl-cargo-choice" }));
-
-          let currentValue = null;
-
-          for (const shipsKey in ships) {
-            const ship = ships[shipsKey];
-
-            const value = calcNeededShips({
-              moreFret: true,
-              fret: ship.id,
-              resources: Math.ceil((report.total * Math.pow(1 - report.loot / 100, round) * report.loot) / 100),
-            });
-
-            if (ship.id === OGBIData.options.spyFret) currentValue = value;
-
-            extraShip.setAttribute(`data-ship-${ship.id}`, value);
+          if (flight.origin) {
+            // flight.origin is a plain {galaxy, system, position} object from
+            // farmEvaluator.js's nearestOrigin() - never an OGameCoordinate instance
+            // or an encoded number, so it was never a valid coordinate.toString()
+            // argument. Before Phase A.5 of refactoring-new.md, the module's empty
+            // "unsupported argument" guard silently produced the string "[undefined]"
+            // here; after that fix made the guard throw instead, this call site
+            // started throwing on every render - formatted directly instead.
+            const { galaxy, system, position } = flight.origin;
+            perHourDetail.appendChild(
+              createDOM("div", undefined, `${Translator.translate(234)}: [${galaxy}:${system}:${position}]`)
+            );
           }
-
-          extraShip.setAttribute("data-coords", report.coords);
-          extraShip.setAttribute("data-planet-target-type", report.planetTargetType);
-
-          const extraFleetQueryParams = this.#fleetDispatchLink(
-            report.coords,
-            report.planetTargetType,
-            OGBIData.options.spyFret,
-            currentValue
-          );
-
-          extraShip.appendChild(
+          // Distance/ships/fuel breakdown, not just the final number: this formula has
+          // never been checked against a real page (fleetFlight.js is the only consumer
+          // of the OGame flight-time formula in this whole tool - everywhere else reads
+          // OGame's own displayed numbers instead of recomputing them), so a wrong input
+          // should be visible at a glance instead of requiring a console session to find.
+          perHourDetail.appendChild(
             createDOM(
-              "a",
-              {
-                href: "?" + extraFleetQueryParams.toString(),
-              },
-              toFormattedNumber(currentValue)
+              "div",
+              undefined,
+              `${toFormattedNumber(flight.distance, 0)} · ${flight.shipCount}x · -${toFormattedNumber(
+                Math.round(flight.fuelCost),
+                null,
+                true
+              )} ${Translator.translate(2, "res")}`
             )
           );
-
-          extraLine.appendChild(createDOM("td"));
-          extraLine.appendChild(createDOM("td"));
+          perHourCol.addEventListener("mouseover", () => tooltip(perHourCol, perHourDetail, true, false, 50));
         }
-      };
 
-      gainCol.addEventListener("click", () => {
-        rentaDisplay();
-      });
+        bodyRow.appendChild(perHourCol);
+
+        // report.fleet/report.defense are either a number or the sentinel string
+        // "No data" (SpyReport.js) when OGame didn't reveal it. toFormattedNumber()
+        // returns undefined (a blank cell) for that string, so it needs its own text.
+        const fleetCol = createDOM(
+          "td",
+          {},
+          report.fleet === "No data" ? report.fleet : toFormattedNumber(report.fleet, null, true)
+        );
+        if (
+          report.fleet === "No data" ||
+          Math.round(report.fleet * OGBIData.universeSettingsTooltip.debrisFactor) >= OGBIData.options.rvalLimit
+        ) {
+          fleetCol.classList.add("ogl-care");
+        }
+        bodyRow.appendChild(fleetCol);
+
+        const defCol = createDOM(
+          "td",
+          {},
+          report.defense === "No data" ? report.defense : toFormattedNumber(report.defense, null, true)
+        );
+        if (report.defense === "No data" || report.defense > 0) defCol.classList.add("ogl-danger");
+        bodyRow.appendChild(defCol);
+
+        const shipCol = createDOM("td", { class: "ogl-cargo-choice" });
+        const shipId = OGBIData.options.spyFret;
+
+        const ships = {
+          smallCargo: {
+            id: ship.SmallCargoShip,
+            count: report.pt,
+          },
+          largeCargo: {
+            id: ship.LargeCargoShip,
+            count: report.gt,
+          },
+          pathFinder: {
+            id: ship.Pathfinder,
+            count: report.pf,
+          },
+        };
+
+        if (OGBIData.ships[ship.EspionageProbe].cargoCapacity) {
+          ships.probe = {
+            id: ship.EspionageProbe,
+            count: report.pb,
+          };
+        }
+
+        shipCol.setAttribute("data-coords", report.coords);
+        shipCol.setAttribute("data-planet-target-type", report.planetTargetType);
+
+        for (const shipsKey in ships) {
+          const ship = ships[shipsKey];
+
+          shipCol.setAttribute(`data-ship-${ship.id}`, ship.count);
+        }
+
+        let shipCount = 0;
+
+        if (parseInt(report.defense) === 0 && parseInt(report.fleet) === 0 && shipId === ship.EspionageProbe) {
+          shipCount = report.pb;
+        }
+
+        if (shipId === ship.SmallCargoShip) shipCount = report.pt;
+        else if (shipId === ship.LargeCargoShip) shipCount = report.gt;
+        else if (shipId === ship.Pathfinder) shipCount = report.pf;
+
+        const fleetLink = this.#fleetDispatchLink(report.coords, report.planetTargetType, shipId, shipCount);
+
+        const shipLink = createDOM("a", { href: `?${fleetLink.toString()}` }, toFormattedNumber(shipCount));
+        shipCol.appendChild(shipLink);
+        bodyRow.appendChild(shipCol);
+
+        const colorsCol = createDOM("td");
+        const colorsColContent = createDOM("div", {
+          class: "ogl-colors",
+          "data-coords": report.coords,
+          "data-context": "spytable",
+        });
+
+        colorsCol.appendChild(colorsColContent);
+
+        Player.get(report.name).then((p) => {
+          if (p.id) {
+            stalk.stalk(nameColLink, p);
+          }
+
+          Markerui.add(report.coords, colorsColContent, p.id);
+          Markerui.display(colorsColContent, report.coords);
+        });
+
+        bodyRow.appendChild(colorsCol);
+
+        const optCol = createDOM("td", { class: "ogl-spyOptions" });
+
+        const optColButton = createDOM("button", {
+          class: "icon icon_maximize overlay",
+          href: report.detailLink,
+          title: Translator.translate(329),
+        });
+        optCol.appendChild(optColButton);
+
+        const optColSimButton = createDOM("a", { class: "ogl-text-btn", title: Translator.translate(330) }, "T");
+        const currentPlanet = (
+          document.querySelector("#planetList .active") ?? document.querySelector("#planetList .planetlink")
+        ).parentNode;
+        const currentCoords = currentPlanet.querySelector(".planet-koords").textContent;
+
+        let playerClass = PlayerClass.NONE;
+
+        if (document.querySelector("#characterclass .explorer")) {
+          playerClass = PlayerClass.EXPLORER;
+        } else if (document.querySelector("#characterclass .warrior")) {
+          playerClass = PlayerClass.WARRIOR;
+        } else if (document.querySelector("#characterclass .miner")) {
+          playerClass = PlayerClass.MINER;
+        }
+
+        optColSimButton.addEventListener("click", () => {
+          if (!OGBIData.options.simulator) {
+            popup(
+              null,
+              createDOM("div", { class: "ogl-warning-dialog overmark" }, "External tool not configured in 'Settings'")
+            );
+          } else {
+            let apiTechData = {
+              109: { level: OGBIData.technology[109] },
+              110: { level: OGBIData.technology[110] },
+              111: { level: OGBIData.technology[111] },
+              115: { level: OGBIData.technology[115] },
+              117: { level: OGBIData.technology[117] },
+              118: { level: OGBIData.technology[118] },
+              114: { level: OGBIData.technology[114] },
+            };
+            let coords = currentCoords.split(":");
+            let payloadJson = {
+              0: [
+                {
+                  class: playerClass,
+                  research: apiTechData,
+                  planet: {
+                    galaxy: coords[0],
+                    system: coords[1],
+                    position: coords[2],
+                  },
+                },
+              ],
+            };
+            const base64 = btoa(JSON.stringify(payloadJson));
+            window.open(`${OGBIData.options.simulator}en?SR_KEY=${report.apiKey}#prefill=${base64}`, "_blank");
+          }
+        });
+        optCol.appendChild(optColSimButton);
+
+        if (OGBIData.options.ptreTK) {
+          const optColPtreButton = createDOM("a", { class: "ogl-text-btn", title: Translator.translate(331) }, "P");
+          optCol.appendChild(optColPtreButton);
+
+          optColPtreButton.addEventListener("click", () => {
+            ptreService
+              .importSpy(OGBIData.options.ptreTK, report.apiKey)
+              .then((result) => fadeBox(result.message_verbose, result.code !== 1))
+              .catch((reason) => fadeBox(reason, true));
+          });
+        }
+
+        const attackQueryString = this.#fleetDispatchLink(report.coords, report.planetTargetType);
+
+        const optColAttackButton = createDOM("a", {
+          class: "icon ogl-icon-attack",
+          href: `?${attackQueryString.toString()}`,
+          title: Translator.translate(200),
+        });
+        optCol.appendChild(optColAttackButton);
+
+        const optColSpyButton = createDOM("button", {
+          class: "icon icon_eye",
+          onclick: report.spyLink,
+          title: Translator.translate(332),
+        });
+        optCol.appendChild(optColSpyButton);
+
+        if (
+          this.#tabId === messagesTabs.SPY &&
+          !document.querySelector('.messagesTrashcanBtns button.custom_btn[disabled="disabled"]')
+        ) {
+          const optColDeleteButton = createDOM("button", {
+            class: "icon icon_trash",
+            title: Translator.translate(333),
+          });
+          optColDeleteButton.setAttribute("data-id", report.id);
+          optColDeleteButton.addEventListener("click", () => {
+            this.reportsToDelete.push({ report, row: bodyRow });
+
+            this.deleteReports();
+          });
+          optCol.appendChild(optColDeleteButton);
+
+          if (
+            OGBIData.options.autoDeleteEnable &&
+            // "No data" means OGame did not reveal fleet/defense - the actual risk is
+            // unknown, not zero. parseInt("No data") || 0 would silently fold it into
+            // the safe-to-delete sum below and could auto-trash a report hiding a real
+            // fleet, so an unrevealed value must never be eligible for auto-delete.
+            report.fleet !== "No data" &&
+            report.defense !== "No data" &&
+            Math.round((parseInt(report.fleet) || 0) * OGBIData.universeSettingsTooltip.debrisFactor) +
+              Math.round(((parseInt(report.total) || 0) * (parseInt(report.loot) || 0)) / 100) +
+              Math.round(
+                (parseInt(report.defense) || 0) *
+                  (1 - OGBIData.universeSettingsTooltip.repairFactor) *
+                  OGBIData.universeSettingsTooltip.debrisFactorDef
+              ) <
+              OGBIData.options.rvalLimit
+          ) {
+            this.reportsToDelete.push({ report, row: bodyRow });
+          }
+        } else if (document.querySelector('.messagesTrashcanBtns button.custom_btn[disabled="disabled"]')) {
+          const optColRestoreButton = createDOM("button", {
+            class: "icon icon_restore",
+            title: Translator.translate(334),
+          });
+          optColRestoreButton.setAttribute("data-id", report.id);
+
+          optColRestoreButton.addEventListener("click", () => {
+            this.#flagDeleted([report.id], [bodyRow], () => {
+              window.dispatchEvent(new CustomEvent("ogi-spyTableReload"));
+            });
+          });
+          optCol.appendChild(optColRestoreButton);
+        }
+
+        bodyRow.appendChild(optCol);
+        const rentaDisplay = () => {
+          const renta = [];
+          for (let round = 0; round < 6; round++) {
+            renta[round] = Math.round((report.total * Math.pow(1 - report.loot / 100, round) * report.loot) / 100);
+          }
+
+          const line = gainCol.parentElement;
+
+          if (line.getAttribute("data") === "expanded") {
+            line.setAttribute("data", "closed");
+            document.querySelectorAll("tr.spyTable-extended").forEach((e) => e.remove());
+
+            return;
+          }
+          const expanded = document.querySelector("tr[data='expanded']");
+          if (expanded) {
+            expanded.setAttribute("data", "closed");
+            document.querySelectorAll("tr.spyTable-extended").forEach((e) => e.remove());
+          }
+          line.setAttribute("data", "expanded");
+          const nextReport = line.nextElementSibling;
+          for (let round = 1; round < renta.length; round++) {
+            const extraLine = line.parentNode.insertBefore(createDOM("tr", { class: "spyTable-extended" }), nextReport);
+            extraLine.appendChild(createDOM("td"));
+            extraLine.appendChild(createDOM("td", { class: "ogl-date" }));
+            extraLine.appendChild(createDOM("td"));
+            extraLine.appendChild(createDOM("td", { class: "ogl-name" }));
+
+            const extraDetail = createDOM("div");
+            const extraDetailMetal = createDOM(
+              "div",
+              { class: "ogl-metal" },
+              `Metal : ${toFormattedNumber(renta[round] * report.resRatio[0], null, true)}`
+            );
+            const extraDetailCrystal = createDOM(
+              "div",
+              { class: "ogl-crystal" },
+              `Crystal : ${toFormattedNumber(renta[round] * report.resRatio[1], null, true)}`
+            );
+            const extraDetailDeut = createDOM(
+              "div",
+              { class: "ogl-deut" },
+              `Deuterium : ${toFormattedNumber(renta[round] * report.resRatio[2], null, true)}`
+            );
+            const extraDetailSplitLine = createDOM(
+              "div",
+              { class: "splitline" },
+              `Total : ${toFormattedNumber(renta[round], null, true)}`
+            );
+
+            extraDetail.appendChild(extraDetailMetal);
+            extraDetail.appendChild(extraDetailCrystal);
+            extraDetail.appendChild(extraDetailDeut);
+            extraDetail.appendChild(extraDetailSplitLine);
+            const extraTotal = extraLine.appendChild(
+              createDOM("td", { class: "ogl-tooltipLeft ogl-lootable" }, toFormattedNumber(renta[round], null, true))
+            );
+            extraTotal.addEventListener("mouseover", () => tooltip(extraTotal, extraDetail, true, false, 50));
+            extraTotal.style.background = `linear-gradient(to right, rgba(255, 170, 204, 0.63) ${
+              report.resRatio[0]
+            }%, rgba(115, 229, 255, 0.78) ${report.resRatio[0]}%\n, rgba(115, 229, 255, 0.78) ${
+              report.resRatio[0] + report.resRatio[1]
+            }%, rgb(166, 224, 176) ${report.resRatio[2]}%)`;
+            if (renta[round] >= OGBIData.options.rvalLimit) extraTotal.classList.add("ogl-good");
+
+            extraLine.appendChild(createDOM("td"));
+            extraLine.appendChild(createDOM("td"));
+
+            const extraShip = extraLine.appendChild(createDOM("td", { class: "ogl-cargo-choice" }));
+
+            let currentValue = null;
+
+            for (const shipsKey in ships) {
+              const ship = ships[shipsKey];
+
+              const value = calcNeededShips({
+                moreFret: true,
+                fret: ship.id,
+                resources: Math.ceil((report.total * Math.pow(1 - report.loot / 100, round) * report.loot) / 100),
+              });
+
+              if (ship.id === OGBIData.options.spyFret) currentValue = value;
+
+              extraShip.setAttribute(`data-ship-${ship.id}`, value);
+            }
+
+            extraShip.setAttribute("data-coords", report.coords);
+            extraShip.setAttribute("data-planet-target-type", report.planetTargetType);
+
+            const extraFleetQueryParams = this.#fleetDispatchLink(
+              report.coords,
+              report.planetTargetType,
+              OGBIData.options.spyFret,
+              currentValue
+            );
+
+            extraShip.appendChild(
+              createDOM(
+                "a",
+                {
+                  href: "?" + extraFleetQueryParams.toString(),
+                },
+                toFormattedNumber(currentValue)
+              )
+            );
+
+            extraLine.appendChild(createDOM("td"));
+            extraLine.appendChild(createDOM("td"));
+          }
+        };
+
+        gainCol.addEventListener("click", () => {
+          rentaDisplay();
+        });
+      } catch (error) {
+        bodyRow?.remove();
+        this.#logger.warn(`Could not render spy table row for report ${report.id}`, error);
+      }
     });
 
     // The loop above reorders every row - reused and newly created alike - to match

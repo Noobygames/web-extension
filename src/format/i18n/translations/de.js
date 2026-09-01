@@ -440,5 +440,6 @@ export default Object.freeze({
     356: "Bericht veraltet - erneut spähen",
     357: "Raid-Liste",
     358: "Nur Inaktive",
+    359: "Löscht automatisch jeden Spionagebericht unter deinem eingestellten Rentabilitätswert - ohne Rückfrage pro Bericht, und das dauerhaft auch für künftige Berichte. Fortfahren?",
   },
 });

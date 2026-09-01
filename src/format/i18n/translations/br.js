@@ -440,5 +440,6 @@ export default Object.freeze({
     356: "Relatório antigo - espionar novamente",
     357: "Lista de invasão",
     358: "Somente inativos",
+    359: "Exclui automaticamente todo relatório de espionagem abaixo do seu valor de rentabilidade configurado - sem confirmação por relatório, e continuará excluindo relatórios futuros também. Continuar?",
   },
 });

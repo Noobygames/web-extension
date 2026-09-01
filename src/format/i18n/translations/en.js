@@ -440,5 +440,6 @@ export default Object.freeze({
     356: "Report is old - spy again",
     357: "Raid list",
     358: "Only inactive",
+    359: "Automatically deletes every spy report below your configured profitability value - no confirmation per report, and it keeps deleting future reports too. Continue?",
   },
 });

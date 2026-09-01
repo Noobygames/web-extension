@@ -440,5 +440,6 @@ export default Object.freeze({
     356: "Rapor eski - tekrar casusluk yap",
     357: "Baskın listesi",
     358: "Sadece pasif olanlar",
+    359: "Ayarladığın kârlılık değerinin altındaki her casusluk raporunu otomatik olarak siler - rapor başına onay yok ve bu, gelecekteki raporları da silmeye devam eder. Devam edilsin mi?",
   },
 });

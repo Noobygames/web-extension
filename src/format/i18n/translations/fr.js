@@ -440,5 +440,6 @@ export default Object.freeze({
     356: "Rapport ancien - espionner à nouveau",
     357: "Liste de raid",
     358: "Inactifs seulement",
+    359: "Supprime automatiquement chaque rapport d'espionnage en dessous de votre valeur de rentabilité configurée - sans confirmation par rapport, et continuera de supprimer les rapports futurs aussi. Continuer ?",
   },
 });

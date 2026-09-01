@@ -796,11 +796,58 @@ test("the options bar toggles table visibility, append mode and auto-delete, and
   document.querySelector(".ogl-tableOptions .icon_plus").click();
   assert.equal(OGBIData.options.spyTableAppend, true);
 
-  document.querySelector(".ogl-tableOptions .icon_trash").click();
+  // Turning auto-delete on asks for confirmation first - it starts deleting reports
+  // silently on every rebuild, with only a tooltip explaining it beforehand.
+  const realConfirm = globalThis.confirm;
+  globalThis.confirm = () => true;
+  try {
+    document.querySelector(".ogl-tableOptions .icon_trash").click();
+  } finally {
+    globalThis.confirm = realConfirm;
+  }
   assert.equal(OGBIData.options.autoDeleteEnable, true);
   // Toggling auto-delete forces a clean(true) + reload, which rebuilds the table
   // from the same cached message list rather than leaving it torn down.
   assert.ok(document.querySelector(".ogl-spyTable"), "the table was rebuilt after the reload");
+});
+
+test("declining the confirmation leaves auto-delete off", () => {
+  resetStore({ spyTableEnable: true, autoDeleteEnable: false });
+  document.body.innerHTML = spyPageChrome();
+  const report = spyReportRow(9562, { targetPlayerId: 99999 });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+
+  const realConfirm = globalThis.confirm;
+  globalThis.confirm = () => false;
+  try {
+    document.querySelector(".ogl-tableOptions .icon_trash").click();
+  } finally {
+    globalThis.confirm = realConfirm;
+  }
+
+  assert.equal(OGBIData.options.autoDeleteEnable, false);
+  assert.equal(document.querySelector(".ogl-tableOptions .icon_trash").classList.contains("ogl-active"), false);
+});
+
+test("turning auto-delete back off needs no confirmation", () => {
+  resetStore({ spyTableEnable: true, autoDeleteEnable: true });
+  document.body.innerHTML = spyPageChrome();
+  const report = spyReportRow(9563, { targetPlayerId: 99999 });
+
+  new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY);
+
+  const realConfirm = globalThis.confirm;
+  globalThis.confirm = () => {
+    throw new Error("confirm() must not be called when turning auto-delete off");
+  };
+  try {
+    document.querySelector(".ogl-tableOptions .icon_trash").click();
+  } finally {
+    globalThis.confirm = realConfirm;
+  }
+
+  assert.equal(OGBIData.options.autoDeleteEnable, false);
 });
 
 test("on the trash tab, a restore button replaces the delete button", () => {
@@ -986,6 +1033,29 @@ test("auto-delete never queues a report whose fleet or defense was not revealed,
   assert.equal(row.classList.contains("hide"), false);
 });
 
+test("a row that throws while rendering (not parsing) does not take analyze() down with it", () => {
+  // #displaySpyTable() parses every report into this.#spyReports safely (see below),
+  // but #spyTableBody() builds the actual DOM row in a second, separate loop that had
+  // no isolation of its own - a report parsed perfectly fine could still blank the rest
+  // of the table (and throw out of analyze() itself) if rendering it failed, e.g. no
+  // #planetList to read the simulator button's current-planet coordinates from.
+  resetStore();
+  // No #planetList at all - spyPageChrome() always includes one, so build the chrome by hand.
+  document.body.innerHTML = `
+    <div id="messages">
+      <ul class="messagesHolder"></ul>
+      <div class="messagePaginator"></div>
+    </div>
+  `;
+  const report = spyReportRow(9741, { targetPlayerId: 99999 });
+
+  assert.doesNotThrow(() => new SpyMessagesAnalyzer().analyze(spyCallableOf(report), messagesTabs.SPY));
+
+  // The row itself could not render (nothing to read the current planet from), but
+  // analyze() must not propagate that - and no half-built row is left behind either.
+  assert.equal(document.querySelector('.ogl-spyTable tbody tr[data-report-id="9741"]'), null);
+});
+
 test("one malformed report message does not take the rest of the table down with it", () => {
   // Was a bug: new SpyReport(message) threw uncaught for any message shape it could
   // not parse, escaping the forEach in #displaySpyTable - the whole table build (every
@@ -996,8 +1066,11 @@ test("one malformed report message does not take the rest of the table down with
   document.body.innerHTML = spyPageChrome();
   const good1 = spyReportRow(9721, { targetPlayerId: 99999 });
   const broken = spyReportRow(9722, { targetPlayerId: 99999 });
-  // Corrupt it into a shape SpyReport.js cannot parse - it reads this unconditionally.
-  broken.querySelector('[onclick*="sendShipsWithPopup"]').remove();
+  // Corrupt it into a shape SpyReport.js genuinely cannot parse - without target
+  // coordinates there is nothing to build a row around, so this one path is left to
+  // throw on purpose (every other field degrades to a safe default instead, see
+  // SpyReport.test.js).
+  broken.removeAttribute("data-messages-filters-coordinates");
   const good2 = spyReportRow(9723, { targetPlayerId: 99999 });
 
   assert.doesNotThrow(() => new SpyMessagesAnalyzer().analyze(spyCallableOf(good1, broken, good2), messagesTabs.SPY));

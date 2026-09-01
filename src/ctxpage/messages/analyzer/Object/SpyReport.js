@@ -109,20 +109,24 @@ export class SpyReport {
     return this._targetIsSelf;
   }
   constructor(message) {
+    // Read once, guarded, and reused: every field below used to re-run this same
+    // querySelector and call .getAttribute() on its result unguarded. A message
+    // #isReport() correctly recognises as spy-related but that carries no full
+    // rawMessageData block (the "your probe was detected, no intel" notice
+    // #isReport()'s counter-espionage branch also matches) threw on the very
+    // first read - `new SpyReport()` never got past that line, and the message
+    // never became a row, one probe run in ten mistaken for one.
+    const rawMessageData = message.querySelector(".rawMessageData");
+
     this._id = message.getAttribute("data-msg-id");
     this._targetIsSelf =
       message.querySelector(`.rawMessageData[data-raw-targetplayerid="${OGBIData.playerId}"]`) !== null;
     this._isNew = message.classList.contains("msg_new");
     this._isFavorited = message.querySelector(".icon_favorited");
     this._attacked = message.querySelector(".fleetAction.fleetHostile");
-    this._planetTargetType = parseInt(
-      message.querySelector(".rawMessageData").getAttribute("data-raw-targetplanettype") || planetType.planet
-    );
+    this._planetTargetType = parseInt(rawMessageData?.getAttribute("data-raw-targetplanettype") || planetType.planet);
 
-    this._name = message
-      .getAttribute("data-messages-filters-playername")
-      .replace(/&nbsp;/g, "")
-      .trim();
+    this._name = (message.getAttribute("data-messages-filters-playername") ?? "").replace(/&nbsp;/g, "").trim();
 
     this._status = "";
     const classList = message.querySelector(".playerName > span:last-child")?.classList;
@@ -135,10 +139,10 @@ export class SpyReport {
       }
     }
 
-    this._spyLink = message.querySelector('.msg_actions [onclick*="sendShipsWithPopup"]').getAttribute("onclick");
+    this._spyLink = message.querySelector('.msg_actions [onclick*="sendShipsWithPopup"]')?.getAttribute("onclick");
     const textContent = message.getAttribute("data-messages-filters-activity");
-    this._activity = parseInt(textContent.match(/\d+/) ? textContent.match(/\d+/)[0] : 60);
-    this._coords = /\[.*\]/g.exec(message.getAttribute("data-messages-filters-coordinates"))[0]?.slice(1, -1);
+    this._activity = parseInt(textContent?.match(/\d+/)?.[0] ?? 60);
+    this._coords = /\[.*\]/g.exec(message.getAttribute("data-messages-filters-coordinates") ?? "")?.[0]?.slice(1, -1);
     this._coordsLink = message.querySelector(".msgTitle a")?.href || "#";
 
     this._detailLink = message.querySelector(".msg_actions message-footer-details a.fright")?.href;
@@ -155,8 +159,8 @@ export class SpyReport {
       this._fleet = "No data";
     } else if (fleet === "0") {
       this._fleet = "0";
-    } else if (message.querySelector(".rawMessageData").getAttribute("data-raw-fleetvalue")) {
-      this._fleet = cleanValue(message.querySelector(".rawMessageData").getAttribute("data-raw-fleetvalue"));
+    } else if (rawMessageData?.getAttribute("data-raw-fleetvalue")) {
+      this._fleet = cleanValue(rawMessageData.getAttribute("data-raw-fleetvalue"));
     } else {
       this._fleet = "No data";
     }
@@ -165,16 +169,17 @@ export class SpyReport {
       this._defense = "No data";
     } else if (defense === "0") {
       this._defense = "0";
-    } else if (message.querySelector(".rawMessageData").getAttribute("data-raw-defensevalue")) {
-      this._defense = cleanValue(message.querySelector(".rawMessageData").getAttribute("data-raw-defensevalue"));
+    } else if (rawMessageData?.getAttribute("data-raw-defensevalue")) {
+      this._defense = cleanValue(rawMessageData.getAttribute("data-raw-defensevalue"));
     } else {
       this._defense = "No data";
     }
 
-    // Date
-    const timestamp = message.querySelector(".rawMessageData").getAttribute("data-raw-timestamp");
+    // Date. A message with no timestamp attribute at all has nothing to fall back
+    // to but "just now" - better than throwing and losing the row entirely.
+    const timestamp = rawMessageData?.getAttribute("data-raw-timestamp");
     this._cleanDate = new Date();
-    this._cleanDate.setTime(timestamp * 1000);
+    this._cleanDate.setTime((timestamp ? Number(timestamp) : Date.now() / 1000) * 1000);
     this._deltaDate = Date.now() - this._cleanDate;
 
     const minutes = this._deltaDate / 6e4;
@@ -182,14 +187,16 @@ export class SpyReport {
 
     this._date = hours < 1 ? Math.floor(minutes) + " min" : Math.floor(hours) + "h";
 
-    this._loot = message.getAttribute("data-messages-filters-loot").replace(/(\D*)/, "").replace(/%/, "");
-    this._metal = cleanValue(message.getAttribute("data-messages-filters-metal").replace(/(\D*)/, ""));
-    this._crystal = cleanValue(message.getAttribute("data-messages-filters-crystal").replace(/(\D*)/, ""));
-    this._deut = cleanValue(message.getAttribute("data-messages-filters-deuterium").replace(/(\D*)/, ""));
+    // No loot/resource filter attributes at all means nothing was actually
+    // revealed (the counter-espionage-only notice) - zero, not a throw.
+    this._loot = (message.getAttribute("data-messages-filters-loot") ?? "0").replace(/(\D*)/, "").replace(/%/, "");
+    this._metal = cleanValue((message.getAttribute("data-messages-filters-metal") ?? "0").replace(/(\D*)/, ""));
+    this._crystal = cleanValue((message.getAttribute("data-messages-filters-crystal") ?? "0").replace(/(\D*)/, ""));
+    this._deut = cleanValue((message.getAttribute("data-messages-filters-deuterium") ?? "0").replace(/(\D*)/, ""));
     this._total = this._metal + this._crystal + this._deut;
     this._renta = Math.round((this._total * this._loot) / 100);
 
-    this._apiKey = message.querySelector(".rawMessageData").getAttribute("data-raw-hashcode");
+    this._apiKey = rawMessageData?.getAttribute("data-raw-hashcode");
 
     //////////////////////////////////////////////////////
 
