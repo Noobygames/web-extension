@@ -66,10 +66,16 @@ const logger = getLogger("fleetdispatch");
 function expedition(context) {
   if (
     context.page == "fleetdispatch" &&
-    fleetDispatcher.shipsOnPlanet?.find((x) => x.number > 0) !== undefined &&
+    // `fleetDispatcher` itself can be null here, not just its property.
+    fleetDispatcher?.shipsOnPlanet?.find((x) => x.number > 0) !== undefined &&
     !fleetDispatcher.isOnVacation
   ) {
     if (!document.querySelector("#allornone .allornonewrap")) return;
+    const buttonColumn = document.querySelector("#allornone .secondcol");
+    if (!buttonColumn) {
+      logger.warn("#allornone .secondcol missing - expedition button not wired up");
+      return;
+    }
     const btnExpe = createDOM("button", {
       class: `ogl-expedition ${OGBIData.json.options.expedition.cargoShip == 202 ? "smallCargo" : "largeCargo"}`,
       // Otherwise the icon-only button explains nothing until the 750ms hover
@@ -77,7 +83,7 @@ function expedition(context) {
       // pickers, never what clicking the button actually does.
       title: Translator.translate(260),
     });
-    document.querySelector("#allornone .secondcol").appendChild(btnExpe);
+    buttonColumn.appendChild(btnExpe);
     const optionsContainerDiv = createDOM("div");
     optionsContainerDiv.appendChild(createDOM("div", { class: "ogk-expedition-explain" }, Translator.translate(260)));
     const combatShipDiv = optionsContainerDiv.appendChild(createDOM("div", { class: "ogk-expedition-options" }));

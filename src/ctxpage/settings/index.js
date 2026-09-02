@@ -279,6 +279,26 @@ function settings(context) {
       "span",
       {
         class: "tooltip",
+        title: Translator.translate(376),
+        style: "display: flex;justify-content: space-between; align-items: center;",
+      },
+      Translator.translate(375)
+    )
+  );
+  let bashingCounterCheck = optiondiv.appendChild(createDOM("input", { type: "checkbox" }));
+  bashingCounterCheck.addEventListener("change", () => {
+    OGBIData.json.options.bashingCounter = bashingCounterCheck.checked;
+    OGBIData.Save();
+  });
+  if (OGBIData.json.options.bashingCounter) {
+    bashingCounterCheck.checked = true;
+  }
+
+  optiondiv = featureSettings.appendChild(
+    createDOM(
+      "span",
+      {
+        class: "tooltip",
         title: Translator.translate(274),
         style: "display: flex;justify-content: space-between; align-items: center;",
       },

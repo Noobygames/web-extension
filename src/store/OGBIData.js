@@ -95,6 +95,15 @@ class OGBIData {
 
     this.#saveHot();
   }
+  /** Attack timestamps per target, for the bashing-rule counter. See game/bashing.js. */
+  get bashLog() {
+    return this.#hot.bashLog;
+  }
+  set bashLog(bashLog) {
+    this.#hot.bashLog = bashLog;
+
+    this.#saveHot();
+  }
   get ships() {
     return this.#hot.ships;
   }

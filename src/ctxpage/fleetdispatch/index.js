@@ -14,6 +14,7 @@ import { createDOM, createSVG } from "../../ui/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
 import Translator from "../../format/i18n/translate.js";
 import OGBIData from "../../store/OGBIData.js";
+import { recordAttack } from "../../store/bashLog.js";
 
 /**
  * The fleet-dispatch page: the rebuilt dispatcher UI, the expedition and collect
@@ -97,6 +98,26 @@ async function awaitFleetDispatcher({ waitFor: waitForImpl = waitFor } = {}) {
  * Compliance note (AGENTS.md 1.1 and 1.2): everything here still runs from one user
  * gesture. No button sends more than one fleet, and nothing schedules a dispatch.
  */
+/**
+ * Remembers an accepted attack for the bashing-rule counter in galaxy view.
+ *
+ * Called from inside the `submitFleet2` patch, where `this` is the FleetDispatcher, so
+ * the dispatcher is passed explicitly. Only fires after the server accepted the fleet,
+ * and only for missions the rule counts (attack / ACS attack / moon destruction) -
+ * `recordAttack()` filters. Purely local bookkeeping: no request, no timer.
+ */
+function rememberBashingAttack(dispatcher) {
+  const target = dispatcher?.targetPlanet;
+  if (!target) return;
+
+  try {
+    recordAttack(`${target.galaxy}:${target.system}:${target.position}`, target.type, dispatcher.mission);
+  } catch (error) {
+    // A broken counter must never swallow a successfully sent fleet.
+    logger.warn("could not record the attack for the bashing counter", error);
+  }
+}
+
 function onFleetSent(context, callback) {
   FleetDispatcher.prototype.submitFleet2 = function (force) {
     force = force || false;
@@ -121,6 +142,7 @@ function onFleetSent(context, callback) {
       token = data?.fleetSendingToken;
       if (data.success === true) {
         fadeBox(data.message, false);
+        rememberBashingAttack(that);
         let href = callback();
 
         setTimeout(function () {
@@ -198,6 +220,7 @@ function initFleetDispatcher(context) {
   if (
     context.page == "fleetdispatch" &&
     document.querySelector("#civilships") &&
+    fleetDispatcherReady() &&
     fleetDispatcher.shipsOnPlanet.length != 0
   ) {
     FleetDispatcher.prototype.updateEmptySystems = function (newData) {
@@ -419,6 +442,7 @@ function initFleetDispatcher(context) {
 }
 
 function neededCargo(context) {
+  if (!fleetDispatcherReady() || typeof shipsOnPlanet === "undefined") return;
   const defaultKept = context.current.isMoon
     ? OGBIData.json.options.defaultKeptMoon ?? OGBIData.json.options.defaultKept
     : OGBIData.json.options.defaultKept;
@@ -455,6 +479,7 @@ function neededCargo(context) {
 }
 
 function selectMostShips(context, reclickSelectedTargetType = true) {
+  if (!fleetDispatcherReady()) return;
   fleetDispatcher.shipsOnPlanet.forEach((ship) => {
     const defaultKept = context.current.isMoon
       ? OGBIData.json.options.defaultKeptMoon ?? OGBIData.json.options.defaultKept
@@ -472,6 +497,7 @@ function selectMostShips(context, reclickSelectedTargetType = true) {
 }
 
 function selectAllShips(context, reclickSelectedTargetType = true) {
+  if (!fleetDispatcherReady()) return;
   fleetDispatcher.shipsOnPlanet.forEach((ship) => {
     selectShips(context, ship.id, ship.number);
   });
@@ -485,7 +511,7 @@ function selectAllShips(context, reclickSelectedTargetType = true) {
 }
 
 function selectShips(context, shipID, amount) {
-  if (context.page == "fleetdispatch") {
+  if (context.page == "fleetdispatch" && fleetDispatcherReady()) {
     fleetDispatcher.shipsOnPlanet.forEach((ship) => {
       if (ship.id == shipID) {
         if (amount > ship.number) amount = ship.number;
@@ -498,7 +524,11 @@ function selectShips(context, shipID, amount) {
 }
 
 function preselectShips(context) {
-  if (context.page == "fleetdispatch") {
+  // `awaitFleetDispatcher()` is checked once, before the whole wiring run; the global
+  // can still be null by the time this particular call gets its turn (the game rebuilds
+  // the dispatcher on its own fleet1/fleet2 renders), and the read below then throws
+  // out of the async caller and cancels every step after it.
+  if (context.page == "fleetdispatch" && fleetDispatcherReady()) {
     // One selectShip() per matching ship, one refresh() after all of them - not one
     // refresh() per ship. A URL preselecting several ship types (am202=10&am203=5, ...)
     // used to call fleetDispatcher.refresh() back-to-back inside this loop, which could

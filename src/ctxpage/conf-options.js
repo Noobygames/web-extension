@@ -61,6 +61,8 @@ const _options = {
   // Manual zoom factor. 0 = automatic stepped zoom (1.15 / 1.25 / 1.4 by viewport
   // width); any other value is used verbatim from 1600px up, overriding the steps.
   wideZoomFactor: 0,
+  // Bashing-rule counter in galaxy view (game/bashing.js).
+  bashingCounter: true,
   // Feature E: how long an alliance target claim stays 'taken' before the target is fair game.
   claimTtlMinutes: 120,
   ptreTK: "",

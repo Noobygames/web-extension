@@ -10079,3 +10079,55 @@ body.no-commander .contentBoxBody {
   line-height: 12px;
   padding-top: 4px;
 }
+
+/* ===========================================================================
+   Bashing-rule counter (galaxy view)
+   ---------------------------------------------------------------------------
+   Badge on the planet / moon cell showing how many attacks OGI recorded against
+   that position in the last 24h. Colour follows game/bashing.js's level:
+   ok (below limit-1), warn (one attack left), limit (limit reached).
+   =========================================================================== */
+#galaxyContent .ogl-bash-cell {
+  position: relative;
+}
+
+.ogl-bash-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 2px;
+  border-radius: 7px;
+  font-size: 10px;
+  line-height: 13px;
+  font-weight: 700;
+  text-align: center;
+  color: #fff;
+  cursor: help;
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.ogl-bash-badge.ogl-bash-ok {
+  background: #3f6b3f;
+}
+
+.ogl-bash-badge.ogl-bash-warn {
+  background: #b57a22;
+}
+
+.ogl-bash-badge.ogl-bash-limit {
+  background: #b34a4a;
+}
+
+.ogl-bashTooltip .ogl-bash-limit {
+  color: #e06a6a;
+  font-weight: 700;
+}
+
+.ogl-bashTooltip .ogl-bash-note {
+  margin-top: 3px;
+  opacity: 0.6;
+  font-size: 10px;
+}

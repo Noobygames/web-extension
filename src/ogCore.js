@@ -216,6 +216,7 @@ class OGBeyondInfinity {
     OGBIData.json.sideStalk = OGBIData.json.sideStalk || [];
     OGBIData.json.playerMarkers = OGBIData.json.playerMarkers || {};
     OGBIData.json.markers = OGBIData.json.markers || {};
+    OGBIData.json.bashLog = OGBIData.json.bashLog || {};
     OGBIData.json.missing = OGBIData.json.missing || {};
     OGBIData.json.notifications = OGBIData.json.notifications || {};
     OGBIData.json.targetTabs = OGBIData.json.targetTabs || { g: 1, s: 0 };
@@ -314,8 +315,13 @@ class OGBeyondInfinity {
       if (planet && this.current.id == planet.id) this.current.index = index;
     });
     // update current place resources in empire data for methods that need more updated data
-    const place = this.current.isMoon ? OGBIData.empire[this.current.index].moon : OGBIData.empire[this.current.index];
-    if (place) {
+    // The loop above only sets `current.index` when the current id is in the cached
+    // empire; on a first load, or a page the planet bar is not in step with (chat),
+    // it stays undefined and the lookup is undefined - the unguarded `.moon` threw
+    // out of start() there and cancelled every remaining boot step.
+    const currentFromEmpire = OGBIData.empire[this.current.index];
+    const place = this.current.isMoon ? currentFromEmpire?.moon : currentFromEmpire;
+    if (place && resourcesBar?.resources) {
       ["metal", "crystal", "deuterium"].forEach((res) => (place[res] = Math.floor(resourcesBar.resources[res].amount)));
     }
 
@@ -548,6 +554,11 @@ class OGBeyondInfinity {
         OGBIData.json.universeName = xml.querySelector("name").innerHTML;
         OGBIData.json.universeDomain = xml.querySelector("domain").innerHTML;
         OGBIData.json.topScore = Number(xml.querySelector("topScore").innerHTML);
+        // Bashing rule (AGENTS-independent, OGame's own rule): `bashlimit` is the number
+        // of attacks allowed per planet or moon per 24h and is NOT always 6 - some
+        // universes run 20. `bashingSystemEnabled` is 0 where the rule is off entirely.
+        OGBIData.json.bashLimit = Number(xml.querySelector("bashlimit")?.innerHTML) || 6;
+        OGBIData.json.bashingSystemEnabled = xml.querySelector("bashingSystemEnabled")?.innerHTML != 0;
         OGBIData.json.speed = Number(xml.querySelector("speed").innerHTML);
         OGBIData.json.speedResearch =
           Number(xml.querySelector("speed").innerHTML) * Number(xml.querySelector("researchDurationDivisor").innerHTML);

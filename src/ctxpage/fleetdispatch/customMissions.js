@@ -66,7 +66,9 @@ const logger = getLogger("fleetdispatch");
 function customMissions(context) {
   if (
     context.page == "fleetdispatch" &&
-    fleetDispatcher.shipsOnPlanet?.find((x) => x.number > 0) !== undefined &&
+    // `fleetDispatcher` is null between OGame declaring it and assigning it - the
+    // optional chain below only covers the property, not the object.
+    fleetDispatcher?.shipsOnPlanet?.find((x) => x.number > 0) !== undefined &&
     !fleetDispatcher.isOnVacation
   ) {
     const getMissionClass = (mission) => {
@@ -75,7 +77,14 @@ function customMissions(context) {
       return "";
     };
 
+    // Same bail-out as `expedition()`: the column the buttons hang from is OGame's,
+    // and it is not on every fleet1 render. Without this the appendChild below threw
+    // "Cannot read properties of null" and took the rest of the wiring with it.
     let missionsDiv = document.querySelector("#allornone .secondcol");
+    if (!missionsDiv) {
+      logger.warn("#allornone .secondcol missing - custom missions not wired up");
+      return;
+    }
     const maxMissions = 5;
     let nbMissions = getOption("nbCustomMissions");
     if (nbMissions > maxMissions) nbMissions = maxMissions;
@@ -88,15 +97,20 @@ function customMissions(context) {
     let btnCollectProcessing = false;
 
     //get the real current id (planet or moon)
-    const currentFromEmpire = context.current.isMoon
-      ? OGBIData.empire.find((p) => p.id == context.current.id).moon
-      : OGBIData.empire.find((p) => p.id == context.current.id);
+    // The cached empire can be empty or stale on the first load of a page - the entry
+    // is then undefined and every read below throws.
+    const planetFromEmpire = OGBIData.empire.find((p) => p.id == context.current.id);
+    const currentFromEmpire = context.current.isMoon ? planetFromEmpire?.moon : planetFromEmpire;
+    if (!currentFromEmpire) {
+      logger.warn("current planet/moon not in the cached empire - custom missions not wired up");
+      return;
+    }
     const currentId = currentFromEmpire.id;
 
     //get the mirror id
     const mirrorId = context.current.isMoon
-      ? OGBIData.empire.find((p) => p.id == context.current.id) // if current is a moon => get planet id
-      : OGBIData.empire.find((p) => p.id == context.current.id).moon?.id ?? undefined; // if current is a planet having moon => get moon id, else get undefined
+      ? planetFromEmpire.id // if current is a moon => get planet id (was the whole planet object)
+      : planetFromEmpire.moon?.id ?? undefined; // if current is a planet having moon => get moon id, else get undefined
 
     //ensure everything is ready
     const everyThingIsReady = () => {
@@ -705,12 +719,18 @@ function customMissions(context) {
 function collect(context) {
   if (
     context.page == "fleetdispatch" &&
-    fleetDispatcher.shipsOnPlanet?.find((x) => x.number > 0) !== undefined &&
+    // See `customMissions()`: the object itself can be null, not just the property.
+    fleetDispatcher?.shipsOnPlanet?.find((x) => x.number > 0) !== undefined &&
     !fleetDispatcher.isOnVacation
   ) {
+    const buttonColumn = document.querySelector("#allornone .secondcol");
+    if (!buttonColumn) {
+      logger.warn("#allornone .secondcol missing - collect shortcut not wired up");
+      return;
+    }
     let cargoChoice = createDOM("div", { class: "ogk-collect-cargo" });
     cargoChoice.appendChild(createDOM("div", { class: "ogk-expedition-explain" }, Translator.translate(310)));
-    let btnCollect = document.querySelector("#allornone .secondcol").appendChild(
+    let btnCollect = buttonColumn.appendChild(
       createDOM("button", {
         class: `ogl-collect ${OGBIData.json.options.collect.mission == 4 ? "statio" : ""} ${
           OGBIData.json.options.collect.ship == 202

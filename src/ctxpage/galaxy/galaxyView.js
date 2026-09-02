@@ -18,6 +18,8 @@ import DateTime from "../../format/dateTime.js";
 import { toFormattedNumber } from "../../format/numbers.js";
 import planetType from "../../game/planetType.js";
 import { getSpyReport, estimateResourcesNow } from "../../store/spyReportCache.js";
+import { getBashStatus, isBashingSystemEnabled, pruneAttacks } from "../../store/bashLog.js";
+import { formatBashCountdown } from "../../game/bashing.js";
 
 const logger = getLogger("galaxyView");
 
@@ -114,6 +116,7 @@ function onGalaxyUpdate(context) {
     highlightTarget(context);
     scan(context);
     applyTargetClaims(context, galaxy, system);
+    renderBashingCounters();
   };
 
   let dc = displayContentGalaxy;
@@ -283,6 +286,83 @@ function addSpyReportHover() {
     const moonCell = row.querySelector(".cellMoon");
     if (moonCell && moonCell.children.length !== 0) attachSpyReportTooltip(moonCell, coords, planetType.moon);
   });
+}
+
+/**
+ * Bashing-rule counter: how often this position was attacked in the last 24h.
+ *
+ * OGame's rule allows a limited number of attacks per planet OR moon per rolling 24h
+ * window (`bashlimit` in serverData.xml - 6 by default, 20 in a few universes), and a
+ * planet and its moon are counted separately. The badge sits on the row the player is
+ * already looking at, tooltip carries the limit and when the count next drops.
+ *
+ * Source of the numbers is the fleet-dispatch hook, i.e. attacks sent from this browser
+ * only - so it is a lower bound and the tooltip says so. Nothing here queries the game
+ * (AGENTS.md 1.3 / 4), nothing attaches an attack action to a coordinate
+ * (AGENTS.md 1.5.1); it annotates rows the game itself drew.
+ */
+function renderBashingCounters() {
+  if (!getOption("bashingCounter")) return;
+  if (!isBashingSystemEnabled()) return;
+
+  const now = Date.now();
+  pruneAttacks(now);
+
+  document.querySelectorAll("#galaxyContent .galaxyRow.ctContentRow").forEach((row, indexInDom) => {
+    const posMatch = /^galaxyRow(\d+)$/.exec(row.id || "");
+    const pos = posMatch ? Number(posMatch[1]) : indexInDom + 1;
+    const coords = `${galaxy}:${system}:${pos}`;
+
+    attachBashBadge(row.querySelector(".cellPlanet"), coords, planetType.planet, now);
+    const moonCell = row.querySelector(".cellMoon");
+    if (moonCell && moonCell.children.length !== 0) attachBashBadge(moonCell, coords, planetType.moon, now);
+  });
+}
+
+function attachBashBadge(cell, coords, type, now) {
+  if (!cell) return;
+
+  // The galaxy view is re-rendered in place on every navigation, but a cached row can
+  // survive it, so an old badge is removed rather than stacked on.
+  cell.querySelector(".ogl-bash-badge")?.remove();
+
+  const status = getBashStatus(coords, type, now);
+  if (status.count <= 0) return;
+
+  cell.classList.add("ogl-bash-cell");
+  const badge = cell.appendChild(
+    createDOM("div", { class: `ogl-bash-badge ogl-bash-${status.level}` }, String(status.count))
+  );
+  badge.addEventListener("mouseover", () => tooltip(badge, buildBashTooltipContent(status, type), true, false, 50));
+}
+
+export function buildBashTooltipContent(status, type) {
+  const container = createDOM("div", { class: "ogl-bashTooltip" });
+
+  container.appendChild(createDOM("div", { class: "splitline" }, Translator.translate(368)));
+  container.appendChild(
+    createDOM(
+      "div",
+      {},
+      `${Translator.translate(type === planetType.moon ? 370 : 369)}: ${status.count}/${status.limit}`
+    )
+  );
+
+  if (status.remaining <= 0) {
+    container.appendChild(createDOM("div", { class: "ogl-bash-limit" }, Translator.translate(372)));
+  } else {
+    container.appendChild(createDOM("div", {}, `${Translator.translate(371)}: ${status.remaining}`));
+  }
+
+  if (status.resetAt) {
+    container.appendChild(
+      createDOM("div", {}, `${Translator.translate(373)}: ${formatBashCountdown(status.resetAt - Date.now())}`)
+    );
+  }
+
+  container.appendChild(createDOM("div", { class: "ogl-bash-note" }, Translator.translate(374)));
+
+  return container;
 }
 
 function attachSpyReportTooltip(cell, coords, type) {
