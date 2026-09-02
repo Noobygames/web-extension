@@ -7,6 +7,7 @@ import * as standardUnit from "../../../game/standardUnit.js";
 import { createDOM } from "../../../ui/dom.js";
 import { fleetCost } from "../../../game/fleetCost.js";
 import { toFormattedNumber } from "../../../format/numbers.js";
+import { confirmAttackFromReport } from "../../../store/bashLog.js";
 
 class FightMessagesAnalyzer {
   #logger;
@@ -151,6 +152,45 @@ class FightMessagesAnalyzer {
     this.#addStandardUnit(combats[msgId], message);
   }
 
+  /**
+   * Feeds the bashing counter from a battle report.
+   *
+   * This is the half of the counter that does not depend on the fleet having been sent
+   * from this browser: the report is in the inbox whichever device launched it, so
+   * opening the messages tab is what keeps a phone-played account's numbers honest.
+   * Runs on cached records too, so re-reading old reports backfills a cleared log.
+   *
+   * Skipped on purpose:
+   * - fights the account defended (`attacker !== true`) - being attacked is not bashing;
+   * - probe-only fights (`isProbes`) - those are espionage missions whose probes were
+   *   shot down, and espionage is exempt from the rule;
+   * - records cached before `attacker` was stored, where the side is unknown.
+   *
+   * Moon-destruction reports do count under the rule but arrive as their own message
+   * type, which no analyzer covers yet; those stay launch-only for now.
+   *
+   * `confirmAttackFromReport()` is idempotent per hashcode and drops anything outside
+   * the 24h window, so this runs on every render without inflating anything.
+   */
+  #recordBashing(combat) {
+    if (combat?.attacker !== true || combat.isProbes) return;
+
+    const coordinates = combat.coordinates;
+    if (!coordinates) return;
+
+    try {
+      confirmAttackFromReport(
+        `${coordinates.galaxy}:${coordinates.system}:${coordinates.position}`,
+        coordinates.planetType,
+        // `data-raw-timestamp` is epoch seconds, like everywhere else in the analyzers.
+        Number(combat.timestamp) * 1000,
+        combat.hashcode
+      );
+    } catch (error) {
+      this.#logger.warn("could not feed the bashing counter from a battle report", error);
+    }
+  }
+
   #getFight() {
     const messages = [];
 
@@ -193,6 +233,7 @@ class FightMessagesAnalyzer {
         message.classList.add("ogk-combat");
       }
 
+      this.#recordBashing(combats[msgId]);
       this.#addStandardUnit(combats[msgId], message);
       return;
     }
@@ -287,9 +328,15 @@ class FightMessagesAnalyzer {
       win: accountIsWinner,
       draw: isDraw,
       isProbes: isProbes,
+      // Which side the account was on. Only stored since the bashing counter needed it -
+      // an entry cached before that has it undefined, and #recordBashing() skips those
+      // rather than guessing which way round the fight was.
+      attacker: !accountIsDefender,
       loot: resources.map((obj) => obj.amount * (accountIsWinner ? 1 : -1)),
       losses,
     };
+
+    this.#recordBashing(combats[msgId]);
 
     if (combats[msgId].isProbes) {
       message.classList.add("ogk-combat-probes");

@@ -455,8 +455,9 @@ export default Object.freeze({
     371: "Kalan",
     372: "Limite ulaşıldı",
     373: "Sayaç şu sürede düşer",
-    374: "Yalnızca bu tarayıcıdan gönderilen saldırıları sayar",
+    374: "Başka cihazlardan gönderilen saldırıların da sayılması için savaş raporlarını aç",
     375: "Bashing sayacı",
     376: "Galaksi görünümünde bir gezegene veya aya son 24 saatte kaç kez saldırdığını gösterir (bashing kuralı).",
+    377: "uçuşta / henüz doğrulanmadı",
   },
 });

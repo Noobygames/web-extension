@@ -5,6 +5,7 @@ import { getPlayersHighscore, NAN_HIGHSCORE } from "./parsers/universe.highscore
 import { getPlanets } from "./parsers/universe.planets.js";
 import { DEFAULT_PLAYER, getPlayers } from "./parsers/universe.players.js";
 import { isUniverseExpired, setUniverseExpirationTTL } from "./services/universe.expirations.js";
+import { isExtensionContextInvalidated, isExtensionContextValid } from "../platform/extensionContext.js";
 
 const ptreLogger = getLogger("data-helper.ptre");
 
@@ -374,13 +375,22 @@ export class DataHelper {
       }
       this.saveData();
     } catch (err) {
-      ptreLogger.error("scan failed", err);
+      // Reloading the extension orphans the content scripts in already-open tabs; every
+      // chrome.* call below then throws "Extension context invalidated" until the page is
+      // reloaded. That is not a scan failure and needs no stack trace.
+      if (isExtensionContextInvalidated(err)) {
+        ptreLogger.warn("extension was reloaded - scan skipped until this page is reloaded");
+      } else {
+        ptreLogger.error("scan failed", err);
+      }
       return {};
     }
     return payload;
   }
 
   saveData() {
+    // See scan(): an orphaned content script cannot write anything any more.
+    if (!isExtensionContextValid()) return;
     chrome.storage.local.set({
       [`ogi-scanned-${this.universe}`]: JSON.stringify({
         scannedPlanets: this.scannedPlanets,
@@ -400,6 +410,9 @@ export class DataHelper {
       this._galaxyFlushTimer = null;
     }
     const logger = getLogger("galaxyStorage");
+    // Runs from a timer, so it outlives the call that scheduled it - and the extension
+    // may have been reloaded in between.
+    if (!isExtensionContextValid()) return;
     const key = `ogi-galaxy-${this.universe}`;
     let payload;
     try {

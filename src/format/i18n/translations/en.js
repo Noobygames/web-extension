@@ -455,8 +455,9 @@ export default Object.freeze({
     371: "Left",
     372: "Limit reached",
     373: "Counter drops in",
-    374: "Only counts attacks sent from this browser",
+    374: "Open your battle reports to also count attacks sent from other devices",
     375: "Bashing counter",
     376: "Shows in galaxy view how often you attacked a planet or moon in the last 24h (OGame's bashing rule).",
+    377: "in flight / not yet confirmed",
   },
 });

@@ -360,6 +360,13 @@ export function buildBashTooltipContent(status, type) {
     );
   }
 
+  // Entries with no battle report behind them yet - normally fleets still in flight.
+  if (status.pending > 0) {
+    container.appendChild(
+      createDOM("div", { class: "ogl-bash-note" }, `${status.pending} ${Translator.translate(377)}`)
+    );
+  }
+
   container.appendChild(createDOM("div", { class: "ogl-bash-note" }, Translator.translate(374)));
 
   return container;

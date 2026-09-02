@@ -155,6 +155,10 @@ export function createChromeStub() {
 
   return {
     runtime: {
+      // A live content script always has one; it is undefined only when the extension
+      // was reloaded under an open page, which `isExtensionContextValid()` reads as
+      // "stop calling chrome.*".
+      id: "ogi-test-id",
       getURL: (path) => `chrome-extension://ogi-test-id/${path.replace(/^\.?\//, "")}`,
       sendMessage: (message, callback) => {
         calls.sendMessage.push(message);

@@ -455,8 +455,9 @@ export default Object.freeze({
     371: "Restantes",
     372: "Limite atingido",
     373: "O contador cai em",
-    374: "Conta apenas ataques enviados deste navegador",
+    374: "Abra seus relatórios de combate para contar também ataques enviados de outros dispositivos",
     375: "Contador de bashing",
     376: "Mostra na visão da galáxia quantas vezes você atacou um planeta ou lua nas últimas 24h (regra de bashing).",
+    377: "em voo / ainda não confirmados",
   },
 });

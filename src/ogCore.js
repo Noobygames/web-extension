@@ -315,10 +315,8 @@ class OGBeyondInfinity {
       if (planet && this.current.id == planet.id) this.current.index = index;
     });
     // update current place resources in empire data for methods that need more updated data
-    // The loop above only sets `current.index` when the current id is in the cached
-    // empire; on a first load, or a page the planet bar is not in step with (chat),
-    // it stays undefined and the lookup is undefined - the unguarded `.moon` threw
-    // out of start() there and cancelled every remaining boot step.
+    // `current.index` stays undefined when the current id is not in the cached empire
+    // (first load, chat page) - the unguarded `.moon` then threw out of start().
     const currentFromEmpire = OGBIData.empire[this.current.index];
     const place = this.current.isMoon ? currentFromEmpire?.moon : currentFromEmpire;
     if (place && resourcesBar?.resources) {

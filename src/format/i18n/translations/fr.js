@@ -455,8 +455,9 @@ export default Object.freeze({
     371: "Restantes",
     372: "Limite atteinte",
     373: "Le compteur baisse dans",
-    374: "Ne compte que les attaques envoyées depuis ce navigateur",
+    374: "Ouvrez vos rapports de combat pour compter aussi les attaques envoyées depuis d'autres appareils",
     375: "Compteur de bashing",
     376: "Affiche dans la vue galaxie combien de fois vous avez attaqué une planète ou une lune ces dernières 24h (règle de bashing).",
+    377: "en vol / pas encore confirmées",
   },
 });

@@ -455,8 +455,9 @@ export default Object.freeze({
     371: "Verbleibend",
     372: "Limit erreicht",
     373: "Zähler sinkt in",
-    374: "Zählt nur Angriffe aus diesem Browser",
+    374: "Öffne deine Kampfberichte, damit auch Angriffe von anderen Geräten gezählt werden",
     375: "Bashing-Zähler",
     376: "Zeigt in der Galaxieansicht, wie oft du einen Planeten oder Mond in den letzten 24h angegriffen hast (Bashing-Regel).",
+    377: "im Flug / noch nicht bestätigt",
   },
 });
