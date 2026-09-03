@@ -20,7 +20,9 @@ const browser = setupBrowser({
 });
 
 const OGBIData = (await import("../../src/store/OGBIData.js")).default;
-const { calcNeededShips, selectBestCargoShip } = await import("../../src/ctxpage/fleetdispatch/index.js");
+const { calcNeededShips, selectBestCargoShip, correctCargoCount } = await import(
+  "../../src/ctxpage/fleetdispatch/index.js"
+);
 
 test.after(() => {
   delete globalThis.fleetDispatcher;
@@ -215,4 +217,129 @@ test("selectBestCargoShip does nothing when there are no ships on the planet", (
   selectBestCargoShip(CONTEXT);
 
   assert.deepEqual(selected, []);
+});
+
+// --------------------------------------------------------------------------
+// correcting the ship count against the game's own capacity
+// --------------------------------------------------------------------------
+
+/**
+ * The same page, plus the cargo total OGame itself reports.
+ *
+ * `realPerShip` is what one ship truly carries - the number the game knows and the
+ * store's estimate does not, because `shipData.js` only applies the Hyperspace and
+ * Miner bonuses. In a lifeform universe the real figure is higher still, and every
+ * bonus the extension has not been taught leaves the estimate generous and the count
+ * short. That is the shape of the bug this covers.
+ */
+function pageWithCapacity({ realPerShip, shipsOnPlanet, filled, preselected = 0 }) {
+  const selected = fleetDispatchPage({
+    metal: 100_000_000,
+    crystal: 100_000_000,
+    deuterium: 100_000_000,
+    shipsOnPlanet,
+    filled,
+  });
+
+  let chosen = 0;
+  const inner = globalThis.fleetDispatcher.selectShip;
+  globalThis.fleetDispatcher.selectShip = (id, amount) => {
+    chosen = amount;
+    inner(id, amount);
+  };
+  // `preselected` stands for cargo picked before this call - it keeps its capacity when
+  // the helper selects on top of it, which is the whole point of the parameter.
+  globalThis.fleetDispatcher.getCargoCapacity = () => (preselected + chosen) * realPerShip;
+
+  return selected;
+}
+
+test("the ship count is raised when the game says the estimate does not fit", () => {
+  withStore();
+  // The store thinks a large cargo carries 25.000; the game says 20.000.
+  const selected = pageWithCapacity({
+    realPerShip: 20_000,
+    shipsOnPlanet: [{ id: 203, number: 500 }],
+    filled: { metal: "2.000.000", crystal: "0", deuterium: "0" },
+  });
+
+  selectBestCargoShip(CONTEXT, 203);
+
+  // 2.000.000 / 25.000 = 80 on the estimate, but 80 ships only hold 1.600.000.
+  assert.deepEqual(selected[0], [203, 80], "the estimate is selected first");
+  assert.deepEqual(selected.at(-1), [203, 100], "then corrected to what actually fits");
+});
+
+test("a selection that already fits is left exactly as it was", () => {
+  withStore();
+  // The game is more generous than the estimate - no reason to touch anything.
+  const selected = pageWithCapacity({
+    realPerShip: 30_000,
+    shipsOnPlanet: [{ id: 203, number: 500 }],
+    filled: { metal: "2.000.000", crystal: "0", deuterium: "0" },
+  });
+
+  selectBestCargoShip(CONTEXT, 203);
+
+  assert.equal(selected.length, 1, "selected once, never corrected");
+  assert.deepEqual(selected[0], [203, 80]);
+});
+
+test("the correction never asks for more ships than the planet has", () => {
+  withStore();
+  const selected = pageWithCapacity({
+    realPerShip: 20_000,
+    shipsOnPlanet: [{ id: 203, number: 90 }],
+    filled: { metal: "2.000.000", crystal: "0", deuterium: "0" },
+  });
+
+  selectBestCargoShip(CONTEXT, 203);
+
+  // 100 would fit the cargo, but only 90 exist - and `selectShips` clamps to that.
+  assert.deepEqual(selected.at(-1), [203, 90]);
+});
+
+test("cargo already selected before the call counts towards the total", () => {
+  withStore();
+  const selected = pageWithCapacity({
+    realPerShip: 10_000,
+    shipsOnPlanet: [{ id: 203, number: 500 }],
+    filled: { metal: "2.000.000", crystal: "0", deuterium: "0" },
+    // 20 ships were already picked, carrying 200.000 of the 2.000.000.
+    preselected: 20,
+  });
+
+  selectBestCargoShip(CONTEXT, 203);
+
+  // 1.800.000 left over 10.000 a ship = 180. Counting the 200.000 twice would ask for
+  // 200 and leave the player wondering why 20 cargoes are flying empty.
+  assert.deepEqual(selected.at(-1), [203, 180]);
+});
+
+test("a dispatcher without a cargo total is left to the estimate", () => {
+  withStore();
+  // Older dispatcher, or a page state that does not expose it. Silently doing nothing
+  // is the right answer - the estimate is what the extension had before this existed.
+  const selected = fleetDispatchPage({
+    metal: 100_000_000,
+    shipsOnPlanet: [{ id: 203, number: 500 }],
+    filled: { metal: "2.000.000", crystal: "0", deuterium: "0" },
+  });
+
+  assert.doesNotThrow(() => selectBestCargoShip(CONTEXT, 203));
+  assert.deepEqual(selected.at(-1), [203, 80]);
+});
+
+test("correctCargoCount refuses to shrink a selection", () => {
+  withStore();
+  pageWithCapacity({
+    realPerShip: 100_000,
+    shipsOnPlanet: [{ id: 203, number: 500 }],
+    filled: { metal: "0", crystal: "0", deuterium: "0" },
+    preselected: 80,
+  });
+
+  // Far more capacity than needed - the count stays where it is rather than dropping,
+  // because the player may have chosen it on purpose.
+  assert.equal(correctCargoCount(CONTEXT, 203, 80, 1_000_000, { 203: 500 }, 0), 80);
 });

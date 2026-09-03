@@ -77,11 +77,20 @@ test("the page-specific code is in chunks, not in the file every page loads", ()
   // of refactoring.md moved the fleet-dispatch page, the statistics popup, the
   // settings dialog, the message analyzers and the build-page detail panel behind
   // dynamic imports; this is the number that says it stayed that way. It is a
-  // ceiling, not a target - it should only ever move down.
-  // 512_000 is the phase's own exit criterion, 500 KB, as a number a test can fail
-  // on. The entry sits just under it: getting there took the five page chunks plus
-  // the per-language translation tables, so there is no slack left for a static
-  // import that "is only a few KB".
+  // ceiling, not a target.
+  //
+  // 512_000 is the phase's own exit criterion, 500 KB, as a number a test can fail on.
+  //
+  // The upgrade plans found this budget already spent: the entry had crept to within
+  // 574 bytes of the cap, so any feature touching a module the boot path already
+  // imports failed here however little it added. Rather than keep raising the number,
+  // `ctxpage/keyboard/index.js` (15 KB of shortcuts that nothing on screen waits for)
+  // moved behind a dynamic import, which paid for the feature twice over - the entry is
+  // now ~7 KB smaller than before it.
+  //
+  // Do the same next time. Measured candidates, all still in the entry:
+  // `ctxpage/stalk/*` (43.5 KB, but woven into galaxy/messages/markers),
+  // `ctxpage/chat/index.js` (18.5 KB), `game/itemImageID.js` (10.9 KB).
   const entryBytes = bytesOf("ogCore.js");
   assert.ok(entryBytes < 512_000, `the page entry grew back to ${(entryBytes / 1024).toFixed(0)} KB`);
 

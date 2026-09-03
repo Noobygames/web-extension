@@ -6,6 +6,7 @@ import { tooltip } from "../../ui/tooltip.js";
 import OGBIObserver from "../../platform/observer.js";
 import flying from "../../ogame/fleetMovements.js";
 import Translator from "../../format/i18n/translate.js";
+import { loadChunk } from "../../platform/loadChunk.js";
 
 const needs = {
   ...OGBIData.needs,
@@ -67,6 +68,12 @@ function getNeedsResourceByCoords(coords, isMoon) {
 
   const needsTarget = isMoon ? needs?.[planetFound.id]?.moon : needs?.[planetFound.id]?.planet;
 
+  // A planet with nothing recorded at all threw here (`Object.values(undefined)`).
+  // Never reached before: every caller checked the bucket first, and the dispatch page
+  // only asked about a target that already had a lock. The upgrade-plan overview walks
+  // every planet in the empire, so it does reach it.
+  if (!needsTarget) return;
+
   if (Object.values(needsTarget).reduce((total, resource) => total + resource, 0) === 0) return;
 
   return needsTarget;
@@ -98,41 +105,30 @@ export function getNeedsByCoords(coords, isMoon) {
   };
 }
 
-export function append(coords, isMoon, resources) {
-  const planetFound = getPlanetByCoords(coords);
-
-  if (planetFound === null) return;
-
-  const needsTarget = getNeedsResourceByCoords(coords, isMoon);
-
-  const metal = Math.max((needsTarget?.metal || 0) + (resources?.metal || 0), 0);
-  const crystal = Math.max((needsTarget?.crystal || 0) + (resources?.crystal || 0), 0);
-  const deuterium = Math.max((needsTarget?.deuterium || 0) + (resources?.deuterium || 0), 0);
-
-  if (isMoon) {
-    needs[planetFound.id].moon = {
-      metal,
-      crystal,
-      deuterium,
-    };
-  } else {
-    needs[planetFound.id].planet = {
-      metal,
-      crystal,
-      deuterium,
-    };
-  }
-
-  OGBIData.needs = needs;
+/** @param {{metal?: number, crystal?: number, deuterium?: number}} [side] */
+function sumOf(side) {
+  return (side?.metal || 0) + (side?.crystal || 0) + (side?.deuterium || 0);
 }
 
-export function lock(coords, isMoon, needed) {
+/**
+ * Sets what one side is short of, and redraws its icon.
+ *
+ * A derived value now: `store/upgradePlans.js` holds the upgrades the player planned
+ * and `ctxpage/upgradePlans/sync.js` prices them and calls this. Replaces
+ * `lock()`/`append()`, which added to a running total nobody could break down again,
+ * and which disagreed about the key - `lock()` created the bucket under the moon's own
+ * id, `append()` wrote to the planet's.
+ *
+ * @param {string} coords
+ * @param {boolean} isMoon
+ * @param {{metal?: number, crystal?: number, deuterium?: number}} resources
+ */
+export function setNeeds(coords, isMoon, resources) {
   const planetFound = getPlanetByCoords(coords);
 
   if (planetFound === null) return;
 
-  const planet = isMoon ? planetFound.moon : planetFound;
-  const planetId = planet?.planetID || planet.id;
+  const planetId = planetFound.id;
 
   if (!needs[planetId]) {
     needs[planetId] = {
@@ -143,9 +139,39 @@ export function lock(coords, isMoon, needed) {
     };
   }
 
-  append(coords, isMoon, needed);
+  const side = {
+    metal: Math.max(0, Math.round(resources?.metal || 0)),
+    crystal: Math.max(0, Math.round(resources?.crystal || 0)),
+    deuterium: Math.max(0, Math.round(resources?.deuterium || 0)),
+  };
 
-  displayLocks(planet, isMoon);
+  needs[planetId][isMoon ? "moon" : "planet"] = side;
+
+  // A plan that has been built asks for nothing, and a zero row is not "nothing" - it
+  // is a row that survives every reload and slowly fills the store with one entry per
+  // planet the player ever planned on. Once both sides are empty the whole bucket goes,
+  // which is also what makes `getNeedsByCoords()` answer undefined again.
+  if (sumOf(needs[planetId].planet) === 0 && sumOf(needs[planetId].moon) === 0) {
+    delete needs[planetId];
+  }
+
+  OGBIData.needs = needs;
+
+  displayLocks(isMoon ? planetFound.moon : planetFound, isMoon);
+}
+
+/**
+ * Deletes the plan a lock icon stands for, not just the cached total.
+ *
+ * The plan itself needs the cost tables, which are chunk-side (see `setNeeds` above),
+ * so this reaches for them on demand. The caller has already cleared the cache, which
+ * is what makes the icon disappear straight away; without this the next sync would
+ * price the plan again and bring it back.
+ */
+function clearPlan(coords, isMoon) {
+  loadChunk("upgradePlans", () => import("../upgradePlans/sync.js")).then((module) =>
+    module?.clearPlanFor(coords, isMoon)
+  );
 }
 
 export function displayLocksByCoords(coords, isMoon) {
@@ -205,11 +231,13 @@ function displayLocks(planet, isMoon) {
 
         if (needMoon && condition(needMoon)) {
           needs[key].moon = {};
+          clearPlan(need.coords, true);
           displayLocks(getPlanetByCoords(need.coords).moon, true);
         }
 
         if (needPlanet && condition(needPlanet)) {
           needs[key].planet = {};
+          clearPlan(need.coords, false);
           displayLocks(getPlanetByCoords(need.coords), false);
         }
 
@@ -270,11 +298,13 @@ function createLockIcon(planet, isMoon) {
   const deleteBtn = tooltipContent.appendChild(createDOM("div", { style: "width: 75px;", class: "icon icon_against" }));
   deleteBtn.addEventListener("click", () => {
     if (!isMoon) {
-      OGBIData.needs[planetId].planet = {};
+      needs[planetId].planet = {};
     } else {
-      OGBIData.needs[planetId].moon = {};
+      needs[planetId].moon = {};
     }
 
+    clearPlan(coords, isMoon);
+    OGBIData.needs = needs;
     OGBIData.needSync = true;
     document.querySelector(".ogl-tooltip .close-tooltip").click();
     displayLocks(planet, isMoon);
@@ -298,7 +328,9 @@ function createLockIcon(planet, isMoon) {
       system: coords[1],
       position: coords[2],
       type: isMoon ? planetType.moon : planetType.planet,
-      mission: 1,
+      // Transport. Was a literal 1, OGame's attack - not a mission you can fly to your
+      // own planet. A number, like `oglMode`: the entry has no room for another import.
+      mission: 3,
       oglMode: 2,
     });
 

@@ -293,6 +293,20 @@ class OGBIData {
     this.#saveHot();
   }
 
+  /**
+   * The structured upgrade plans `needs` is derived from - which technology, from
+   * which level to which, per planet and moon. `store/upgradePlans.js` owns the shape.
+   */
+  get upgradePlans() {
+    return this.#hot.upgradePlans;
+  }
+
+  set upgradePlans(upgradePlans) {
+    this.#hot.upgradePlans = upgradePlans;
+
+    this.#saveHot();
+  }
+
   get lastSentFleet() {
     return this.#hot.lastSentFleet;
   }

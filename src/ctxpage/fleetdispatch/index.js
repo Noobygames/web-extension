@@ -573,6 +573,46 @@ function overwriteFleetDispatcher(context, functionName, param, callback, callba
   };
 }
 
+/** The game's own cargo total, or 0 where the dispatcher does not offer one. */
+function cargoCapacityNow() {
+  return typeof fleetDispatcher.getCargoCapacity === "function" ? fleetDispatcher.getCargoCapacity() : 0;
+}
+
+/**
+ * Raises the ship count until the game itself says the cargo fits.
+ *
+ * `calcNeededShips()` divides by `OGBIData.json.ships[id].cargoCapacity`, which is the
+ * base capacity with the two bonuses `shipData.js` knows about - Hyperspace Technology
+ * and the Miner class. A lifeform universe adds more on top of that, and any capacity
+ * bonus the extension has not been taught leaves the estimate too generous and the ship
+ * count short. The player then has to correct it by hand, which is exactly what this
+ * exists to stop.
+ *
+ * `fleetDispatcher.getCargoCapacity()` is the game's own arithmetic and knows every
+ * bonus there is. Measuring what the ships just selected actually added gives the true
+ * capacity per ship, so the count is fixed from the real number rather than from a
+ * better guess. Only ever upward - a selection that already fits is left alone.
+ *
+ * @param {number} selectedCount how many were selected on the estimate
+ * @param {number} resources what has to fit
+ * @param {Record<string, number>} onPlanet cargo ships available, by id
+ * @param {number} capacityBefore cargo capacity of whatever was selected beforehand
+ * @returns {number} the count now selected
+ */
+function correctCargoCount(context, shipId, selectedCount, resources, onPlanet, capacityBefore) {
+  const capacity = cargoCapacityNow();
+
+  if (selectedCount <= 0 || capacity >= resources) return selectedCount;
+
+  const perShip = (capacity - capacityBefore) / selectedCount;
+  if (!(perShip > 0)) return selectedCount;
+
+  const corrected = Math.min(Math.ceil((resources - capacityBefore) / perShip), onPlanet[shipId] ?? selectedCount);
+  if (corrected <= selectedCount) return selectedCount;
+
+  return selectShips(context, shipId, corrected);
+}
+
 function selectBestCargoShip(context, preferredShipId = null) {
   if (fleetDispatcher.currentPage == "fleet1" && fleetDispatcher.shipsOnPlanet.length != 0) {
     let metalAvailable = Math.max(0, fleetDispatcher.metalOnPlanet);
@@ -617,7 +657,11 @@ function selectBestCargoShip(context, preferredShipId = null) {
       }
     });
     if (enoughCargo) {
+      // What is already selected, so the correction below can tell that apart from what
+      // the ships it is about to pick will add.
+      const capacityBefore = cargoCapacityNow();
       selectShips(context, selectedCargoShip, neededShips);
+      correctCargoCount(context, selectedCargoShip, neededShips, resources, cargoShipsOnPlanet, capacityBefore);
     } else {
       cargoIds.forEach((ship) => {
         if (cargoShipsOnPlanet[ship]) {
@@ -649,6 +693,7 @@ export {
   calcNeededShips,
   selectShips,
   selectBestCargoShip,
+  correctCargoCount,
   onFleetSent,
   initUnionCombat,
   overwriteFleetDispatcher,

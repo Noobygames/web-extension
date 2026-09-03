@@ -2282,6 +2282,35 @@ button.build-it_premium:hover {
   padding: 70px 0;
 }
 
+/* The control that puts the level range on screen into the upgrade plans. A padlock on
+   its own reads as "lock", not "plan", so it carries a badge - and lights up once the
+   technology is in the plan, which is the only feedback the click gives here. */
+.ogl-planTech {
+  position: relative;
+}
+
+.ogl-planTech:after {
+  background: #1b1b1b;
+  border: 1px solid #6f9fc8;
+  border-radius: 50%;
+  color: #6f9fc8;
+  content: "+";
+  font-size: 10px;
+  height: 12px;
+  line-height: 11px;
+  position: absolute;
+  right: -6px;
+  text-align: center;
+  top: -6px;
+  width: 12px;
+}
+
+.ogl-planTech.ogl-active:after {
+  background: #6f9fc8;
+  color: #1b1b1b;
+  content: "✓";
+}
+
 .messageDetails .loot-row .loot-item .loot-details {
   justify-content: left;
 }
@@ -4040,6 +4069,215 @@ div[data-raw-depletion="4"] + .msgHead a.txt_link {
 .ogl-raidList {
   min-width: 460px;
   max-width: 90vw;
+}
+
+/* Upgrade plans: sidebar button and panel. */
+.ogl-upgradePlans-icon {
+  cursor: pointer;
+  height: 100%;
+  position: relative;
+  width: 100%;
+  background: #1b1b1b !important;
+}
+
+.ogl-upgradePlans-icon:before {
+  background: #000;
+  border-radius: 3px;
+  border: 3px solid #6f9fc8;
+  border-bottom-width: 8px;
+  box-sizing: border-box;
+  content: "";
+  height: 15px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 15px;
+}
+
+.ogl-upgradePlans {
+  min-width: 520px;
+  max-width: 90vw;
+}
+
+.ogl-upgradePlans h2 {
+  margin: 0 0 8px;
+}
+
+.ogl-upgradePlans-source {
+  color: #9099a3;
+  margin-bottom: 6px;
+}
+
+.ogl-upgradePlans-coord {
+  margin-left: 4px;
+  text-align: center;
+  width: 42px;
+}
+
+.ogl-upgradePlans-sourceValue {
+  color: #cbd3db;
+  margin-left: 8px;
+}
+
+.ogl-upgradePlans-empty {
+  color: #9099a3;
+  padding: 12px 0;
+  text-align: center;
+}
+
+.ogl-upgradePlans-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.ogl-upgradePlans-table th,
+.ogl-upgradePlans-table td {
+  border-bottom: 1px solid #2b2b2b;
+  padding: 3px 6px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ogl-upgradePlans-table th:first-child,
+.ogl-upgradePlans-table td:first-child {
+  text-align: left;
+}
+
+.ogl-upgradePlans-table .ogl-upgradePlans-short {
+  color: #d43635;
+}
+
+.ogl-upgradePlans-total td {
+  border-top: 1px solid #4b4b4b;
+  font-weight: bold;
+}
+
+.ogl-upgradePlans-details {
+  margin-top: 14px;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+.ogl-upgradePlans-planet {
+  margin-bottom: 12px;
+}
+
+.ogl-upgradePlans-planetName {
+  border-bottom: 1px solid #4b4b4b;
+  color: #cbd3db;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.ogl-upgradePlans-manual td {
+  color: #9099a3;
+}
+
+.ogl-upgradePlans-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0 4px;
+}
+
+.ogl-upgradePlans-chip {
+  background: #1b1b1b;
+  border: 1px solid #3d3d3d;
+  border-radius: 3px;
+  color: #6b7178;
+  cursor: pointer;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.ogl-upgradePlans-chip.ogl-active {
+  border-color: #6f9fc8;
+  color: #cbd3db;
+}
+
+.ogl-upgradePlans-filterHint {
+  color: #ca8e4c;
+  margin-bottom: 6px;
+}
+
+.ogl-upgradePlans-add {
+  align-items: center;
+  border-bottom: 1px solid #2b2b2b;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-bottom: 8px;
+}
+
+.ogl-upgradePlans-add select {
+  max-width: 190px;
+}
+
+.ogl-upgradePlans-level {
+  text-align: center;
+  width: 44px;
+}
+
+.ogl-upgradePlans-addLabel {
+  color: #9099a3;
+}
+
+.ogl-upgradePlans-addBtn {
+  background: #1b1b1b;
+  border: 1px solid #6f9fc8;
+  border-radius: 3px;
+  color: #cbd3db;
+  cursor: pointer;
+  padding: 2px 10px;
+}
+
+.ogl-upgradePlans-addBtn:disabled {
+  border-color: #3d3d3d;
+  color: #6b7178;
+  cursor: default;
+}
+
+.ogl-upgradePlans-ok {
+  color: #5e8a5e;
+}
+
+.ogl-upgradePlans-covered td {
+  opacity: 0.75;
+}
+
+.ogl-upgradePlans-coveredMark {
+  color: #5cb85c;
+}
+
+.ogl-upgradePlans-submitted td {
+  color: #7fa87f;
+}
+
+.ogl-upgradePlans-badge {
+  color: #9099a3;
+}
+
+.ogl-upgradePlans-subtotal td {
+  border-top: 1px solid #3d3d3d;
+  color: #9099a3;
+  font-style: italic;
+}
+
+.ogl-upgradePlans-send {
+  display: inline-block;
+  height: 18px;
+  position: relative;
+  width: 18px;
+}
+
+.ogl-upgradePlans-send:before {
+  border: 5px solid transparent;
+  border-left-color: #6f9fc8;
+  content: "";
+  left: 6px;
+  position: absolute;
+  top: 4px;
 }
 
 .ogl-raidList .ogl-spyTableScroll {
@@ -10119,6 +10357,13 @@ body.no-commander .contentBoxBody {
 
 .ogl-bash-badge.ogl-bash-limit {
   background: #b34a4a;
+}
+
+/* Inactive owner: the count is still shown because it is true, but the bashing limit
+   does not apply to it, so it must not look like a warning. */
+.ogl-bash-badge.ogl-bash-exempt {
+  background: #3d4a56;
+  color: #b6c2cd;
 }
 
 .ogl-bashTooltip .ogl-bash-limit {

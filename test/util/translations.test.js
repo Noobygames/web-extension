@@ -93,3 +93,36 @@ test("translate.js keeps English static and the other five behind import()", () 
   }
   assert.ok(!source.includes("import(`"), "a path built from a variable splits into no chunk at all");
 });
+
+test("no key is written twice in the same table", () => {
+  // A duplicate is legal JavaScript - the last one silently wins - and every other
+  // assertion here reads the parsed object, so none of them can see it. It happens for
+  // real: a key-adding script run twice appends the whole block again, and the file
+  // then carries two copies of eleven strings that a later edit will only half update.
+  const dir = path.join(import.meta.dirname, "..", "..", "src", "format", "i18n", "translations");
+
+  for (const lang of Object.keys(tables)) {
+    const source = fs.readFileSync(path.join(dir, `${lang}.js`), "utf8");
+    const seen = new Map();
+    const duplicates = [];
+
+    // `  tech: {` / `  res: {` / `  text: {` open a block; keys are one per line under it.
+    let type = null;
+    for (const line of source.split("\n")) {
+      const opens = line.match(/^ {2}(\w+): \{/);
+      if (opens) {
+        type = opens[1];
+        continue;
+      }
+
+      const key = line.match(/^ {4}(\d+):/);
+      if (!key || !type) continue;
+
+      const id = `${type}.${key[1]}`;
+      if (seen.has(id)) duplicates.push(id);
+      seen.set(id, true);
+    }
+
+    assert.deepEqual(duplicates, [], `${lang}.js defines these keys more than once`);
+  }
+});

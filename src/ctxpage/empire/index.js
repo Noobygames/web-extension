@@ -3,6 +3,7 @@ import * as wait from "../../platform/wait.js";
 import Translator from "../../format/i18n/translate.js";
 import OGBIData from "../../store/OGBIData.js";
 import { pageSignal } from "../../platform/abort.js";
+import { loadChunk } from "../../platform/loadChunk.js";
 import { updateresourceDetail } from "../empireOverview/index.js";
 import ogiMode from "../../ogame/ogiMode.js";
 // Re-exported so ogCore.js keeps one import path per page, and so the split parts
@@ -274,6 +275,17 @@ function updateInfo(context) {
     context.setLoading(false);
     OGBIData.needsUpdate = false;
     document.querySelector(".spinner").remove();
+
+    // Fresh levels just landed, so this is the one moment a finished upgrade can be
+    // told from an unfinished one: `reconcile()` compares a plan's target against what
+    // the planet now owns. Without it a plan that is done keeps its lock icon in the
+    // planet bar until the player happens to open a build page or the plans panel.
+    //
+    // Fetched rather than imported: pricing the remaining levels needs the cost tables,
+    // ~93 KB the page entry cannot carry (see store/upgradePlans.js). This runs on an
+    // empire refresh only, not on every page load, and reads local storage - no request
+    // of its own (AGENTS.md 1.3, 4).
+    loadChunk("upgradePlans", () => import("../upgradePlans/sync.js")).then((module) => module?.refreshPlans());
   });
 }
 

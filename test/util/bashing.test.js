@@ -267,3 +267,44 @@ test("the countdown reads in hours and minutes, never negative", () => {
   assert.equal(formatBashCountdown(0), "0m");
   assert.equal(formatBashCountdown(-5000), "0m");
 });
+
+// --------------------------------------------------------------------------
+// the inactive exemption
+// --------------------------------------------------------------------------
+
+/**
+ * OGame's rule is "any given planet or moon owned by an **active** player". Attacks on
+ * an inactive player do not count towards the limit at all, so warning about one is
+ * warning about a limit that is not there.
+ *
+ * The count itself stays: it is a true statement about what the player did, and a
+ * counter that vanished the moment a target went inactive would read as a bug.
+ */
+
+test("an inactive owner is exempt, however many attacks are on the clock", () => {
+  const log = { "1:2:3": [{ t: Date.now() }, { t: Date.now() }, { t: Date.now() }] };
+  const status = bashStatus(log, "1:2:3", Date.now(), 3, true);
+
+  assert.equal(status.count, 3, "the count is unchanged - it happened");
+  assert.equal(status.exempt, true);
+  assert.equal(status.level, "exempt", "not 'limit', even at the limit");
+});
+
+test("without the flag the same log still reports the limit", () => {
+  const log = { "1:2:3": [{ t: Date.now() }, { t: Date.now() }, { t: Date.now() }] };
+
+  assert.equal(bashStatus(log, "1:2:3", Date.now(), 3).level, "limit");
+  assert.equal(bashStatus(log, "1:2:3", Date.now(), 3).exempt, false);
+});
+
+test("an exempt position with no attacks on it is still 'none'", () => {
+  // Nothing to say about a target that has not been touched, exempt or not.
+  assert.equal(bashLevel(0, 6, true), "none");
+});
+
+test("bashLevel reports exempt ahead of every other verdict", () => {
+  assert.equal(bashLevel(1, 6, true), "exempt", "would have been 'ok'");
+  assert.equal(bashLevel(5, 6, true), "exempt", "would have been 'warn'");
+  assert.equal(bashLevel(6, 6, true), "exempt", "would have been 'limit'");
+  assert.equal(bashLevel(6, 6, false), "limit", "and the flag is what makes the difference");
+});

@@ -9,6 +9,8 @@ import AllianceClass from "../../game/allianceClass.js";
 import PlayerClass from "../../game/playerClass.js";
 import shipEnum from "../../game/ship.js";
 import * as needsUtil from "../planetbar/needs.js";
+import { addEntry, addManual, planFor } from "../../store/upgradePlans.js";
+import { refreshPlans, syncNeeds } from "../upgradePlans/sync.js";
 import * as time from "../../format/time.js";
 import {
   ENGINEER_ENERGY_BONUS,
@@ -59,6 +61,11 @@ function technoDetail(context) {
       : false;
     let that = this;
     let xhrAbortSignal = null;
+
+    // A build page is where levels change, so it is where a plan goes out of date -
+    // and this chunk has the cost tables loaded anyway, which the page entry does not.
+    // Reads local storage and nothing else: no request, no timer (AGENTS.md 1.3, 4).
+    refreshPlans();
     let updateResearchDetails = (technoId, baselvl, tolvl) => {
       let object = context.current.isMoon
         ? OGBIData.json.empire[context.current.index].moon
@@ -571,12 +578,17 @@ function technoDetail(context) {
       } else {
         document.querySelector(".ogk-titles").children[2].textContent = Translator.translate(39);
       }
+      // The panel counts `baselvl` as the level being built, the plan store counts
+      // `from` as the level already owned - hence the -1. `upgradeCostRange()`, which
+      // prices the entry from then on, reproduces exactly the `resSum` above;
+      // `test/util/upgradeCost.test.js` pins the two against each other.
       lockListener = () => {
-        needsUtil.lock(context.current.coords, context.current.isMoon, {
-          metal: resSum[0],
-          crystal: resSum[1],
-          deuterium: resSum[2],
+        addEntry(context.current.coords, context.current.isMoon, {
+          technoId,
+          from: baselvl - 1,
+          to: tolvl,
         });
+        syncNeeds(context.current.coords, context.current.isMoon);
       };
     };
     technologyDetails.show = function (technologyId) {
@@ -649,9 +661,13 @@ function technoDetail(context) {
           let infoDiv = document
             .querySelector("#technologydetails .sprite_large")
             .appendChild(createDOM("div", { class: "ogk-tech-controls" }));
-          lock = infoDiv.appendChild(createDOM("a", { class: "icon icon_lock", title: Translator.translate(314) }));
+          lock = infoDiv.appendChild(
+            createDOM("a", { class: "icon icon_lock ogl-planTech", title: Translator.translate(405) })
+          );
           lock.addEventListener("click", () => {
             lockListener();
+            const pile = planFor(context.current.coords, context.current.isMoon).manual;
+            lock.classList.toggle("ogl-active", (pile.metal || 0) + (pile.crystal || 0) + (pile.deuterium || 0) > 0);
           });
           let helpNode = document.querySelector(".txt_box .details").cloneNode(true);
           infoDiv.appendChild(helpNode);
@@ -765,12 +781,16 @@ function technoDetail(context) {
                 });
               }
             }
+            // Ships and defences have no level, so they cannot be a plan entry - they
+            // go on the free-hand pile, which is what a plan entry's cost lands beside.
+            // Additive, the way the old `lock()` was: clicking twice asks for twice.
             lockListener = () => {
-              needsUtil.lock(context.current.coords, context.current.isMoon, {
+              addManual(context.current.coords, context.current.isMoon, {
                 metal: resSum[0],
                 crystal: resSum[1],
                 deuterium: resSum[2],
               });
+              syncNeeds(context.current.coords, context.current.isMoon);
             };
           };
           if (input) {
@@ -824,10 +844,24 @@ function technoDetail(context) {
           let lvlFromTo = titleDiv.appendChild(createDOM("div"));
           titleDiv.appendChild(createDOM("div", {}, Translator.translate(39)));
           let helpNode = document.querySelector(".txt_box .details").cloneNode(true);
-          lock = infoDiv.appendChild(createDOM("a", { class: "icon icon_lock", title: Translator.translate(314) }));
+          lock = infoDiv.appendChild(
+            createDOM("a", { class: "icon icon_lock ogl-planTech", title: Translator.translate(314) })
+          );
+          // A padlock says nothing about upgrade plans. The `+` badge and the lit state
+          // do: lit means this technology is already in the plan for this planet, which
+          // is also the only feedback a click otherwise gives - the panel it feeds is
+          // somewhere else entirely.
+          let markPlanned = () => {
+            const planned = planFor(context.current.coords, context.current.isMoon).entries.some(
+              (entry) => Number(entry.technoId) === Number(technologyId)
+            );
+            lock.classList.toggle("ogl-active", planned);
+          };
           lock.addEventListener("click", () => {
             lockListener();
+            markPlanned();
           });
+          markPlanned();
           let timeDiv = document.querySelector(".build_duration time");
           let initTime = time.getTimeFromISOString(timeDiv.getAttribute("datetime"));
           let metalCost = document.querySelector(".costs .metal")

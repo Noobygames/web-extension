@@ -1,6 +1,7 @@
 import * as DOM from "../../ui/dom.js";
 import Translator from "../../format/i18n/translate.js";
 import OGBIData from "../../store/OGBIData.js";
+import { readBuildQueues } from "../../ogame/buildQueue.js";
 import AllianceClass from "../../game/allianceClass.js";
 import PlayerClass from "../../game/playerClass.js";
 import {
@@ -911,6 +912,19 @@ function updateProductionProgress(context, canCheckFromEmpire = false) {
       delete OGBIData.json.lfResearchProgress[coords];
     }
   }
+
+  // What the build list is holding behind the running order - unpaid, so it belongs in
+  // the upgrade plans. Recorded per planet/moon side, the way options.kept is keyed, so
+  // it can be priced from any page. The key is created on the spot: a store written
+  // before this version has none.
+  const queueKey = context.current.coords + (context.current.isMoon ? "M" : "P");
+  const queues = readBuildQueues();
+  const buildQueue = OGBIData.json.buildQueue || {};
+
+  if (Object.keys(queues).length) buildQueue[queueKey] = queues;
+  else delete buildQueue[queueKey];
+
+  OGBIData.json.buildQueue = buildQueue;
 
   updateProgressIndicators();
 

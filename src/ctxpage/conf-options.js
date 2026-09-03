@@ -91,6 +91,26 @@ const _options = {
       type: 1,
     },
   },
+  /**
+   * Where transports for the upgrade plans start from - the player's RSS moon.
+   * `useCollectTarget` follows `collect.target` above, which for most accounts is the
+   * same place; turning it off uses the coordinates stored here instead.
+   */
+  upgradePlanSource: {
+    useCollectTarget: true,
+    galaxy: 0,
+    system: 0,
+    position: 0,
+    type: 3,
+  },
+  /** Which categories the upgrade-plan panel lists. A view filter, nothing else. */
+  upgradePlanFilter: {
+    supplies: true,
+    facilities: true,
+    research: true,
+    lfbuildings: true,
+    lfresearch: true,
+  },
   customMissions: {},
   nbCustomMissions: 0,
   expedition: {
@@ -123,6 +143,15 @@ export function initConfOptions(options) {
   const collect = options?.collect || _options.collect;
   delete options["collect"];
 
+  // Merged on its own for the same reason as `collect`: Object.assign below is
+  // shallow, so a stored object would replace the defaults wholesale and any key
+  // added here in a later release would come back undefined.
+  const upgradePlanSource = options?.upgradePlanSource || _options.upgradePlanSource;
+  delete options["upgradePlanSource"];
+
+  const upgradePlanFilter = options?.upgradePlanFilter || _options.upgradePlanFilter;
+  delete options["upgradePlanFilter"];
+
   const customMissions = options?.customMissions || _options.customMissions;
   delete options["customMissions"];
 
@@ -131,6 +160,8 @@ export function initConfOptions(options) {
 
   Object.assign(_options, options);
   Object.assign(_options.collect, collect);
+  Object.assign(_options.upgradePlanSource, upgradePlanSource);
+  Object.assign(_options.upgradePlanFilter, upgradePlanFilter);
 
   Object.assign(_options.customMissions, customMissions);
   Object.assign(_options.expedition, expedition);

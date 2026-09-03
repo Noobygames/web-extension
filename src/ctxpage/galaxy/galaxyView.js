@@ -312,21 +312,45 @@ function renderBashingCounters() {
     const posMatch = /^galaxyRow(\d+)$/.exec(row.id || "");
     const pos = posMatch ? Number(posMatch[1]) : indexInDom + 1;
     const coords = `${galaxy}:${system}:${pos}`;
+    const exempt = isBashingExempt(row);
 
-    attachBashBadge(row.querySelector(".cellPlanet"), coords, planetType.planet, now);
+    attachBashBadge(row.querySelector(".cellPlanet"), coords, planetType.planet, now, exempt);
     const moonCell = row.querySelector(".cellMoon");
-    if (moonCell && moonCell.children.length !== 0) attachBashBadge(moonCell, coords, planetType.moon, now);
+    if (moonCell && moonCell.children.length !== 0) attachBashBadge(moonCell, coords, planetType.moon, now, exempt);
   });
 }
 
-function attachBashBadge(cell, coords, type, now) {
+/**
+ * Whether the bashing limit applies to this row at all.
+ *
+ * It does not for an inactive owner - that is part of the rule itself, not a courtesy
+ * (see `game/bashing.js`). The flags come off the same `status_abbr_*` spans the PTRE
+ * snapshot below reads, so the two cannot disagree about what "inactive" means.
+ *
+ * @param {Element} row a galaxy row
+ * @returns {boolean}
+ */
+export function isBashingExempt(row) {
+  const spans = row?.querySelectorAll?.(".cellPlayerName span") || [];
+
+  for (const span of spans) {
+    if (typeof span.className !== "string") continue;
+
+    const status = /status_abbr_(\w+)/.exec(span.className)?.[1];
+    if (status === "inactive" || status === "longinactive") return true;
+  }
+
+  return false;
+}
+
+function attachBashBadge(cell, coords, type, now, exempt) {
   if (!cell) return;
 
   // The galaxy view is re-rendered in place on every navigation, but a cached row can
   // survive it, so an old badge is removed rather than stacked on.
   cell.querySelector(".ogl-bash-badge")?.remove();
 
-  const status = getBashStatus(coords, type, now);
+  const status = getBashStatus(coords, type, now, exempt);
   if (status.count <= 0) return;
 
   cell.classList.add("ogl-bash-cell");
@@ -348,13 +372,17 @@ export function buildBashTooltipContent(status, type) {
     )
   );
 
-  if (status.remaining <= 0) {
+  if (status.exempt) {
+    // The count is still true and worth showing; what would be false is any statement
+    // about a limit, so neither the remaining count nor the reset time is drawn.
+    container.appendChild(createDOM("div", { class: "ogl-bash-note" }, Translator.translate(406)));
+  } else if (status.remaining <= 0) {
     container.appendChild(createDOM("div", { class: "ogl-bash-limit" }, Translator.translate(372)));
   } else {
     container.appendChild(createDOM("div", {}, `${Translator.translate(371)}: ${status.remaining}`));
   }
 
-  if (status.resetAt) {
+  if (!status.exempt && status.resetAt) {
     container.appendChild(
       createDOM("div", {}, `${Translator.translate(373)}: ${formatBashCountdown(status.resetAt - Date.now())}`)
     );

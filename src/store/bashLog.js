@@ -78,10 +78,11 @@ export function confirmAttackFromReport(coords, planetType, timestamp, ref, now 
  * @param {string} coords "g:s:p"
  * @param {number|string} planetType
  * @param {number} [now] epoch ms
+ * @param {boolean} [exempt] the owner is inactive, so the bashing limit does not apply
  * @returns {ReturnType<typeof bashStatus>}
  */
-export function getBashStatus(coords, planetType, now = Date.now()) {
-  return bashStatus(OGBIData.bashLog || {}, bashKeyFromTarget(coords, planetType), now, getBashLimit());
+export function getBashStatus(coords, planetType, now = Date.now(), exempt = false) {
+  return bashStatus(OGBIData.bashLog || {}, bashKeyFromTarget(coords, planetType), now, getBashLimit(), exempt);
 }
 
 /** Same, for a key already built by `bashKey()`. */

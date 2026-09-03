@@ -9,7 +9,6 @@ import {
   updateProductionProgress,
 } from "./ctxpage/empire/index.js";
 import { resourceDetail } from "./ctxpage/empireOverview/index.js";
-import { keyboardActions, listenKeyboard } from "./ctxpage/keyboard/index.js";
 import { eventBox } from "./ctxpage/eventbox/index.js";
 import { betterHighscore, playerSearch, sideStalk } from "./ctxpage/stalk/index.js";
 import {
@@ -343,7 +342,13 @@ class OGBeyondInfinity {
 
     this.#migrations();
     OGBIData.Save();
-    listenKeyboard(this.pageContext());
+
+    // The shortcuts are 15 KB and nothing on screen waits for them, so they are fetched
+    // rather than carried by every page load. Not awaited: both halves only bind
+    // listeners, and holding up the ~20 setup steps below for a fetch would trade a
+    // visible delay for an invisible one. `loadChunk` never rejects.
+    const keyboard = loadChunk("keyboard", () => import("./ctxpage/keyboard/index.js"));
+    keyboard.then((module) => module?.listenKeyboard(this.pageContext()));
 
     wait
       .waitForQuerySelector("#eventContent")
@@ -362,7 +367,7 @@ class OGBeyondInfinity {
     sideStalk(this.pageContext());
     checkDebris(this.pageContext());
     this.spyTable();
-    keyboardActions(this.pageContext());
+    keyboard.then((module) => module?.keyboardActions(this.pageContext()));
     utilities(this.pageContext());
     this.chat();
     // Chat: private-message button on alliance messages, coordinate hover menu.
@@ -747,6 +752,18 @@ class OGBeyondInfinity {
       const module = await loadChunk("raid", () => import("./ctxpage/galaxy/raidList.js"));
       if (!module) return;
       popupUtil.popup(false, module.raidList());
+    });
+    let upgradePlansBtn = harvestOptions.appendChild(
+      DOM.createDOM("div", { class: "ogl-option ogl-upgradePlans-icon tooltip", title: Translator.translate(378) })
+    );
+    // A chunk, not a static import: pricing the plans needs the cost tables, which are
+    // ~93 KB the page entry cannot carry. See the header of store/upgradePlans.js.
+    upgradePlansBtn.addEventListener("click", async () => {
+      const module = await loadChunk("upgradePlans", () => import("./ctxpage/upgradePlans/index.js"));
+      if (!module) return;
+      // Plain data, not the instance: the planning form opens on the planet the player
+      // is standing on rather than on whatever sorts first.
+      module.upgradePlans({ coords: this.current.coords, isMoon: this.current.isMoon });
     });
     if (OGBIData.json.options.targetList) {
       targetListButton.classList.add("ogl-active");

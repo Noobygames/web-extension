@@ -12,6 +12,11 @@ import missionType from "./missionType.js";
  * Details this file encodes:
  * - The limit is per **position**, and a planet and its moon count separately - hence
  *   the `:M` suffix in `bashKey()`.
+ * - "owned by an **active** player" is part of the rule, not decoration: attacks on an
+ *   inactive player do not count towards the limit at all. The count is still worth
+ *   showing - it is a true statement about what the player did - but warning about it
+ *   would be warning about a limit that is not there, so `bashLevel()` takes an
+ *   `exempt` flag and reports `"exempt"` instead of `"warn"` or `"limit"`.
  * - Espionage and interplanetary missiles are exempt. Attack, ACS attack and moon
  *   destruction count. See `BASHING_MISSIONS`.
  * - The window is rolling: an attack stops counting once it is older than 24h. The
@@ -176,17 +181,19 @@ export function confirmBashAttack(log, key, timestamp, ref, now = Date.now()) {
   return true;
 }
 
-/** @typedef {"none"|"ok"|"warn"|"limit"} BashLevel */
+/** @typedef {"none"|"ok"|"warn"|"exempt"|"limit"} BashLevel */
 
 /**
  * @param {Object<string, Array<BashEntry|number>>} log
  * @param {string} key
  * @param {number} now epoch ms
  * @param {number} [limit]
+ * @param {boolean} [exempt] the position belongs to an inactive player, so the limit
+ *   does not apply to it
  * @returns {{count: number, confirmed: number, pending: number, limit: number,
- *            remaining: number, resetAt: number|null, level: BashLevel}}
+ *            remaining: number, resetAt: number|null, exempt: boolean, level: BashLevel}}
  */
-export function bashStatus(log, key, now, limit = DEFAULT_BASH_LIMIT) {
+export function bashStatus(log, key, now, limit = DEFAULT_BASH_LIMIT, exempt = false) {
   const effectiveLimit = Number(limit) > 0 ? Number(limit) : DEFAULT_BASH_LIMIT;
   const inWindow = entriesFor(log, key).filter((entry) => now - entry.t < BASH_WINDOW_MS);
   const count = inWindow.length;
@@ -202,13 +209,19 @@ export function bashStatus(log, key, now, limit = DEFAULT_BASH_LIMIT) {
     // The oldest attack still in the window is the next one to age out, so this is when
     // the counter first drops - "24h after the first attack" as players phrase it.
     resetAt: count ? Math.min(...inWindow.map((entry) => entry.t)) + BASH_WINDOW_MS : null,
-    level: bashLevel(count, effectiveLimit),
+    exempt: Boolean(exempt),
+    level: bashLevel(count, effectiveLimit, exempt),
   };
 }
 
-/** @returns {BashLevel} */
-export function bashLevel(count, limit) {
+/**
+ * @param {boolean} [exempt] inactive owner - the limit does not apply, so neither does
+ *   any warning about approaching it
+ * @returns {BashLevel}
+ */
+export function bashLevel(count, limit, exempt = false) {
   if (count <= 0) return "none";
+  if (exempt) return "exempt";
   if (count >= limit) return "limit";
   if (count >= limit - 1) return "warn";
   return "ok";
