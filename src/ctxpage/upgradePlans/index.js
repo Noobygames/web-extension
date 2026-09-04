@@ -6,7 +6,8 @@ import { overviewTable } from "./overviewTable.js";
 import { planetTable } from "./planetTable.js";
 import { filterChips, isFiltering } from "./filter.js";
 import { addForm } from "./addForm.js";
-import { refreshPlans } from "./sync.js";
+import { refreshPlans, syncAllNeeds } from "./sync.js";
+import { clearAllPlans } from "../../store/upgradePlans.js";
 
 /**
  * The upgrade plans panel, opened from the sidebar.
@@ -26,7 +27,23 @@ import { refreshPlans } from "./sync.js";
 function build(render, current) {
   const container = createDOM("div", { class: "ogl-dialogContainer ogl-upgradePlans" });
 
-  container.appendChild(createDOM("h2", {}, Translator.translate(378)));
+  const head = container.appendChild(createDOM("div", { class: "ogl-upgradePlans-head" }));
+  head.appendChild(createDOM("h2", {}, Translator.translate(378)));
+
+  // Asked first: there is no undo in the store, and this drops every planet at once.
+  const clearAllBtn = head.appendChild(
+    createDOM("a", { class: "icon icon_trash tooltip", title: Translator.translate(409) })
+  );
+  clearAllBtn.addEventListener("click", () => {
+    if (!confirm(Translator.translate(410))) return;
+
+    clearAllPlans();
+    // Not optional: this is what rewrites `OGBIData.needs` and redraws the planet bar's
+    // lock icons, which would otherwise still show the plans that are gone.
+    syncAllNeeds();
+    render();
+  });
+
   container.appendChild(overviewTable(render));
   container.appendChild(addForm(render, current));
   container.appendChild(filterChips(render));

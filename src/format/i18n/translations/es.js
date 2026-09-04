@@ -490,5 +490,9 @@ export default Object.freeze({
     406: "Jugador inactivo: la regla de bashing no se aplica aquí.",
     407: "Calculadora de intercambio",
     408: "Introduce una cantidad en cualquier campo: los otros dos muestran su equivalente a este cambio.",
+    409: "Borrar todos los planes",
+    410: "¿Borrar cada mejora planificada en todos los planetas y lunas? Esto no se puede deshacer.",
+    411: "Un nivel menos",
+    412: "Un nivel más",
   },
 });

@@ -490,5 +490,9 @@ export default Object.freeze({
     406: "Etkin olmayan oyuncu - bashing kuralı burada geçerli değil.",
     407: "Takas hesaplayıcı",
     408: "Herhangi bir alana miktar gir - diğer ikisi bu kurdaki karşılığını gösterir.",
+    409: "Tüm planları sil",
+    410: "Tüm gezegen ve aylardaki planlanmış her yükseltme silinsin mi? Bu geri alınamaz.",
+    411: "Bir seviye az",
+    412: "Bir seviye fazla",
   },
 });

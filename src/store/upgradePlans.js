@@ -155,6 +155,44 @@ export function removeEntry(coords, isMoon, technoId) {
 }
 
 /**
+ * Moves one entry's target level by `delta`, one level at a time.
+ *
+ * `from` is deliberately left alone. `pricedEntries()` shows a raised `from` when the
+ * game is already building part of the range, and writing that back would tell the plan
+ * the player owns levels they have not paid for yet.
+ *
+ * @param {number} technoId
+ * @param {number} delta levels to add to `to`, usually +1 or -1
+ * @param {number|null} floor the level the row starts at on screen; below it the entry
+ *   is gone. Defaults to the stored `from` - pass the displayed one so a row made up
+ *   entirely of submitted levels disappears instead of lingering unseen.
+ */
+export function shiftEntryTarget(coords, isMoon, technoId, delta, floor = null) {
+  const entry = planFor(coords, isMoon).entries.find((existing) => Number(existing.technoId) === Number(technoId));
+
+  if (!entry) return getPlans();
+
+  const to = Math.floor(Number(entry.to) || 0) + Math.trunc(Number(delta) || 0);
+  const limit = floor === null ? entry.from : Math.max(entry.from, Number(floor) || 0);
+
+  if (to <= limit) return removeEntry(coords, isMoon, technoId);
+
+  return updateSide(coords, isMoon, (side) => ({
+    ...side,
+    entries: side.entries.map((existing) =>
+      Number(existing.technoId) === Number(technoId) ? { ...existing, to } : existing
+    ),
+  }));
+}
+
+/** Empties every plan on every planet and moon. One setter write, nothing behind it. */
+export function clearAllPlans() {
+  OGBIData.upgradePlans = {};
+
+  return OGBIData.upgradePlans;
+}
+
+/**
  * The free-hand pile on top of the planned entries: what migrated locks became, and
  * where the ship and defence panels record their sums - those have no level, so they
  * cannot be an entry.

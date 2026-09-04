@@ -490,5 +490,9 @@ export default Object.freeze({
     406: "Jogador inativo - a regra de bashing não se aplica aqui.",
     407: "Calculadora de troca",
     408: "Digite uma quantia em qualquer campo - os outros dois mostram o equivalente a esta taxa.",
+    409: "Apagar todos os planos",
+    410: "Apagar cada melhoria planejada em todos os planetas e luas? Isso não pode ser desfeito.",
+    411: "Um nível a menos",
+    412: "Um nível a mais",
   },
 });

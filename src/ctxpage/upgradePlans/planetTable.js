@@ -2,7 +2,7 @@ import OGBIData from "../../store/OGBIData.js";
 import { createDOM } from "../../ui/dom.js";
 import { toFormattedNumber } from "../../format/numbers.js";
 import Translator from "../../format/i18n/translate.js";
-import { pricedEntries, planFor, removeEntry, setManual } from "../../store/upgradePlans.js";
+import { pricedEntries, planFor, removeEntry, setManual, shiftEntryTarget } from "../../store/upgradePlans.js";
 import { categoryOf } from "../../game/upgradeCost.js";
 import { CATEGORIES, CATEGORY_ICON, categoryLabel, passesFilter } from "./filter.js";
 import { syncNeeds } from "./sync.js";
@@ -126,16 +126,36 @@ export function planetTable(coords, isMoon, onChange) {
 
     const removeCell = createDOM("td");
 
-    // Only what the player planned can be removed here. A submitted order lives in the
+    // Only what the player planned can be edited here. A submitted order lives in the
     // game, and cancelling it is the game's own button on the build page.
     if (!entry.submitted) {
+      const actions = createDOM("div", { class: "ogl-upgradePlans-actions" });
+
+      // `entry.from` rather than the stored one: on a row the game is already part way
+      // through, one level less means one level off what is still on screen.
+      const step = (delta) => () => {
+        shiftEntryTarget(coords, isMoon, entry.technoId, delta, entry.from);
+        syncNeeds(coords, isMoon);
+        onChange();
+      };
+
+      const lessBtn = createDOM("a", { class: "icon icon_minus tooltip", title: Translator.translate(411) });
+      lessBtn.addEventListener("click", step(-1));
+      actions.appendChild(lessBtn);
+
+      const moreBtn = createDOM("a", { class: "icon icon_plus tooltip", title: Translator.translate(412) });
+      moreBtn.addEventListener("click", step(1));
+      actions.appendChild(moreBtn);
+
       const removeBtn = createDOM("a", { class: "icon icon_against tooltip", title: Translator.translate(385) });
       removeBtn.addEventListener("click", () => {
         removeEntry(coords, isMoon, entry.technoId);
         syncNeeds(coords, isMoon);
         onChange();
       });
-      removeCell.appendChild(removeBtn);
+      actions.appendChild(removeBtn);
+
+      removeCell.appendChild(actions);
     }
 
     row.appendChild(removeCell);

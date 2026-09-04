@@ -4184,6 +4184,22 @@ div[data-raw-depletion="4"] + .msgHead a.txt_link {
   margin: 0 0 8px;
 }
 
+.ogl-upgradePlans-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ogl-upgradePlans-head h2 {
+  margin: 0;
+}
+
+.ogl-upgradePlans-actions {
+  display: flex;
+  gap: 3px;
+}
+
 .ogl-upgradePlans-source {
   color: #9099a3;
   margin-bottom: 6px;
@@ -8167,6 +8183,7 @@ body:has(.food) table.fleetinfo tr:nth-last-child(1) {
 .icon_eye,
 .icon_fastforward,
 .icon_maximize,
+.icon_minus,
 .icon_missile,
 .icon_plus,
 .icon_trash,
@@ -8192,6 +8209,7 @@ body:has(.food) table.fleetinfo tr:nth-last-child(1) {
 .icon_eye.ogl-active,
 .icon_fastforward.ogl-active,
 .icon_maximize.ogl-active,
+.icon_minus.ogl-active,
 .icon_missile.ogl-active,
 .icon_plus.ogl-active,
 .icon_trash.ogl-active,
@@ -8211,6 +8229,7 @@ body:has(.food) table.fleetinfo tr:nth-last-child(1) {
 .icon_eye:hover,
 .icon_fastforward:hover,
 .icon_maximize:hover,
+.icon_minus:hover,
 .icon_missile:hover,
 .icon_trash:hover,
 .icon_user:hover,
@@ -8320,6 +8339,19 @@ body:has(.food) table.fleetinfo tr:nth-last-child(1) {
 }
 
 .icon_plus:after {
+  background: #fff;
+  content: "";
+  display: block;
+  height: 9px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
+  width: 2px;
+}
+
+/* Same bar as .icon_plus:after, without the upright one. */
+.icon_minus:after {
   background: #fff;
   content: "";
   display: block;

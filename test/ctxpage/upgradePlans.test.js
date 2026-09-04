@@ -27,11 +27,12 @@ const bootstrap = setupBrowser({
 });
 const OGBIData = (await import("../../src/store/OGBIData.js")).default;
 const { initConfOptions, getOptions } = await import("../../src/ctxpage/conf-options.js");
-const { addEntry, setManual, planFor } = await import("../../src/store/upgradePlans.js");
+const { addEntry, setManual, planFor, getPlans } = await import("../../src/store/upgradePlans.js");
 const { syncNeeds, syncAllNeeds } = await import("../../src/ctxpage/upgradePlans/sync.js");
 const { overviewTable } = await import("../../src/ctxpage/upgradePlans/overviewTable.js");
 const { planetTable } = await import("../../src/ctxpage/upgradePlans/planetTable.js");
 const { filterChips } = await import("../../src/ctxpage/upgradePlans/filter.js");
+const { upgradePlans } = await import("../../src/ctxpage/upgradePlans/index.js");
 const { addForm, technologiesFor, technologyName } = await import("../../src/ctxpage/upgradePlans/addForm.js");
 const Translator = (await import("../../src/format/i18n/translate.js")).default;
 const { toFormattedNumber } = await import("../../src/format/numbers.js");
@@ -351,6 +352,143 @@ test("the free-hand pile gets a row of its own, with no level range", () => {
     assert.ok(manualRow, "ships and defences have no level, so they cannot be an entry");
     assert.equal(manualRow.children[1].textContent, "-");
   } finally {
+    browser.cleanup();
+  }
+});
+
+/** The level cell of one technology row: "20 → 24", or a bare level once paid. */
+function levelOf(section, index = 0) {
+  return entryRows(section)[index].querySelectorAll("td")[1].textContent;
+}
+
+test("one level less trims the row instead of dropping it", () => {
+  const browser = setupBrowser({ html: `<div id="norm"><div id="planetList"></div></div>` });
+
+  try {
+    seed();
+    addEntry("1:234:5", false, { technoId: 1, from: 20, to: 24 });
+
+    let redrawn = 0;
+    const section = planetTable("1:234:5", false, () => (redrawn += 1));
+    section.querySelector(".icon_minus").dispatchEvent(new Event("click", { bubbles: true }));
+
+    assert.equal(redrawn, 1);
+    assert.equal(levelOf(planetTable("1:234:5", false, noop)), "20 → 23");
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("one level more extends the row", () => {
+  const browser = setupBrowser({ html: `<div id="norm"><div id="planetList"></div></div>` });
+
+  try {
+    seed();
+    addEntry("1:234:5", false, { technoId: 1, from: 20, to: 24 });
+
+    const section = planetTable("1:234:5", false, noop);
+    section.querySelector(".icon_plus").dispatchEvent(new Event("click", { bubbles: true }));
+
+    assert.equal(levelOf(planetTable("1:234:5", false, noop)), "20 → 25");
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("stepping the only planned level off empties the side", () => {
+  const browser = setupBrowser({ html: `<div id="norm"><div id="planetList"></div></div>` });
+
+  try {
+    seed();
+    addEntry("1:234:5", false, { technoId: 1, from: 20, to: 21 });
+
+    planetTable("1:234:5", false, noop)
+      .querySelector(".icon_minus")
+      .dispatchEvent(new Event("click", { bubbles: true }));
+
+    assert.equal(planetTable("1:234:5", false, noop), null, "nothing left to draw");
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("a submitted order has no steppers either", () => {
+  const browser = setupBrowser({ html: `<div id="norm"><div id="planetList"></div></div>` });
+
+  try {
+    seed();
+    OGBIData.json.empire[0].workInProgressTechs = [{ group: "supply", id: 1, from: 20, to: 23 }];
+    OGBIData.json.productionProgress = { "1:234:5": { technoId: 1, tolvl: 21 } };
+
+    const section = planetTable("1:234:5", false, noop);
+
+    assert.equal(section.querySelectorAll(".icon_minus").length, 0);
+    assert.equal(section.querySelectorAll(".icon_plus").length, 0);
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("the free-hand pile has no steppers - it has no level to step", () => {
+  const browser = setupBrowser({ html: `<div id="norm"><div id="planetList"></div></div>` });
+
+  try {
+    seed();
+    setManual("1:234:5", false, { metal: 1000 });
+
+    const section = planetTable("1:234:5", false, noop);
+
+    assert.equal(section.querySelectorAll(".ogl-upgradePlans-manual .icon_minus").length, 0);
+    assert.equal(section.querySelectorAll(".ogl-upgradePlans-manual .icon_against").length, 1);
+  } finally {
+    browser.cleanup();
+  }
+});
+
+// --------------------------------------------------------------------------
+// the panel's own delete-everything button
+// --------------------------------------------------------------------------
+
+/** Opens the panel with `confirm()` answering `answer`, and hands back what it drew. */
+function openPanel(answer) {
+  globalThis.confirm = () => answer;
+  upgradePlans({ coords: "1:234:5", isMoon: false });
+
+  return document.querySelector(".ogl-dialogContent");
+}
+
+test("the trash button clears every plan once it is confirmed", () => {
+  const browser = setupBrowser({ html: `<div id="norm"><div id="planetList"></div></div>` });
+
+  try {
+    seed();
+    addEntry("1:234:5", false, { technoId: 1, from: 20, to: 24 });
+    addEntry("1:234:8", true, { technoId: 41, from: 3, to: 5 });
+
+    const panel = openPanel(true);
+    panel.querySelector(".icon_trash").dispatchEvent(new Event("click", { bubbles: true }));
+
+    assert.deepEqual(getPlans(), {});
+    assert.equal(panel.querySelectorAll(".ogl-upgradePlans-planet").length, 0, "the panel redrew empty");
+  } finally {
+    delete globalThis.confirm;
+    browser.cleanup();
+  }
+});
+
+test("cancelling the trash button leaves every plan standing", () => {
+  const browser = setupBrowser({ html: `<div id="norm"><div id="planetList"></div></div>` });
+
+  try {
+    seed();
+    addEntry("1:234:5", false, { technoId: 1, from: 20, to: 24 });
+
+    const panel = openPanel(false);
+    panel.querySelector(".icon_trash").dispatchEvent(new Event("click", { bubbles: true }));
+
+    assert.equal(planFor("1:234:5", false).entries.length, 1);
+  } finally {
+    delete globalThis.confirm;
     browser.cleanup();
   }
 });
@@ -679,6 +817,8 @@ test("the buttons all carry a tooltip", () => {
     for (const button of [
       overviewTable(noop).querySelector(".ogl-upgradePlans-send"),
       planetTable("1:234:5", false, noop).querySelector(".icon_against"),
+      planetTable("1:234:5", false, noop).querySelector(".icon_minus"),
+      planetTable("1:234:5", false, noop).querySelector(".icon_plus"),
       filterChips(noop).querySelector(".ogl-upgradePlans-chip"),
       addForm(noop).querySelector(".ogl-upgradePlans-addBtn"),
     ]) {

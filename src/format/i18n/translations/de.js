@@ -490,5 +490,9 @@ export default Object.freeze({
     406: "Inaktiver Spieler - die Bashing-Regel gilt hier nicht.",
     407: "Tausch-Rechner",
     408: "Menge in ein beliebiges Feld eintragen - die anderen beiden zeigen den Gegenwert zu diesem Kurs.",
+    409: "Alle Pläne löschen",
+    410: "Wirklich jeden geplanten Ausbau auf allen Planeten und Monden löschen? Das lässt sich nicht rückgängig machen.",
+    411: "Eine Stufe weniger",
+    412: "Eine Stufe mehr",
   },
 });

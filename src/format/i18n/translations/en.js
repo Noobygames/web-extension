@@ -490,5 +490,9 @@ export default Object.freeze({
     406: "Inactive player - the bashing rule does not apply here.",
     407: "Trade calculator",
     408: "Enter an amount in any field - the other two show what it is worth at this rate.",
+    409: "Delete every plan",
+    410: "Delete every planned upgrade on every planet and moon? This cannot be undone.",
+    411: "One level less",
+    412: "One level more",
   },
 });

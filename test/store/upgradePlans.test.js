@@ -22,6 +22,8 @@ const {
   planetByCoords,
   addEntry,
   removeEntry,
+  shiftEntryTarget,
+  clearAllPlans,
   setManual,
   addManual,
   clearSide,
@@ -176,6 +178,74 @@ test("removing an entry leaves the other rows alone", () => {
     planFor("1:234:5", false).entries.map((entry) => entry.technoId),
     [2]
   );
+});
+
+test("one level less moves the target and leaves the level owned alone", () => {
+  seed();
+  addEntry("1:234:5", false, { technoId: 1, from: 20, to: 24 });
+  shiftEntryTarget("1:234:5", false, 1, -1);
+
+  assert.deepEqual(planFor("1:234:5", false).entries[0].from, 20);
+  assert.deepEqual(planFor("1:234:5", false).entries[0].to, 23);
+});
+
+test("one level more extends the range", () => {
+  seed();
+  addEntry("1:234:5", false, { technoId: 1, from: 20, to: 24 });
+  shiftEntryTarget("1:234:5", false, 1, 1);
+
+  assert.deepEqual(planFor("1:234:5", false).entries[0].to, 25);
+});
+
+test("stepping the last planned level off removes the entry", () => {
+  seed();
+  addEntry("1:234:5", false, { technoId: 1, from: 20, to: 21 });
+  shiftEntryTarget("1:234:5", false, 1, -1);
+
+  assert.deepEqual(planFor("1:234:5", false).entries, []);
+});
+
+test("a row that is only submitted levels goes rather than lingering unseen", () => {
+  // Planned 20 to 24 with 21 to 23 already ordered: the row on screen starts at 23, so
+  // one level less is nothing left to plan - and 20 to 23 would still be stored.
+  seed();
+  addEntry("1:234:5", false, { technoId: 1, from: 20, to: 24 });
+  shiftEntryTarget("1:234:5", false, 1, -1, 23);
+
+  assert.deepEqual(planFor("1:234:5", false).entries, []);
+});
+
+test("stepping a technology that is not planned changes nothing", () => {
+  seed();
+  addEntry("1:234:5", false, { technoId: 1, from: 20, to: 24 });
+  shiftEntryTarget("1:234:5", false, 2, 1);
+
+  assert.deepEqual(
+    planFor("1:234:5", false).entries.map((entry) => entry.technoId),
+    [1]
+  );
+});
+
+test("clearing every plan empties both sides of every planet, pile included", () => {
+  seed({ empire: [planetRow(), planetRow({ id: 33627999, coordinates: "[1:234:8]", moonID: 0, moon: null })] });
+  addEntry("1:234:5", false, { technoId: 1, from: 20, to: 24 });
+  setManual("1:234:5", true, { metal: 1000 });
+  addEntry("1:234:8", false, { technoId: 2, from: 18, to: 22 });
+
+  clearAllPlans();
+
+  assert.deepEqual(getPlans(), {});
+  assert.deepEqual(planFor("1:234:5", false).entries, []);
+  assert.equal(planFor("1:234:5", true).manual.metal || 0, 0);
+  assert.deepEqual(planFor("1:234:8", false).entries, []);
+});
+
+test("clearing every plan reaches storage, not just the object in memory", () => {
+  seed();
+  addEntry("1:234:5", false, { technoId: 1, from: 20, to: 24 });
+  clearAllPlans();
+
+  assert.deepEqual(stored(), {});
 });
 
 // --------------------------------------------------------------------------

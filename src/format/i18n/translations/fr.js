@@ -490,5 +490,9 @@ export default Object.freeze({
     406: "Joueur inactif - la règle de bashing ne s'applique pas ici.",
     407: "Calculateur d’échange",
     408: "Saisis un montant dans n’importe quel champ : les deux autres affichent l’équivalent à ce taux.",
+    409: "Supprimer tous les plans",
+    410: "Supprimer chaque amélioration prévue sur toutes les planètes et lunes ? C’est irréversible.",
+    411: "Un niveau de moins",
+    412: "Un niveau de plus",
   },
 });
