@@ -496,5 +496,7 @@ export default Object.freeze({
     412: "Eine Stufe mehr",
     413: "Punkte",
     414: "Punkte auf der Statistik: 1 Punkt je 1.000 Metall, Kristall und Deuterium. Energie und Bevölkerung zählen nicht.",
+    415: "Kein Recycler auf diesem Planeten/Mond - von hier aus lässt sich nichts abbauen.",
+    416: "Blendet den Hinflug jeder Expedition im Ereignisfenster aus. Zeilen mit noch möglichem Rückruf bleiben immer sichtbar.",
   },
 });

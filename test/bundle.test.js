@@ -88,9 +88,14 @@ test("the page-specific code is in chunks, not in the file every page loads", ()
   // moved behind a dynamic import, which paid for the feature twice over - the entry is
   // now ~7 KB smaller than before it.
   //
-  // Do the same next time. Measured candidates, all still in the entry:
-  // `ctxpage/stalk/*` (43.5 KB, but woven into galaxy/messages/markers),
-  // `ctxpage/chat/index.js` (18.5 KB), `game/itemImageID.js` (10.9 KB).
+  // It happened again: the trade calculator, the plan editing, the score column and the
+  // chat fixes together pushed the entry 430 bytes over, and `ctxpage/chat/index.js`
+  // (18.5 KB of observer and hover menus that nothing on screen waits for) moved behind
+  // a dynamic import to pay for them.
+  //
+  // Do the same next time. Measured candidates still in the entry:
+  // `ctxpage/stalk/*` (43.5 KB, but woven into galaxy/messages/markers) and
+  // `game/itemImageID.js` (10.9 KB).
   const entryBytes = bytesOf("ogCore.js");
   assert.ok(entryBytes < 512_000, `the page entry grew back to ${(entryBytes / 1024).toFixed(0)} KB`);
 
@@ -105,6 +110,7 @@ test("the page-specific code is in chunks, not in the file every page loads", ()
     "chunks/technoDetail.js",
     "chunks/messages.js",
     "chunks/galaxyView.js",
+    "chunks/chat.js",
     // Five of the six language tables. English stays in the entry as the fallback
     // for every key; the other five were 67 KB nobody could read, and they are the
     // reason the entry is under 500 KB at all. See format/i18n/translate.js.

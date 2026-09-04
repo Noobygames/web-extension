@@ -312,3 +312,109 @@ test("a page whose game has no chat API still gets a working toggle", () => {
     page.cleanup();
   }
 });
+
+// --------------------------------------------------------------------------
+// the expedition rows in the event box
+// --------------------------------------------------------------------------
+
+/**
+ * `expeditionImpact()` hides the outbound half of every expedition so the event box is
+ * not filled twice over. The recall link lives on exactly those rows, and it is the
+ * only way back for a fleet sent by accident - so the rule is that a row carrying one
+ * is never hidden, and that re-ticking the box brings back what un-ticking removed.
+ *
+ * The old version failed both: it hid by selector and un-hid by guessing that the row
+ * before a *return* row is its outbound half, so an expedition that had only just
+ * launched - the one you actually want to recall - had no way back onto the screen.
+ */
+const EVENT_BOX = `
+  <table>
+    <tr class="eventFleet" id="eventRow-1" data-mission-type="15" data-return-flight="false">
+      <td class="reversal"><a href="?page=ingame&component=movement&return=1">back</a></td>
+    </tr>
+    <tr class="eventFleet" id="eventRow-2" data-mission-type="15" data-return-flight="false">
+      <td class="reversal"></td>
+    </tr>
+    <tr class="eventFleet" id="eventRow-3" data-mission-type="15" data-return-flight="true">
+      <td class="reversal"></td>
+    </tr>
+    <tr class="eventFleet" id="eventRow-4" data-mission-type="3" data-return-flight="false">
+      <td class="reversal"><a href="?page=ingame&component=movement&return=4">back</a></td>
+    </tr>
+  </table>
+`;
+
+function onEventBox(run) {
+  const page = setupBrowser({
+    html: `${overviewPage()}${EVENT_BOX}`,
+    url: "https://s1-en.ogame.gameforge.com/game/index.php?page=ingame&component=overview",
+  });
+
+  try {
+    run(new OGBeyondInfinity(), (id) => document.querySelector(`#eventRow-${id}`).style.display);
+  } finally {
+    page.cleanup();
+  }
+}
+
+test("an expedition that can still be recalled is never hidden", () => {
+  onEventBox((instance, displayOf) => {
+    instance.expeditionImpact(false);
+
+    assert.notEqual(displayOf(1), "none", "the recall link was hidden with the row");
+  });
+});
+
+test("an outbound expedition with no recall left is hidden as asked", () => {
+  onEventBox((instance, displayOf) => {
+    instance.expeditionImpact(false);
+
+    assert.equal(displayOf(2), "none");
+  });
+});
+
+test("nothing but outbound expeditions is touched", () => {
+  onEventBox((instance, displayOf) => {
+    instance.expeditionImpact(false);
+
+    assert.notEqual(displayOf(3), "none", "a returning expedition is the half worth keeping");
+    assert.notEqual(displayOf(4), "none", "mission 3 is a transport, not an expedition");
+  });
+});
+
+test("re-ticking the box brings back exactly what un-ticking hid", () => {
+  onEventBox((instance, displayOf) => {
+    instance.expeditionImpact(false);
+    assert.equal(displayOf(2), "none");
+
+    instance.expeditionImpact(true);
+
+    assert.notEqual(displayOf(2), "none", "the toggle is one-way");
+  });
+});
+
+test("a just-launched expedition survives the toggle even with no return row on screen", () => {
+  // The reported case: send one by accident, and the row with the recall link on it is
+  // gone. There is no return row yet, which is what the old id-arithmetic needed.
+  const page = setupBrowser({
+    html: `${overviewPage()}
+      <table>
+        <tr class="eventFleet" id="eventRow-7" data-mission-type="15" data-return-flight="false">
+          <td class="reversal"></td>
+        </tr>
+      </table>`,
+    url: "https://s1-en.ogame.gameforge.com/game/index.php?page=ingame&component=overview",
+  });
+
+  try {
+    const instance = new OGBeyondInfinity();
+
+    instance.expeditionImpact(false);
+    assert.equal(document.querySelector("#eventRow-7").style.display, "none");
+
+    instance.expeditionImpact(true);
+    assert.notEqual(document.querySelector("#eventRow-7").style.display, "none");
+  } finally {
+    page.cleanup();
+  }
+});

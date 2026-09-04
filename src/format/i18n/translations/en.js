@@ -496,5 +496,7 @@ export default Object.freeze({
     412: "One level more",
     413: "Points",
     414: "Score on the highscore: one point per 1,000 metal, crystal and deuterium. Energy and population do not count.",
+    415: "No recycler on this planet or moon - the harvest link does nothing from here.",
+    416: "Hides the outbound leg of every expedition in the event box. Rows that can still be recalled always stay visible.",
   },
 });

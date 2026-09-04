@@ -19,8 +19,20 @@ const { renderPointsColumn } = await import("../../src/ctxpage/technoDetail/poin
 const { toFormattedNumber } = await import("../../src/format/numbers.js");
 bootstrap.cleanup();
 
-/** OGame's own cost row, empty - the panel fills it before OGI appends to it. */
-const COSTS = `<ul class="costs"></ul>`;
+/**
+ * OGame's own cost row, the way the panel leaves it: a list of cost cells plus the
+ * `<p>` the stylesheet hides. The column has to join that row, not break out of it -
+ * the first version appended a `<div>` among the `<li>`s and it landed a line below,
+ * on top of "Produktionsdauer".
+ */
+const COSTS = `
+  <ul class="costs">
+    <li class="metal resource icon"></li>
+    <li class="crystal resource icon"></li>
+    <li class="deuterium resource icon"></li>
+    <p>hidden by the stylesheet</p>
+  </ul>
+`;
 
 test("a battlecruiser is worth what it costs, divided by a thousand", () => {
   assert.equal(pointsFor([30000, 40000, 15000]), 85);
@@ -115,6 +127,43 @@ test("every figure carries its exact value on hover", () => {
 
 test("without a cost row on the page nothing is drawn and nothing throws", () => {
   const browser = setupBrowser();
+
+  try {
+    assert.equal(renderPointsColumn([1000, 0, 0]), null);
+  } finally {
+    browser.cleanup();
+  }
+});
+
+// --------------------------------------------------------------------------
+// where the column lands
+// --------------------------------------------------------------------------
+
+test("the column is built as the same kind of element as the cells it sits beside", () => {
+  const browser = setupBrowser({ html: COSTS });
+
+  try {
+    // A <div> among <li>s is a block box between inline ones: it breaks the row.
+    assert.equal(renderPointsColumn([1000, 0, 0]).tagName, "LI");
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("the column goes after the last cost cell, not after the hidden paragraph", () => {
+  const browser = setupBrowser({ html: COSTS });
+
+  try {
+    const column = renderPointsColumn([1000, 0, 0]);
+
+    assert.ok(column.previousElementSibling.classList.contains("deuterium"));
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("a cost row with nothing to sit beside draws nothing rather than a stray box", () => {
+  const browser = setupBrowser({ html: `<ul class="costs"></ul>` });
 
   try {
     assert.equal(renderPointsColumn([1000, 0, 0]), null);

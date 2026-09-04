@@ -496,5 +496,7 @@ export default Object.freeze({
     412: "Un niveau de plus",
     413: "Points",
     414: "Points au classement : 1 point pour 1 000 de métal, cristal et deutérium. L’énergie et la population ne comptent pas.",
+    415: "Aucun recycleur sur cette planète ou cette lune : d’ici, le lien de recyclage ne fait rien.",
+    416: "Masque l’aller de chaque expédition dans la boîte d’événements. Les lignes encore rappelables restent toujours visibles.",
   },
 });

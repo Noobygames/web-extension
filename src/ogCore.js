@@ -1,7 +1,6 @@
 /// Page Context Imports
 import { initConfOptions, getOptions } from "./ctxpage/conf-options.js";
 import { applyWideLayout } from "./ctxpage/wide-layout.js";
-import { initChatEnhancements } from "./ctxpage/chat/index.js";
 import {
   startEmpirePrefetch,
   updateEmpireData,
@@ -371,7 +370,12 @@ class OGBeyondInfinity {
     utilities(this.pageContext());
     this.chat();
     // Chat: private-message button on alliance messages, coordinate hover menu.
-    initChatEnhancements();
+    //
+    // A chunk, not a static import. It is 18.5 KB nothing on screen waits for - the
+    // observer inside it catches every message the chat bar draws whenever it lands -
+    // and the page entry is at its size budget, which `test/bundle.test.js` names this
+    // module as one of the ways to pay for. Not awaited, for the same reason.
+    loadChunk("chat", () => import("./ctxpage/chat/index.js")).then((module) => module?.initChatEnhancements());
     uvlinks(this.pageContext());
     this.OverviewPage.MakePrettierOverview(this.page);
     this.TraderImportExportPage.RemindMeImportExport(this.page);
@@ -652,20 +656,37 @@ class OGBeyondInfinity {
       });
   }
 
+  /**
+   * The outbound half of every expedition in the event box, hidden or shown.
+   *
+   * Unchecking the box in the event-box header is meant to halve the clutter: ten
+   * expeditions otherwise fill the list twice, once flying out and once coming back.
+   *
+   * What it must never hide is a **recall link**. It lives on the outbound row, it is
+   * the only way back for a fleet sent by accident, and it disappears by itself the
+   * moment the expedition arrives - so a row that still has one is left alone. A tidier
+   * event box is not worth a fleet that cannot be called home.
+   *
+   * @param {boolean} show whether outbound expedition rows are visible
+   */
   expeditionImpact(show) {
+    const outbound = document.querySelectorAll(".eventFleet[data-mission-type='15'][data-return-flight='false']");
+
     if (show) {
-      document.querySelectorAll(".eventFleet[data-mission-type='15'][data-return-flight='true']").forEach((elem) => {
-        let previous = Number(elem.getAttribute("id").replace("eventRow-", "")) - 1;
-        let previousNode = document.querySelector("#eventRow-" + previous);
-        if (previousNode) {
-          previousNode.style.display = "table-row";
-        }
-      });
-    } else {
-      document.querySelectorAll(".eventFleet[data-mission-type='15'][data-return-flight='false']").forEach((elem) => {
-        elem.style.display = "none";
-      });
+      // The same rows the hide below picks, and deliberately so. This used to un-hide
+      // `#eventRow-(N - 1)` for every *returning* expedition, guessing that the row
+      // before a return is its outbound half. An expedition that has only just
+      // launched has no return row to guess from, so its outbound row - the one
+      // carrying the recall link - could never be brought back: hiding it once cost
+      // the recall until the next page load, and re-ticking the box did not undo it.
+      outbound.forEach((row) => (row.style.display = ""));
+      return;
     }
+
+    outbound.forEach((row) => {
+      if (row.querySelector(".reversal a")) return;
+      row.style.display = "none";
+    });
   }
 
   /**

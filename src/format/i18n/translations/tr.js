@@ -496,5 +496,7 @@ export default Object.freeze({
     412: "Bir seviye fazla",
     413: "Puan",
     414: "Sıralamadaki puan: her 1.000 metal, kristal ve döteryum için 1 puan. Enerji ve nüfus sayılmaz.",
+    415: "Bu gezegende veya ayda geri dönüşümcü yok - buradan toplama bağlantısı çalışmaz.",
+    416: "Olay kutusunda her keşif seferinin gidiş ayağını gizler. Hâlâ geri çağrılabilen satırlar her zaman görünür kalır.",
   },
 });

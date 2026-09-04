@@ -2262,8 +2262,12 @@ button.build-it_premium:hover {
    never what it puts on the highscore, which is the number builds get compared by.
    Sized like a resource column so it lines up with them. */
 #technologydetails .ogl-pointsCost {
+  /* `display` and `float` are copied off the neighbouring cost cell at runtime, so the
+     column sits in the row whatever OGame lays it out with; inline-block is only the
+     fallback for a browser with no getComputedStyle. */
   display: inline-block;
   height: 75px;
+  list-style: none;
   margin: 0 2px;
   text-align: center;
   vertical-align: top;
@@ -6672,6 +6676,16 @@ div.activity.showMinutes {
 #galaxyContent #expeditionDebris {
   font-size: 70%;
   text-decoration: none;
+}
+
+/* The reason the harvest link in a debris tooltip does nothing: no recycler where the
+   player is standing. Sits inside OGame's own .ListLinks, so it inherits its metrics. */
+#galaxyContent .ogl-debrisHint {
+  border-top: 1px solid #364352;
+  color: #d29a5e;
+  margin-top: 3px;
+  padding-top: 3px;
+  white-space: normal;
 }
 
 .expeditionDebrisSlotBox a[href] {

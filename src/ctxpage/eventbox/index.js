@@ -120,8 +120,12 @@ function eventBox(context) {
     div.appendChild(createDOM("span", {}, Translator.translate(347)));
     let keep = div.appendChild(createDOM("input", { type: "checkbox" }));
     if (OGBIData.json.options.eventBoxKeep) keep.checked = true;
-    div.appendChild(createDOM("span", {}, Translator.translate(41)));
-    let exps = div.appendChild(createDOM("input", { type: "checkbox" }));
+    div.appendChild(
+      createDOM("span", { class: "tooltip", title: Translator.translate(416) }, Translator.translate(41))
+    );
+    let exps = div.appendChild(
+      createDOM("input", { type: "checkbox", class: "tooltip", title: Translator.translate(416) })
+    );
     if (OGBIData.json.options.eventBoxExps) exps.checked = true;
     keep.addEventListener("change", () => {
       OGBIData.json.options.eventBoxKeep = keep.checked;

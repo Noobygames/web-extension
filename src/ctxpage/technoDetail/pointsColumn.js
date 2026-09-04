@@ -23,6 +23,47 @@ function pointsCell(className, points) {
 }
 
 /**
+ * Adds the column next to the resource cells, built the way they are built.
+ *
+ * The first version appended a plain `<div>` and styled it `inline-block`. OGame's cost
+ * row is a list, so a `<div>` among its `<li>`s is a block box between inline ones: the
+ * column broke onto its own line and landed on top of "Produktionsdauer".
+ *
+ * Rather than guess at the game's layout, the neighbour is measured. The column copies
+ * the last resource cell's tag and the two properties that decide whether a box sits
+ * beside another one or below it, so it flows with them whatever OGame changes the row
+ * to. Without a neighbour to copy there is no row to join, and nothing is drawn.
+ *
+ * @param {HTMLElement} costs the `.costs` row
+ * @returns {HTMLElement|null}
+ */
+function buildColumn(costs) {
+  // The last cost cell of the row - deuterium, energy or population, depending on what
+  // is being built. Named rather than "the last child": `.costs` also holds a `<p>` the
+  // stylesheet hides and OGI's own `.ogk-titles`, and copying either lays the column out
+  // as something that is not a cost cell. Direct children only, so a nested span cannot
+  // be mistaken for one.
+  const sample = [...costs.querySelectorAll(".resource.icon, .metal, .crystal, .deuterium, .energy, .population")]
+    .filter((cell) => cell.parentElement === costs && !cell.classList.contains("ogl-pointsCost"))
+    .pop();
+
+  if (!sample) return null;
+
+  const column = createDOM(sample.tagName.toLowerCase(), { class: "ogl-pointsCost" });
+  const measured = window.getComputedStyle?.(sample);
+
+  if (measured) {
+    column.style.display = measured.display;
+    column.style.cssFloat = measured.cssFloat;
+  }
+
+  // After the last resource, which is where the row ends and the button begins.
+  sample.after(column);
+
+  return column;
+}
+
+/**
  * Draws (or redraws) the score column. Called again on every amount and level change,
  * so it reuses the column it drew last time rather than stacking a second one.
  *
@@ -35,8 +76,8 @@ export function renderPointsColumn(each, total = null) {
   const costs = document.querySelector(".costs");
   if (!costs) return null;
 
-  const column =
-    costs.querySelector(".ogl-pointsCost") || costs.appendChild(createDOM("div", { class: "ogl-pointsCost" }));
+  const column = costs.querySelector(".ogl-pointsCost") || buildColumn(costs);
+  if (!column) return null;
 
   const eachPoints = pointsFor(each);
   const totalPoints = total ? pointsFor(total) : null;

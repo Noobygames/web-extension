@@ -13,6 +13,7 @@ import { tooltip } from "../../ui/tooltip.js";
 import * as needsUtil from "../planetbar/needs.js";
 import Notifier from "../../integrations/notifier.js";
 import { getShipsData } from "../../game/shipsData.js";
+import ship from "../../game/ship.js";
 
 /**
  * The small changes OGI makes to pages it does not otherwise own: the extra top-bar
@@ -227,6 +228,44 @@ function quickPlanetList(context) {
   }
 }
 
+/**
+ * Recyclers sitting on the planet or moon the player is standing on.
+ *
+ * @param {object} context a `pageContext()`
+ * @returns {number} the count, or `NaN` when the empire cache cannot answer - which is
+ *   not the same as zero and must not be reported as "you have none".
+ */
+function recyclersHere(context) {
+  const index = context?.current?.index;
+  const planet = index === undefined ? undefined : OGBIData.empire?.[index];
+  if (!planet) return NaN;
+
+  const side = context.current.isMoon ? planet.moon : planet;
+  if (!side) return NaN;
+
+  return Number(side[ship.Recycler]) || 0;
+}
+
+/**
+ * The one thing OGame's debris tooltip never says: whether the planet you are standing
+ * on can go and get it.
+ *
+ * The harvest link is dead without a recycler on the current planet or moon, and the
+ * game gives no reason for that - so it reads as a broken link rather than an empty
+ * shipyard. This is the reason, written into the tooltip next to it.
+ *
+ * Silent in both the other cases: with recyclers there is nothing to explain, and with
+ * no empire data there is nothing that can honestly be said.
+ *
+ * @param {object} context a `pageContext()`
+ * @returns {HTMLElement|null}
+ */
+function debrisHint(context) {
+  if (recyclersHere(context) !== 0) return null;
+
+  return DOM.createDOM("li", { class: "ogl-debrisHint" }, Translator.translate(415));
+}
+
 function checkDebris(context) {
   // TODO: reuse code?, hide debris image with css?, complete align style with regular debris?
   if (context.page != "galaxy") {
@@ -256,6 +295,12 @@ function checkDebris(context) {
         );
       });
       element.querySelector(".microdebris").appendChild(frag);
+
+      // Into the tooltip body, not the cell: `.ListLinks` is what the hover shows,
+      // and it is where the dead harvest link sits that this explains.
+      const hint = debrisHint(context);
+      if (hint) debris.appendChild(hint);
+
       if (total > OGBIData.json.options.rvalLimit) {
         element.classList.add("ogl-active");
       }
@@ -278,7 +323,12 @@ function checkDebris(context) {
     div.appendChild(DOM.createDOM("div", { class: classResources[i++] }, Numbers.toFormattedNumber(value, null, true)));
   });
 
-  debris16.replaceChildren(div);
+  // The anchors are carried over rather than dropped. This used to be a bare
+  // `replaceChildren(div)`, which throws away everything inside `#expeditionDebris` -
+  // and if OGame puts the harvest link in there, it went with it. Where the links sit
+  // outside this element the query finds none and nothing changes.
+  const links = [...debris16.querySelectorAll("a")];
+  debris16.replaceChildren(div, ...links);
   if (total > OGBIData.json.options.rvalLimit) {
     debris16.classList.add("ogl-active");
   }
@@ -607,4 +657,14 @@ function navigationArrows(context) {
   }
 }
 
-export { utilities, uvlinks, topBarUtilities, navigationArrows, quickPlanetList, checkDebris, cleanupMessages };
+export {
+  utilities,
+  uvlinks,
+  topBarUtilities,
+  navigationArrows,
+  quickPlanetList,
+  checkDebris,
+  cleanupMessages,
+  recyclersHere,
+  debrisHint,
+};

@@ -496,5 +496,7 @@ export default Object.freeze({
     412: "Un nivel más",
     413: "Puntos",
     414: "Puntos en la clasificación: 1 punto por cada 1.000 de metal, cristal y deuterio. La energía y la población no cuentan.",
+    415: "Sin reciclador en este planeta o luna: desde aquí el enlace de recolección no hace nada.",
+    416: "Oculta el trayecto de ida de cada expedición en la caja de eventos. Las filas que aún se pueden retirar siempre quedan visibles.",
   },
 });
