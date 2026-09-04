@@ -488,5 +488,7 @@ export default Object.freeze({
     404: "Lo que falta tras contar las existencias del planeta y lo que ya está en vuelo.",
     405: "Apunta esta cantidad para este planeta: las naves y defensas no tienen nivel, así que no pueden ser una entrada del plan.",
     406: "Jugador inactivo: la regla de bashing no se aplica aquí.",
+    407: "Calculadora de intercambio",
+    408: "Introduce una cantidad en cualquier campo: los otros dos muestran su equivalente a este cambio.",
   },
 });

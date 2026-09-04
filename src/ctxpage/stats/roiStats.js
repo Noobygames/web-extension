@@ -6,6 +6,7 @@ import OGBIData from "../../store/OGBIData.js";
 import PlayerClass from "../../game/playerClass.js";
 import { CRAWLER_OVERLOAD_MAX } from "../../game/gameConstants.js";
 import { getBestRoi } from "../../game/gameFormulas.js";
+import * as tradeRateInput from "../../ui/tradeRateInput.js";
 
 import { statsState } from "./state.js";
 
@@ -21,7 +22,7 @@ function roiStats() {
   let header = details.appendChild(createDOM("h1"));
   header.appendChild(createDOM("p", {}, Translator.translate(88)));
   let tradeRateText = createDOM("p", { class: "ogk-tradeRate-text" }, Translator.translate(119));
-  let tradeRateGrid = createDOM("div", { class: "ogk-tradeRate-grid" });
+  let tradeRateGrid = tradeRateInput.tradeRateInputs(() => updateRoi());
   let box = details.appendChild(createDOM("div", { class: "ogk-box" }));
   tradeRateBox.appendChild(tradeRateText);
   tradeRateBox.appendChild(tradeRateGrid);
@@ -156,118 +157,6 @@ function roiStats() {
     OGBIData.json.options.crawlerPercent = crawler.querySelector("#crawlerPercent").value / 100;
     crawler.querySelector("#crawlerPercent").classList.remove("overcharge", "undermark", "middlemark", "overmark");
     crawler.querySelector("#crawlerPercent").classList.add(crawlerClass(OGBIData.json.options.crawlerPercent));
-    OGBIData.Save();
-    updateRoi();
-  });
-
-  tradeRateGrid.appendChild(createDOM("a", { class: "ogl-option resourceIcon metal" }));
-  let metalTradeRate = tradeRateGrid.appendChild(
-    createDOM("input", {
-      class: "ogl-tradeRate-input metal",
-      type: "text",
-      value: toFormattedNumber(OGBIData.json.options.tradeRate[0]),
-    })
-  );
-  metalTradeRate.addEventListener("keyup", (e) => {
-    setTimeout(() => {
-      if (e.key == "Enter") metalTradeRate.blur();
-      if (e.key == "." || e.key == ",") return;
-      let input = metalTradeRate.value.replace(",", ".");
-      if (input === "") return;
-      input = Math.round(parseFloat(input) * 100) / 100;
-      if (e.key == "ArrowUp") input += 0.1;
-      if (e.key == "ArrowDown") input -= 0.1;
-      if (input < 1) {
-        input = 1;
-        fadeBox(Translator.translate(122), true);
-      }
-      if (!input) input = OGBIData.json.options.tradeRate[0];
-      metalTradeRate.value = toFormattedNumber(input);
-      OGBIData.json.options.tradeRate[0] = input;
-      OGBIData.Save();
-      updateRoi();
-    }, 100);
-  });
-  metalTradeRate.addEventListener("blur", () => {
-    let input = metalTradeRate.value.replace(",", ".");
-    if (input === "") input = OGBIData.json.options.tradeRate[0];
-    input = Math.round(parseFloat(input) * 100) / 100;
-    metalTradeRate.value = toFormattedNumber(input);
-    OGBIData.json.options.tradeRate[0] = input;
-    OGBIData.Save();
-    updateRoi();
-  });
-  tradeRateGrid.appendChild(createDOM("a", { class: "ogl-option resourceIcon crystal" }));
-  let crystalTradeRate = tradeRateGrid.appendChild(
-    createDOM("input", {
-      class: "ogl-tradeRate-input crystal",
-      type: "text",
-      value: toFormattedNumber(OGBIData.json.options.tradeRate[1]),
-    })
-  );
-  crystalTradeRate.addEventListener("keyup", (e) => {
-    setTimeout(() => {
-      if (e.key == "Enter") crystalTradeRate.blur();
-      if (e.key == "." || e.key == ",") return;
-      let input = crystalTradeRate.value.replace(",", ".");
-      if (input === "") return;
-      input = Math.round(parseFloat(input) * 100) / 100;
-      if (e.key == "ArrowUp") input += 0.1;
-      if (e.key == "ArrowDown") input -= 0.1;
-      if (input < 1) {
-        input = 1;
-        fadeBox(Translator.translate(122), true);
-      }
-      if (!input) input = OGBIData.json.options.tradeRate[1];
-      crystalTradeRate.value = toFormattedNumber(input);
-      OGBIData.json.options.tradeRate[1] = input;
-      OGBIData.Save();
-      updateRoi();
-    }, 100);
-  });
-  crystalTradeRate.addEventListener("blur", () => {
-    let input = crystalTradeRate.value.replace(",", ".");
-    if (input === "") input = OGBIData.json.options.tradeRate[1];
-    input = Math.round(parseFloat(input) * 100) / 100;
-    crystalTradeRate.value = toFormattedNumber(input);
-    OGBIData.json.options.tradeRate[1] = input;
-    OGBIData.Save();
-    updateRoi();
-  });
-  tradeRateGrid.appendChild(createDOM("a", { class: "ogl-option resourceIcon deuterium" }));
-  let deuteriumTradeRate = tradeRateGrid.appendChild(
-    createDOM("input", {
-      class: "ogl-tradeRate-input deuterium",
-      type: "text",
-      value: toFormattedNumber(OGBIData.json.options.tradeRate[2]),
-    })
-  );
-  deuteriumTradeRate.addEventListener("keyup", (e) => {
-    setTimeout(() => {
-      if (e.key == "Enter") deuteriumTradeRate.blur();
-      if (e.key == "." || e.key == ",") return;
-      let input = deuteriumTradeRate.value.replace(",", ".");
-      if (input === "") return;
-      input = Math.round(parseFloat(input) * 100) / 100;
-      if (e.key == "ArrowUp") input += 0.1;
-      if (e.key == "ArrowDown") input -= 0.1;
-      if (input < 1) {
-        input = 1;
-        fadeBox(Translator.translate(122), true);
-      }
-      if (!input) input = OGBIData.json.options.tradeRate[2];
-      deuteriumTradeRate.value = toFormattedNumber(input);
-      OGBIData.json.options.tradeRate[2] = input;
-      OGBIData.Save();
-      updateRoi();
-    }, 100);
-  });
-  deuteriumTradeRate.addEventListener("blur", () => {
-    let input = deuteriumTradeRate.value.replace(",", ".");
-    if (input === "") input = OGBIData.json.options.tradeRate[2];
-    input = Math.round(parseFloat(input) * 100) / 100;
-    deuteriumTradeRate.value = toFormattedNumber(input);
-    OGBIData.json.options.tradeRate[2] = input;
     OGBIData.Save();
     updateRoi();
   });

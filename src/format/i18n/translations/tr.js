@@ -488,5 +488,7 @@ export default Object.freeze({
     404: "Gezegendeki stok ve uçuştakiler sayıldıktan sonra kalan eksik.",
     405: "Bu miktarı bu gezegen için not et - gemilerin ve savunmanın seviyesi yoktur, plan girdisi olamazlar.",
     406: "Etkin olmayan oyuncu - bashing kuralı burada geçerli değil.",
+    407: "Takas hesaplayıcı",
+    408: "Herhangi bir alana miktar gir - diğer ikisi bu kurdaki karşılığını gösterir.",
   },
 });

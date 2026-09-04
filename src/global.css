@@ -4095,6 +4095,86 @@ div[data-raw-depletion="4"] + .msgHead a.txt_link {
   width: 15px;
 }
 
+.ogl-tradeCalc-icon {
+  cursor: pointer;
+  height: 100%;
+  position: relative;
+  width: 100%;
+  background: #1b1b1b !important;
+}
+
+.ogl-tradeCalc-icon:before {
+  border: 3px solid #7fb063;
+  border-radius: 3px;
+  box-sizing: border-box;
+  color: #7fb063;
+  content: "\21c4";
+  font-size: 11px;
+  font-weight: 700;
+  height: 15px;
+  left: 50%;
+  line-height: 9px;
+  position: absolute;
+  text-align: center;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 15px;
+}
+
+.ogl-tradeCalc {
+  min-width: 300px;
+  max-width: 90vw;
+}
+
+.ogl-tradeCalc h2 {
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.ogl-tradeCalc .ogk-tradeRate-box {
+  margin: 0 auto 10px;
+}
+
+.ogl-tradeCalc-hint {
+  color: #9099a3;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.ogl-tradeCalc-grid {
+  align-items: center;
+  column-gap: 8px;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  row-gap: 6px;
+}
+
+.ogl-tradeCalc-input {
+  height: 22px;
+  padding: 0 5px !important;
+  text-align: right;
+  width: 100%;
+}
+
+.ogl-tradeCalc .resourceIcon {
+  background: transparent url("https://gf3.geo.gfsrv.net/cdned/7f14c18b15064d2604c5476f5d10b3.png") 0 0 no-repeat;
+  background-size: 400px, auto;
+  height: 20px;
+  width: 30px;
+}
+
+.ogl-tradeCalc .resourceIcon.metal {
+  background-position: 0px -100px;
+}
+
+.ogl-tradeCalc .resourceIcon.crystal {
+  background-position: -30px -100px;
+}
+
+.ogl-tradeCalc .resourceIcon.deuterium {
+  background-position: -60px -100px;
+}
+
 .ogl-upgradePlans {
   min-width: 520px;
   max-width: 90vw;

@@ -488,5 +488,7 @@ export default Object.freeze({
     404: "O que falta depois do estoque do planeta e do que já está em voo.",
     405: "Anota esta quantia para este planeta - naves e defesas não têm nível, então não podem ser uma entrada do plano.",
     406: "Jogador inativo - a regra de bashing não se aplica aqui.",
+    407: "Calculadora de troca",
+    408: "Digite uma quantia em qualquer campo - os outros dois mostram o equivalente a esta taxa.",
   },
 });

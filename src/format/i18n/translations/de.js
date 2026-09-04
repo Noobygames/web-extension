@@ -488,5 +488,7 @@ export default Object.freeze({
     404: "Was nach Bestand auf dem Planeten und bereits unterwegs noch fehlt.",
     405: "Diese Menge für diesen Planeten vormerken - Schiffe und Verteidigung haben keine Stufe und können kein Plan-Eintrag sein.",
     406: "Inaktiver Spieler - die Bashing-Regel gilt hier nicht.",
+    407: "Tausch-Rechner",
+    408: "Menge in ein beliebiges Feld eintragen - die anderen beiden zeigen den Gegenwert zu diesem Kurs.",
   },
 });

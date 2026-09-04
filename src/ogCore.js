@@ -765,6 +765,15 @@ class OGBeyondInfinity {
       // is standing on rather than on whatever sorts first.
       module.upgradePlans({ coords: this.current.coords, isMoon: this.current.isMoon });
     });
+    let tradeCalcBtn = harvestOptions.appendChild(
+      DOM.createDOM("div", { class: "ogl-option ogl-tradeCalc-icon tooltip", title: Translator.translate(407) })
+    );
+    // A chunk like the panels above it: arithmetic over the stored trade rate, opened
+    // rarely, and the page entry is at its size budget.
+    tradeCalcBtn.addEventListener("click", async () => {
+      const module = await loadChunk("tradeCalc", () => import("./ctxpage/tradeCalc/index.js"));
+      module?.tradeCalculator();
+    });
     if (OGBIData.json.options.targetList) {
       targetListButton.classList.add("ogl-active");
       targetList(this.galaxyContext(), true);

@@ -488,5 +488,7 @@ export default Object.freeze({
     404: "What is still missing after the planet's own stock and everything already in flight.",
     405: "Pencil this amount in for this planet - ships and defences have no level, so they cannot be a plan entry.",
     406: "Inactive player - the bashing rule does not apply here.",
+    407: "Trade calculator",
+    408: "Enter an amount in any field - the other two show what it is worth at this rate.",
   },
 });

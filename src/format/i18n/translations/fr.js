@@ -488,5 +488,7 @@ export default Object.freeze({
     404: "Ce qui manque une fois comptés le stock de la planète et ce qui est déjà en vol.",
     405: "Note ce montant pour cette planète : vaisseaux et défenses n'ont pas de niveau, ils ne peuvent pas être une entrée du plan.",
     406: "Joueur inactif - la règle de bashing ne s'applique pas ici.",
+    407: "Calculateur d’échange",
+    408: "Saisis un montant dans n’importe quel champ : les deux autres affichent l’équivalent à ce taux.",
   },
 });
