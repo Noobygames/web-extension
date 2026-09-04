@@ -34,13 +34,8 @@ import OGBIData from "../../store/OGBIData.js";
 import { getShipsData } from "../../game/shipsData.js";
 import { getLogger } from "../../platform/logger.js";
 import * as wait from "../../platform/wait.js";
-import ship from "../../game/ship.js";
-import PlayerClass from "../../game/playerClass.js";
 
 const logger = getLogger("fleetdispatch");
-
-/** Trading ships eligible for the Miner class cargo bonus. */
-const TRADING_SHIPS = [ship.SmallCargoShip, ship.LargeCargoShip];
 
 /**
  * OGame's researched-technology pairs, as the dispatcher publishes them.
@@ -63,47 +58,43 @@ function getApiTechData() {
  * name-to-id direction is what `messages-analyzer` and the cargo helpers look up, and
  * getting it backwards is invisible until a message fails to parse.
  *
- * `baseCargoCapacity` is exactly that - base, before either bonus OGame applies on
- * top of it. Storing it unmodified as `cargoCapacity` (as this used to) is what made
- * every cargo suggestion in the extension (needed-cargo-ships counts, expedition cargo
- * fill, the empire-overview transport totals, farm-target ship recommendations) read
- * low the moment a player had any Hyperspace Technology or was Miner class - both are
- * common, so the wrong number was the common case, not an edge case.
+ * **The capacity is taken from the game verbatim. Nothing is multiplied onto it.**
  *
- * The two bonuses do not share a scale, confirmed against a live serverData.xml:
- * `cargoHyperspaceTechMultiplier` is a percentage-per-level integer (`5`, meaning 5%
- * per level - divide by 100), while `minerBonusIncreasedCargoCapacityForTradingShips`
- * is already a fraction (`0.25`, meaning +25% - used as-is). Treating both the same
- * way silently produces a second wrong number instead of fixing the first.
+ * `baseCargoCapacity` is not the base, whatever the name says - it is the final
+ * per-ship capacity with every bonus already in it. A `shipsData` batch captured off a
+ * live account (the fixture in `ctxpage/empireOverview/tables.js`) settles it: small
+ * cargo 7250, large cargo 36250, recycler 29000, pathfinder 14500, death star
+ * 1 450 000 - every one of them exactly OGame's published base times 1.45, that
+ * account's Hyperspace Technology 9. The true bases are in the `baseFuelCapacity`
+ * field beside them (5000 for a small cargo, 25000 for a large one).
  *
- * @param {Record<string, {name: string, baseCargoCapacity: number, speed: number,
- *   fuelConsumption: number}>} shipsData
- * @param {object} [bonus]
- * @param {number} [bonus.hyperspaceTechLevel] player's Hyperspace Technology level (id 114)
- * @param {number} [bonus.cargoHyperspaceTechMultiplier] percent-per-level cargo bonus from server settings
- * @param {number} [bonus.playerClass] `game/playerClass.js` value
- * @param {number} [bonus.minerCargoBonus] Miner class trading-ship cargo bonus, as a fraction
+ * This used to apply the Hyperspace and Miner bonuses on top, which counted them
+ * twice: at Hyperspace 11 a large cargo was stored at 61 787 instead of 39 863, so
+ * "how many cargos do I need for 2 000 000" answered 33 where the real answer was 51 -
+ * and the player found out from OGame's own red overload bar. `cargoCapacity` is
+ * preferred over `baseCargoCapacity` because it is the field the dispatcher's own
+ * `getCargoCapacity()` sums; in every batch seen so far the two are identical.
+ *
+ * Anything the extension has not been taught - lifeform cargo bonuses, class bonuses,
+ * whatever a future update adds - therefore lands in the number for free, because the
+ * number is the game's own.
+ *
+ * @param {Record<string, {name: string, cargoCapacity?: number, baseCargoCapacity: number,
+ *   speed: number, fuelConsumption: number}>} shipsData
  * @returns {{shipNames: Record<string, string>, ships: Record<string, object>}}
  */
-export function mapShipsData(
-  shipsData,
-  { hyperspaceTechLevel = 0, cargoHyperspaceTechMultiplier = 0, playerClass, minerCargoBonus = 0 } = {}
-) {
+export function mapShipsData(shipsData) {
   const shipNames = {};
   const ships = {};
 
   for (const id in shipsData) {
     shipNames[shipsData[id].name] = id;
 
-    let cargoCapacity =
-      shipsData[id].baseCargoCapacity * (1 + (hyperspaceTechLevel * cargoHyperspaceTechMultiplier) / 100);
-    if (playerClass === PlayerClass.MINER && TRADING_SHIPS.includes(Number(id))) {
-      cargoCapacity *= 1 + minerCargoBonus;
-    }
+    const capacity = Number(shipsData[id].cargoCapacity ?? shipsData[id].baseCargoCapacity);
 
     ships[id] = {
       name: shipsData[id].name,
-      cargoCapacity: Math.floor(cargoCapacity),
+      cargoCapacity: Number.isFinite(capacity) ? Math.floor(capacity) : 0,
       speed: shipsData[id].speed,
       fuelConsumption: shipsData[id].fuelConsumption,
     };
@@ -119,28 +110,17 @@ export function mapShipsData(
  * setter's write-through persists the pair - the rule from Phase 4 of refactoring.md.
  * The technology list joins the same batch when the dispatcher carries one.
  *
- * Hyperspace Technology's level is read from this same `apiTechData` batch rather than
- * from the already-stored `OGBIData.json.technology` - the dispatcher hands both the
- * ship table and the tech list over together, so the freshest level is the one sitting
- * right here, not last visit's cached copy. `OGBIData.json.technology` is only the
- * fallback for the (rare) case this particular batch does not carry id 114.
+ * The technology levels still come out of `apiTechData` - the dispatcher hands the
+ * ship table and the tech list over together, so this batch carries the freshest
+ * levels there are. They no longer touch the cargo capacity, which the game reports
+ * bonus-included (see `mapShipsData`); they are stored because the rest of the
+ * extension reads them.
  *
  * @param {object} shipsData the game's ship table
  * @param {ArrayLike<ArrayLike<number>>} [apiTechData] the game's researched-technology pairs (index-access only, see `getApiTechData`)
- * @param {number} [playerClass] `game/playerClass.js` value, for the Miner cargo bonus
  */
-function storeShipData(shipsData, apiTechData, playerClass) {
-  const hyperspaceTechLevel =
-    apiTechData?.find((tech) => Number(tech[0]) === 114)?.[1] ?? OGBIData.json.technology?.[114] ?? 0;
-  const cargoHyperspaceTechMultiplier = Number(OGBIData.json.cargoHyperspaceTechMultiplier) || 0;
-  const minerCargoBonus = Number(OGBIData.json.trashsimSettings?.minerBonusIncreasedCargoCapacityForTradingShips) || 0;
-
-  const { shipNames, ships } = mapShipsData(shipsData, {
-    hyperspaceTechLevel,
-    cargoHyperspaceTechMultiplier,
-    playerClass,
-    minerCargoBonus,
-  });
+function storeShipData(shipsData, apiTechData) {
+  const { shipNames, ships } = mapShipsData(shipsData);
 
   OGBIData.json.shipNames = shipNames;
   apiTechData?.forEach((tech) => {
@@ -185,9 +165,8 @@ function describeDispatcher() {
  * table never appears the cached copy is kept rather than wiped - a fleet-dispatch page
  * with no ship data at all would leave the cargo helpers with nothing to divide by.
  *
- * @param {{waitFor?: typeof wait.waitFor, playerClass?: number}} [deps] `waitFor` is a
- *   seam for tests (the poll is `util/wait.js` in production); `playerClass` is
- *   `game/playerClass.js` value, needed for the Miner cargo bonus.
+ * @param {{waitFor?: typeof wait.waitFor}} [deps] `waitFor` is a seam for tests (the
+ *   poll is `util/wait.js` in production).
  * @returns {Promise<boolean>} whether the table was found and stored
  */
 /**
@@ -202,9 +181,9 @@ function describeDispatcher() {
  *
  * @returns {boolean} whether the table was actually stored
  */
-function tryStoreShipData(shipsData, apiTechData, playerClass) {
+function tryStoreShipData(shipsData, apiTechData) {
   try {
-    storeShipData(shipsData, apiTechData, playerClass);
+    storeShipData(shipsData, apiTechData);
     return true;
   } catch (error) {
     logger.warn("storeShipData failed on an unexpected shape - keeping cached ship data", error);
@@ -212,10 +191,10 @@ function tryStoreShipData(shipsData, apiTechData, playerClass) {
   }
 }
 
-export async function cacheShipData({ waitFor = wait.waitFor, playerClass } = {}) {
+export async function cacheShipData({ waitFor = wait.waitFor } = {}) {
   const immediate = readyShipsData();
   if (immediate) {
-    return tryStoreShipData(immediate, getApiTechData(), playerClass);
+    return tryStoreShipData(immediate, getApiTechData());
   }
 
   try {
@@ -233,7 +212,7 @@ export async function cacheShipData({ waitFor = wait.waitFor, playerClass } = {}
     return false;
   }
 
-  return tryStoreShipData(readyShipsData(), getApiTechData(), playerClass);
+  return tryStoreShipData(readyShipsData(), getApiTechData());
 }
 
 export default cacheShipData;

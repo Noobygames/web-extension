@@ -1021,7 +1021,7 @@ class OGBeyondInfinity {
     // "Uncaught (in promise) TypeError" and cancels the rest of the wiring silently.
     if (!(await module.awaitFleetDispatcher())) return;
 
-    module.cacheShipData({ playerClass: this.playerClass });
+    module.cacheShipData();
     module.neededCargo(this.fleetContext());
     module.preselectShips(this.fleetContext());
     module.expedition(this.fleetContext());

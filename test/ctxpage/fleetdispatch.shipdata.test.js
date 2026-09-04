@@ -22,13 +22,36 @@ import { setupBrowser } from "../helpers/globals.js";
 const bootstrap = setupBrowser();
 const OGBIData = (await import("../../src/store/OGBIData.js")).default;
 const { cacheShipData, mapShipsData } = await import("../../src/ctxpage/fleetdispatch/shipData.js");
-const PlayerClass = (await import("../../src/game/playerClass.js")).default;
 bootstrap.cleanup();
 
-/** Two rows of OGame's own table, in the shape the game publishes. */
+/**
+ * Two rows of OGame's own table, in the shape a live page actually publishes.
+ *
+ * Taken from the batch captured in `ctxpage/empireOverview/tables.js`: both capacity
+ * fields carry the same, already-final number. 7250 and 36250 are OGame's published
+ * bases (5000, 25000) times 1.45 - that account's Hyperspace Technology 9 - and the
+ * untouched bases are what sits in `baseFuelCapacity` beside them.
+ *
+ * The fixture this replaced had `baseCargoCapacity: 25000` and no `cargoCapacity`, a
+ * shape no page ever serves. That is why the double-counted bonus below went unseen.
+ */
 const SHIPS_DATA = Object.freeze({
-  202: { name: "Small Cargo", baseCargoCapacity: 5000, speed: 5000, fuelConsumption: 10 },
-  203: { name: "Large Cargo", baseCargoCapacity: 25000, speed: 7500, fuelConsumption: 50 },
+  202: {
+    name: "Small Cargo",
+    baseCargoCapacity: 7250,
+    cargoCapacity: 7250,
+    baseFuelCapacity: 5000,
+    speed: 5000,
+    fuelConsumption: 10,
+  },
+  203: {
+    name: "Large Cargo",
+    baseCargoCapacity: 36250,
+    cargoCapacity: 36250,
+    baseFuelCapacity: 25000,
+    speed: 7500,
+    fuelConsumption: 50,
+  },
 });
 
 /** What the previous visit left in the store. */
@@ -54,68 +77,70 @@ test("the mapping keeps the name-to-id direction the lookups depend on", () => {
   assert.deepEqual(shipNames, { "Small Cargo": "202", "Large Cargo": "203" });
   assert.deepEqual(ships[203], {
     name: "Large Cargo",
-    cargoCapacity: 25000,
+    cargoCapacity: 36250,
     speed: 7500,
     fuelConsumption: 50,
   });
 });
 
 /**
- * The bug this section covers: `cargoCapacity` used to be stored as
- * `baseCargoCapacity` verbatim, so every cargo suggestion in the extension read low
- * for any player with Hyperspace Technology or the Miner class - which is most
- * players, not an edge case.
+ * KNOWN BUG fixed: the capacity used to be multiplied by the Hyperspace Technology and
+ * Miner bonuses on top of what the game reported - but the game reports them already
+ * applied, so both were counted twice.
  *
- * `cargoHyperspaceTechMultiplier` is a percent-per-level integer on a live
- * serverData.xml (`5`, meaning 5% per level), while
- * `minerBonusIncreasedCargoCapacityForTradingShips` is already a fraction (`0.25`).
- * The two tests below pin that each is applied on its own scale, not both the same way.
+ * What it cost the player: at Hyperspace 11 a large cargo went into the store at
+ * 61 787 instead of 39 863, so "how many cargos for 2 000 000" answered 33 where the
+ * real answer was 51, and OGame's own bar went red at -684 521.
+ *
+ * The tests below therefore pin the opposite of what the old ones did: the number the
+ * game publishes is stored verbatim, whatever the player's technology or class.
  */
-test("Hyperspace Technology raises cargo capacity by a percentage per level", () => {
-  const { ships } = mapShipsData(SHIPS_DATA, { hyperspaceTechLevel: 10, cargoHyperspaceTechMultiplier: 5 });
+test("the capacity the game publishes is stored verbatim, bonuses included", () => {
+  const { ships } = mapShipsData(SHIPS_DATA);
 
-  // 25000 * (1 + 10 * 5 / 100) = 37500
-  assert.equal(ships[203].cargoCapacity, 37500);
-  assert.equal(ships[202].cargoCapacity, 7500);
+  assert.equal(ships[203].cargoCapacity, 36250);
+  assert.equal(ships[202].cargoCapacity, 7250);
 });
 
-test("the Miner cargo bonus is a fraction applied as-is, not divided by 100", () => {
-  const { ships } = mapShipsData(SHIPS_DATA, { playerClass: PlayerClass.MINER, minerCargoBonus: 0.25 });
-
-  assert.equal(ships[203].cargoCapacity, 31250);
-});
-
-test("the Miner cargo bonus only applies to trading ships, not every ship", () => {
-  const shipsData = {
-    ...SHIPS_DATA,
-    219: { name: "Pathfinder", baseCargoCapacity: 10000, speed: 12000, fuelConsumption: 300 },
-  };
-  const { ships } = mapShipsData(shipsData, { playerClass: PlayerClass.MINER, minerCargoBonus: 0.25 });
-
-  assert.equal(ships[219].cargoCapacity, 10000);
-});
-
-test("a non-Miner class never gets the trading-ship cargo bonus", () => {
-  const { ships } = mapShipsData(SHIPS_DATA, { playerClass: PlayerClass.WARRIOR, minerCargoBonus: 0.25 });
-
-  assert.equal(ships[203].cargoCapacity, 25000);
-});
-
-test("both bonuses stack, floored once at the end", () => {
-  const { ships } = mapShipsData(SHIPS_DATA, {
-    hyperspaceTechLevel: 10,
-    cargoHyperspaceTechMultiplier: 5,
-    playerClass: PlayerClass.MINER,
-    minerCargoBonus: 0.25,
+test("`cargoCapacity` wins over `baseCargoCapacity` - it is the field the dispatcher sums", () => {
+  const { ships } = mapShipsData({
+    203: { name: "Large Cargo", baseCargoCapacity: 36250, cargoCapacity: 45312, speed: 7500, fuelConsumption: 50 },
   });
 
-  // 25000 * 1.5 * 1.25 = 46875
-  assert.equal(ships[203].cargoCapacity, 46875);
+  assert.equal(ships[203].cargoCapacity, 45312);
 });
 
-test("cacheShipData reads the Hyperspace Technology level out of this batch's apiTechData", async () => {
+test("a table without `cargoCapacity` falls back to the other field rather than to zero", () => {
+  const { ships } = mapShipsData({
+    203: { name: "Large Cargo", baseCargoCapacity: 36250, speed: 7500, fuelConsumption: 50 },
+  });
+
+  assert.equal(ships[203].cargoCapacity, 36250);
+});
+
+test("a fractional capacity is floored, a missing one is zero rather than NaN", () => {
+  const { ships } = mapShipsData({
+    210: { name: "Espionage Probe", cargoCapacity: 7.25, speed: 100000000, fuelConsumption: 1 },
+    217: { name: "Crawler", speed: 0, fuelConsumption: 0 },
+  });
+
+  assert.equal(ships[210].cargoCapacity, 7);
+  assert.equal(ships[217].cargoCapacity, 0);
+});
+
+test("the ship count for a pile of resources matches what OGame's own cargo bar allows", () => {
+  // The screenshot case, end to end: 2 000 000 crystal, Hyperspace 11, a large cargo
+  // that really holds 39 863. The old double count said 33 and overloaded the fleet.
+  const { ships } = mapShipsData({
+    203: { name: "Large Cargo", baseCargoCapacity: 39863, cargoCapacity: 39863, speed: 7500, fuelConsumption: 50 },
+  });
+
+  assert.equal(Math.ceil(2000000 / ships[203].cargoCapacity), 51);
+});
+
+test("cacheShipData stores the technology levels this batch carries", async () => {
   await withPage(async () => {
-    OGBIData.json = { ...CACHED, cargoHyperspaceTechMultiplier: 5 };
+    OGBIData.json = { ...CACHED };
     globalThis.fleetDispatcher = {
       fleetHelper: { shipsData: SHIPS_DATA },
       apiTechData: [
@@ -126,7 +151,9 @@ test("cacheShipData reads the Hyperspace Technology level out of this batch's ap
 
     await cacheShipData({ waitFor: () => Promise.resolve(true) });
 
-    assert.equal(OGBIData.ships[203].cargoCapacity, 37500);
+    assert.equal(OGBIData.json.technology[114], 10);
+    assert.equal(OGBIData.json.technology[115], 15);
+    assert.equal(OGBIData.ships[203].cargoCapacity, 36250, "Hyperspace 10 must not be counted a second time");
   });
 });
 
@@ -135,7 +162,7 @@ test("apiTechData entries that are array-like but not iterable do not crash the 
   // a real Array. Destructuring one (`[id]`) throws "object is not iterable"; this pins
   // the fix that reads by index instead.
   await withPage(async () => {
-    OGBIData.json = { ...CACHED, cargoHyperspaceTechMultiplier: 5 };
+    OGBIData.json = { ...CACHED };
     globalThis.fleetDispatcher = {
       fleetHelper: { shipsData: SHIPS_DATA },
       apiTechData: [
@@ -146,21 +173,7 @@ test("apiTechData entries that are array-like but not iterable do not crash the 
 
     await cacheShipData({ waitFor: () => Promise.resolve(true) });
 
-    assert.equal(OGBIData.ships[203].cargoCapacity, 37500);
-  });
-});
-
-test("cacheShipData applies the Miner trading-ship bonus when told the player is Miner", async () => {
-  await withPage(async () => {
-    OGBIData.json = {
-      ...CACHED,
-      trashsimSettings: { minerBonusIncreasedCargoCapacityForTradingShips: "0.25" },
-    };
-    globalThis.fleetDispatcher = { fleetHelper: { shipsData: SHIPS_DATA }, apiTechData: [[115, 15]] };
-
-    await cacheShipData({ waitFor: () => Promise.resolve(true), playerClass: PlayerClass.MINER });
-
-    assert.equal(OGBIData.ships[203].cargoCapacity, 31250);
+    assert.equal(OGBIData.json.technology[114], 10);
   });
 });
 
@@ -180,7 +193,7 @@ test("a dispatcher that already carries the table is read without waiting", asyn
     assert.equal(found, true);
     assert.deepEqual(waited, [], "the fast path must not poll");
     assert.equal(OGBIData.json.shipNames["Large Cargo"], "203");
-    assert.equal(OGBIData.ships[202].cargoCapacity, 5000, "the stale entry was not replaced");
+    assert.equal(OGBIData.ships[202].cargoCapacity, 7250, "the stale entry was not replaced");
     assert.equal(OGBIData.json.technology[115], 15);
   });
 });
@@ -204,7 +217,7 @@ test("a table the game publishes late is picked up once it appears", async () =>
 
     assert.equal(found, true);
     assert.deepEqual(OGBIData.json.shipNames, { "Small Cargo": "202", "Large Cargo": "203" });
-    assert.equal(OGBIData.ships[203].cargoCapacity, 25000);
+    assert.equal(OGBIData.ships[203].cargoCapacity, 36250);
   });
 });
 
@@ -282,7 +295,7 @@ test("an empty table is treated as not there yet, not as an answer", async () =>
 
     assert.equal(polled, true, "the fast path accepted an empty table");
     assert.equal(found, true);
-    assert.equal(OGBIData.ships[203].cargoCapacity, 25000);
+    assert.equal(OGBIData.ships[203].cargoCapacity, 36250);
   });
 });
 
