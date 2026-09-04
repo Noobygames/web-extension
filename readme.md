@@ -7,16 +7,16 @@ This repository contains the monolithic code mess for the Ogame Beyond Infinity 
 
 ### What's different from upstream Ogame Infinity
 
-| Area           | What changed                                                                                                                                                                                                                                                                                                       |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Architecture   | Monolithic `ogCore.js` split into modules (`ctxpage/`, `game/`, `store/`, `ui/`, `format/`, `platform/`); one file per module, bundled at build time                                                                                                                                                               |
-| Performance    | Removed a permanent 100ms DOM poll, killed redundant re-parsing on every cargo calc, faster startup draw order                                                                                                                                                                                                     |
-| New features   | [Upgrade plans](#upgrade-plans) (plan builds, see what each planet is short of, set up the transport), raid list (best profit/hour targets), spy-report cache with resource-now estimate + stale warning, harvest planner, expedition slot balancing, alliance target claims in galaxy view, active-planet counter |
-| Notifications  | Rewritten fleet-arrival/browser notification system: scheduling, dedup, sync across tabs                                                                                                                                                                                                                           |
-| Galaxy data    | Dedicated galaxy storage with per-(galaxy,system) diff snapshots, instead of piggybacking the general data blob                                                                                                                                                                                                    |
-| Fleet dispatch | Fixed cargo-capacity math (hyperspace + miner-class bonuses now applied, and the count is corrected against the game's own cargo total), donut-system distance fix, empty/inactive system display                                                                                                                  |
-| Dev tooling    | Makefile, `node:test` + jsdom test suite, ESLint/Prettier gate, benchmarks, permanent local install, docs under `docs/`                                                                                                                                                                                            |
-| OGame version  | v13+ only, v12 support dropped                                                                                                                                                                                                                                                                                     |
+| Area           | What changed                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture   | Monolithic `ogCore.js` split into modules (`ctxpage/`, `game/`, `store/`, `ui/`, `format/`, `platform/`); one file per module, bundled at build time                                                                                                                                                                                                                                                                       |
+| Performance    | Removed a permanent 100ms DOM poll, killed redundant re-parsing on every cargo calc, faster startup draw order                                                                                                                                                                                                                                                                                                             |
+| New features   | [Upgrade plans](#upgrade-plans) (plan builds, edit them level by level, see what each planet is short of, set up the transport), [trade calculator](#trade-calculator), [points per build](#points-per-build), raid list (best profit/hour targets), spy-report cache with resource-now estimate + stale warning, harvest planner, expedition slot balancing, alliance target claims in galaxy view, active-planet counter |
+| Notifications  | Rewritten fleet-arrival/browser notification system: scheduling, dedup, sync across tabs                                                                                                                                                                                                                                                                                                                                   |
+| Galaxy data    | Dedicated galaxy storage with per-(galaxy,system) diff snapshots, instead of piggybacking the general data blob                                                                                                                                                                                                                                                                                                            |
+| Fleet dispatch | Fixed cargo-capacity math (hyperspace + miner-class bonuses now applied, and the count is corrected against the game's own cargo total), donut-system distance fix, empty/inactive system display                                                                                                                                                                                                                          |
+| Dev tooling    | Makefile, `node:test` + jsdom test suite, ESLint/Prettier gate, benchmarks, permanent local install, docs under `docs/`                                                                                                                                                                                                                                                                                                    |
+| OGame version  | v13+ only, v12 support dropped                                                                                                                                                                                                                                                                                                                                                                                             |
 
 Fast-moving fork — expect this list to lag behind `master`.
 
@@ -52,6 +52,13 @@ entries with a per-category subtotal, and the category chips hide what you are n
 interested in right now (lifeform buildings, say). The filter shapes those lists only; the
 amounts at the top stay the full requirement.
 
+**Changing the plan.** Every planned row carries three buttons: `−` and `+` move the
+target by one level, `✖` drops the row. The steppers work off what the row shows, so on a
+technology the game is already part way through, one level less means one level off what is
+still open — and the row goes when nothing is left to plan. The trash button next to the
+panel heading clears every plan on every planet and moon at once; it asks first, because
+there is no undo.
+
 **Sending it.** Each row has one button. It opens OGame's own fleet dispatch page with the
 target, the transport mission and the amounts filled in, starting from your RSS moon —
 which defaults to the collect target you already configured. The ship count is checked
@@ -61,6 +68,27 @@ know about.
 The button stops there. It never sends a fleet, and there is deliberately no "send to all":
 one row, one click, one fleet, with OGame's own send button doing the sending. The planet
 bar keeps showing the same shortfall as a lock icon, as it always has.
+
+## Trade calculator
+
+A sidebar button (`⇄`) opens a converter. Set the rate at the top — 3:2:1, 2.5:1.5:1,
+whatever your universe trades at — then type an amount into any of the three fields and the
+other two show what it is worth. 3000 metal is 2000 crystal is 1000 deuterium at 3:2:1, and
+it works from any of the three, not just from metal.
+
+The rate is the same one the ROI tab and every MSU/CSU/DSU sum already use, so setting it
+here sets it everywhere. Upstream only lets you edit it buried in the statistics ROI tab.
+
+## Points per build
+
+The technology detail panel — ships, defences, buildings, research — gets one more column
+beside the costs: what the build is worth on the highscore. One point per 1000 metal,
+crystal and deuterium; energy, population and food buy nothing.
+
+Two lines: what **one** is worth, and what the amount currently in the box is worth. Type
+150 battlecruisers and it says `85` and `12,750`. On a building or research it is the level
+on screen, plus the whole range when you step the target up. Upstream shows what a build
+costs and never what it gives back.
 
 ## Downloads
 

@@ -494,5 +494,7 @@ export default Object.freeze({
     410: "Tüm gezegen ve aylardaki planlanmış her yükseltme silinsin mi? Bu geri alınamaz.",
     411: "Bir seviye az",
     412: "Bir seviye fazla",
+    413: "Puan",
+    414: "Sıralamadaki puan: her 1.000 metal, kristal ve döteryum için 1 puan. Enerji ve nüfus sayılmaz.",
   },
 });

@@ -494,5 +494,7 @@ export default Object.freeze({
     410: "¿Borrar cada mejora planificada en todos los planetas y lunas? Esto no se puede deshacer.",
     411: "Un nivel menos",
     412: "Un nivel más",
+    413: "Puntos",
+    414: "Puntos en la clasificación: 1 punto por cada 1.000 de metal, cristal y deuterio. La energía y la población no cuentan.",
   },
 });

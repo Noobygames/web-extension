@@ -494,5 +494,7 @@ export default Object.freeze({
     410: "Wirklich jeden geplanten Ausbau auf allen Planeten und Monden löschen? Das lässt sich nicht rückgängig machen.",
     411: "Eine Stufe weniger",
     412: "Eine Stufe mehr",
+    413: "Punkte",
+    414: "Punkte auf der Statistik: 1 Punkt je 1.000 Metall, Kristall und Deuterium. Energie und Bevölkerung zählen nicht.",
   },
 });

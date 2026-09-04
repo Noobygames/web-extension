@@ -494,5 +494,7 @@ export default Object.freeze({
     410: "Delete every planned upgrade on every planet and moon? This cannot be undone.",
     411: "One level less",
     412: "One level more",
+    413: "Points",
+    414: "Score on the highscore: one point per 1,000 metal, crystal and deuterium. Energy and population do not count.",
   },
 });

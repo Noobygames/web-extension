@@ -30,6 +30,7 @@ import {
   roiPlasmatechnology,
 } from "../../game/gameFormulas.js";
 import { isBuildPage, isLeveledBuildingPage, isResearchPage } from "../../ogame/pages.js";
+import { renderPointsColumn } from "./pointsColumn.js";
 
 const logger = getLogger("technoDetail");
 
@@ -578,6 +579,11 @@ function technoDetail(context) {
       } else {
         document.querySelector(".ogk-titles").children[2].textContent = Translator.translate(39);
       }
+      // What the level on screen is worth on the highscore, and the whole range beside
+      // it. Same condition the `.ogk-sum` cells use, so the second line appears exactly
+      // when the cost cells show a range total - a demolition is priced from `demolish`.
+      const showsRange = baselvl != tolvl && baselvl - 1 != tolvl && !(baselvl > tolvl && isResearchPage(context.page));
+      renderPointsColumn(techno.cost, showsRange ? (baselvl - 1 > tolvl ? demolish : resSum) : null);
       // The panel counts `baselvl` as the level being built, the plan store counts
       // `from` as the level already owned - hence the -1. `upgradeCostRange()`, which
       // prices the entry from then on, reproduces exactly the `resSum` above;
@@ -702,6 +708,8 @@ function technoDetail(context) {
                 )
               );
             });
+            // One of these on the highscore, and the whole order beside it.
+            renderPointsColumn(baseCost, resSum);
             timeDiv.textContent = formatTimeWrapper(baseTime * value, 2, true, " ", false, "");
             let currentDate = new Date();
             let timeZoneChange = OGBIData.json.options.timeZone ? 0 : OGBIData.json.timezoneDiff;

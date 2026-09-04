@@ -494,5 +494,7 @@ export default Object.freeze({
     410: "Supprimer chaque amélioration prévue sur toutes les planètes et lunes ? C’est irréversible.",
     411: "Un niveau de moins",
     412: "Un niveau de plus",
+    413: "Points",
+    414: "Points au classement : 1 point pour 1 000 de métal, cristal et deutérium. L’énergie et la population ne comptent pas.",
   },
 });

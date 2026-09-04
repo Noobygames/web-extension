@@ -2258,6 +2258,32 @@ button.build-it_premium:hover {
   margin: 0 2px;
 }
 
+/* The score column beside the costs. OGame's detail panel says what a build takes and
+   never what it puts on the highscore, which is the number builds get compared by.
+   Sized like a resource column so it lines up with them. */
+#technologydetails .ogl-pointsCost {
+  display: inline-block;
+  height: 75px;
+  margin: 0 2px;
+  text-align: center;
+  vertical-align: top;
+  width: 60px;
+}
+
+#technologydetails .ogl-pointsCost-label {
+  color: #5d7fa4;
+  font-size: 11px;
+  line-height: 30px;
+}
+
+#technologydetails .ogl-pointsCost-each {
+  color: #cbd3db;
+}
+
+#technologydetails .ogl-pointsCost-sum {
+  color: #9099a3;
+}
+
 #technologydetails .information > ul:first-of-type {
   height: 83px;
   align-items: end;
