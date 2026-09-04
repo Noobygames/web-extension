@@ -26,8 +26,35 @@ function keyboardActions(context) {
     return false;
   };
   const avoidIn = ["chat_box_textarea", "markItUpEditor", "textBox", "textInput"];
+
+  /**
+   * Whether the player is writing prose rather than driving the page.
+   *
+   * The class list above is the original guard and is kept, but it only holds if
+   * OGame never renames anything - and a shortcut that fires while someone is typing
+   * a chat message is not a small bug: on the dispatch page the letters below pick
+   * missions, and the Enter handler further down calls `preventDefault()` before
+   * clicking "send fleet".
+   *
+   * So the shape of the element is checked too. A `<textarea>` and a
+   * `contenteditable` are always someone typing; a plain `<input>` deliberately is
+   * not, because the ship-count and system fields are exactly where Enter and the
+   * arrow keys are supposed to work.
+   */
+  const isTyping = () => {
+    const element = document.activeElement;
+    if (!element) return false;
+    if (avoidIn.some((avoidInClass) => element.classList?.contains(avoidInClass))) return true;
+    if (element.tagName === "TEXTAREA") return true;
+    if (element.isContentEditable === true) return true;
+
+    // The attribute as well as the property: `isContentEditable` is the one that also
+    // catches an element made editable by an ancestor, but jsdom does not implement
+    // it, so the guard would be untestable on the property alone.
+    return !!element.closest?.('[contenteditable]:not([contenteditable="false"])');
+  };
   document.addEventListener("keydown", (event) => {
-    if (avoidIn.some((avoidInClass) => document.activeElement.classList.contains(avoidInClass))) return;
+    if (isTyping()) return;
     if (event.key == "Escape") {
       if (OGBIData.json.welcome) return;
       closeDialog();
@@ -210,7 +237,7 @@ function keyboardActions(context) {
   };
   if (context.page == "fleetdispatch") {
     document.addEventListener("keydown", (event) => {
-      if (avoidIn.some((avoidInClass) => document.activeElement.classList.contains(avoidInClass))) return;
+      if (isTyping()) return;
       if (fleetDispatcher.currentPage == "fleet1") {
         if (document.querySelector("#fleetTemplatesEdit")) {
           if (document.querySelector("#fleetTemplatesEdit").classList.contains("overlayDiv")) return;
@@ -290,7 +317,7 @@ function keyboardActions(context) {
     };
 
     document.addEventListener("keydown", (event) => {
-      if (avoidIn.some((avoidInClass) => document.activeElement.classList.contains(avoidInClass))) return;
+      if (isTyping()) return;
       if (event.key == "Enter") {
         event.preventDefault();
         event.stopPropagation();

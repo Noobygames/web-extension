@@ -688,29 +688,63 @@ class OGBeyondInfinity {
     // whether or not it is display:none, so the old check was true on almost
     // every page load regardless of what the player last chose. `tchat` is now
     // only ever the player's own choice.
-    if (!document.querySelector("#chatBar")) {
+    const chatBar = document.querySelector("#chatBar");
+    if (!chatBar) {
       return;
     }
-    let toggleChat = () => {
+
+    /**
+     * `tchat` is the player's "hide the chat bar" switch, and it reads as **hidden**.
+     *
+     * It defaults to false (`init()`), so false has to keep meaning "leave the bar
+     * where OGame put it" - which is visible. Reading it the other way round is what
+     * made the toggle button do nothing on its first click: from the default it went
+     * false -> true and set `display: block` on a bar that was already showing.
+     */
+    const applyChatVisibility = () => {
+      chatBar.style.display = OGBIData.tchat ? "none" : "block";
+    };
+
+    const toggleChat = () => {
       OGBIData.tchat = !OGBIData.tchat;
-      document.querySelector("#chatBar").style.display = OGBIData.tchat ? "block" : "none";
+      applyChatVisibility();
     };
-    let oldfunc = ogame.chat.loadChatLogWithPlayer;
-    ogame.chat.loadChatLogWithPlayer = (elem, m, cb, uu) => {
-      if (!OGBIData.json.tchat) {
-        toggleChat();
-      }
-      // Must return oldfunc's result: OGame's own chat wires up the send
-      // button / live updates off the loaded conversation's return value
-      // (promise/jqXHR). Swallowing it here left every chat opened through
-      // this override - native clicks and our PM button alike - visually
-      // present but unresponsive to clicks inside it.
-      return oldfunc(elem, m, cb, uu);
-    };
-    let btn = document.querySelector("body").appendChild(DOM.createDOM("div", { class: "ogk-chat icon icon_chat" }));
-    if (OGBIData.json.tchat) {
-      document.querySelector("#chatBar").style.display = OGBIData.json.tchat ? "block" : "none";
+
+    // Unconditional. This used to sit inside `if (OGBIData.json.tchat)` whose body
+    // then re-tested the same flag, so the branch that hides the bar could never run
+    // and the player's choice was undone by the next page load - which in OGame is
+    // every single view change. That is the "the chat bar keeps coming back" report.
+    applyChatVisibility();
+
+    // Guarded chain, same reason as `shipData.js`: the game assigns `ogame.chat` from
+    // its own script, and one unguarded read here throws out of `start()` and cancels
+    // every boot step after it - the chat enhancements on the next line included.
+    const chatApi = typeof ogame === "undefined" ? undefined : ogame?.chat;
+
+    if (typeof chatApi?.loadChatLogWithPlayer === "function") {
+      const oldfunc = chatApi.loadChatLogWithPlayer;
+
+      chatApi.loadChatLogWithPlayer = function (...args) {
+        // Opening a conversation while the bar is hidden has to show it again,
+        // otherwise the conversation loads into something the player cannot see.
+        if (OGBIData.tchat) {
+          toggleChat();
+        }
+        // `.apply(chatApi, ...)`, not `oldfunc(...)`: this is a method on
+        // `ogame.chat` and calling it bare handed the game's own code `this ===
+        // undefined`. Every argument is forwarded rather than the four this
+        // wrapper used to name, so a signature change in the game cannot silently
+        // drop one.
+        //
+        // Must also return its result: OGame wires the send button and the live
+        // updates off the loaded conversation's return value (promise/jqXHR).
+        // Swallowing it left every chat opened through this override - native
+        // clicks and our PM button alike - visible but dead to clicks inside it.
+        return oldfunc.apply(chatApi, args);
+      };
     }
+
+    let btn = document.querySelector("body").appendChild(DOM.createDOM("div", { class: "ogk-chat icon icon_chat" }));
     btn.addEventListener("click", () => {
       toggleChat();
     });
