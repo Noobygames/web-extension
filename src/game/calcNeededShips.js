@@ -1,5 +1,6 @@
 import * as Numbers from "../format/numbers.js";
 import OGBIData from "../store/OGBIData.js";
+import { cargoCapacityOf } from "./shipsData.js";
 
 /**
  * How many cargo ships are needed to move a pile of resources.
@@ -30,7 +31,11 @@ export function calcNeededShips(options) {
   }
 
   const type = options.fret || json.options.fret;
-  const fret = json.ships[type].cargoCapacity;
+  const fret = cargoCapacityOf(type);
+
+  // No cached ship table yet - see `cargoCapacityOf`. Dividing by it gave `Infinity`,
+  // which every caller then formatted into a cell as "Infinity" or "∞".
+  if (fret <= 0) return 0;
 
   let total = resources / fret;
   if (options.moreFret) total *= 107 / 100;

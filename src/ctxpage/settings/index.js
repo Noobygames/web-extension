@@ -11,6 +11,7 @@ import { applyWideLayout, normalizeZoomFactor } from "../wide-layout.js";
 import { keepOnPlanetDialog } from "../fleetdispatch/keepOnPlanet.js";
 import { getLocalStorageSize, purgeLocalStorage } from "../../store/usage.js";
 import { pageContextRequest } from "../../platform/bridge.js";
+import { supportButton } from "../../ui/supportButton.js";
 
 /**
  * The settings dialog, the first-run welcome popup, and the notice explaining why the
@@ -60,6 +61,11 @@ function welcome(context) {
       "If you see a bug or have a feature request please report to discord 🙏 <a href='https://discord.gg/Z7MDHmk' target='_blank'>Link</a> also in the setting page. <span class='overmark'> Be advised that using multiple addons/script might generate conflicts. </span>"
     )
   );
+  // Said once, on first run, and then only in the settings dialog. OGBI is free and
+  // stays free (AGENTS.md 1.8) - the line next to the button is what says so.
+  const welcomeSupport = container.appendChild(createDOM("p", { class: "ogl-kofi-row" }));
+  welcomeSupport.appendChild(supportButton("inline"));
+  welcomeSupport.appendChild(createDOM("span", { class: "ogl-kofi-note" }, Translator.translate(423)));
   let shortcutsDiv = container.appendChild(
     createDOM(
       "p",
@@ -163,6 +169,11 @@ function settings(context) {
       )}</strong><a target="_blank" href="https://discord.gg/9aMdQgk">Discord</span>`
     )
   );
+  // Beside the version and the Discord link, on the panel the player opened themselves.
+  // Deliberately not on the game page: see the header of `ui/supportButton.js`.
+  const support = ogameInfinity.appendChild(createDOM("div", { class: "ogl-kofi-row" }));
+  support.appendChild(supportButton());
+  support.appendChild(createDOM("span", { class: "ogl-kofi-note" }, Translator.translate(423)));
   dataDiv.appendChild(createDOM("hr"));
   let universe = dataDiv.appendChild(createDOM("div"));
   let universeSettingsTooltip = "";

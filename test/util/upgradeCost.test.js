@@ -16,6 +16,9 @@ const browser = setupBrowser();
 const OGBIData = (await import("../../src/store/OGBIData.js")).default;
 const { building, research } = await import("../../src/game/gameFormulas.js");
 const { upgradeCostRange, categoryOf, isPlanetScoped, isResearchTech } = await import("../../src/game/upgradeCost.js");
+const { buildPageOf } = await import("../../src/game/technoIds.js");
+const { BUIDLING_INFO } = await import("../../src/game/buildingInfo.js");
+const { RESEARCH_INFO } = await import("../../src/game/researchInfo.js");
 
 test.after(() => browser.cleanup());
 
@@ -206,4 +209,37 @@ test("costs are computed without bonuses when no planet is passed", () => {
   const cost = upgradeCostRange(1, 0, 5, {}).cost;
   assert.ok(cost[0] > 0);
   assert.ok(Number.isFinite(cost[0]));
+});
+
+/**
+ * `buildPageOf()` in `game/technoIds.js` answers the same question as `categoryOf()`,
+ * from id ranges rather than the cost tables, so the page entry can ask it without
+ * paying for 93 KB of tables (`ctxpage/planHighlight`).
+ *
+ * Two implementations of one classification is exactly the setup where a technology
+ * added to the tables silently lands on the wrong build page - the menu would light up
+ * next to the wrong entry and nothing would log. So the ranges are checked against the
+ * tables here, over every id in both, rather than against a handful of examples.
+ */
+test("buildPageOf agrees with categoryOf on every technology in the cost tables", () => {
+  const disagreements = [];
+
+  for (const id of new Set([...Object.keys(BUIDLING_INFO), ...Object.keys(RESEARCH_INFO)])) {
+    const table = categoryOf(id);
+    const ranges = buildPageOf(id);
+
+    if (table !== ranges) disagreements.push(`${id}: categoryOf=${table}, buildPageOf=${ranges}`);
+  }
+
+  assert.deepEqual(disagreements, []);
+});
+
+test("buildPageOf does not pretend to validate", () => {
+  // The trade for leaving the tables behind: an id in neither table gets sorted by its
+  // range instead of rejected. Harmless where it is used - the ids come out of the plan
+  // store, which only accepts what categoryOf() already recognised - but worth pinning
+  // so nobody reaches for it as a validity check.
+  assert.equal(categoryOf(202), null, "a small cargo has no level");
+  assert.equal(buildPageOf(202), null, "202 is in no list either, so this one agrees");
+  assert.equal(buildPageOf("nonsense"), null);
 });

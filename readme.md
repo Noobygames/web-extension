@@ -7,16 +7,16 @@ This repository contains the monolithic code mess for the Ogame Beyond Infinity 
 
 ### What's different from upstream Ogame Infinity
 
-| Area           | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Architecture   | Monolithic `ogCore.js` split into modules (`ctxpage/`, `game/`, `store/`, `ui/`, `format/`, `platform/`); one file per module, bundled at build time                                                                                                                                                                                                                                                                                                                                         |
-| Performance    | Removed a permanent 100ms DOM poll, killed redundant re-parsing on every cargo calc, faster startup draw order                                                                                                                                                                                                                                                                                                                                                                               |
-| New features   | [Upgrade plans](#upgrade-plans) (plan builds, edit them level by level, see what each planet is short of, set up the transport), [trade calculator](#trade-calculator), [points per build](#points-per-build), raid list (best profit/hour targets), debris tooltip that says when the current planet has no recycler, spy-report cache with resource-now estimate + stale warning, harvest planner, expedition slot balancing, alliance target claims in galaxy view, active-planet counter |
-| Notifications  | Rewritten fleet-arrival/browser notification system: scheduling, dedup, sync across tabs                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Galaxy data    | Dedicated galaxy storage with per-(galaxy,system) diff snapshots, instead of piggybacking the general data blob                                                                                                                                                                                                                                                                                                                                                                              |
-| Fleet dispatch | Fixed cargo-capacity math (per-ship capacity is taken from the game verbatim instead of re-applying bonuses it already contains, and the count is corrected against the game's own cargo total), donut-system distance fix, empty/inactive system display                                                                                                                                                                                                                                    |
-| Dev tooling    | Makefile, `node:test` + jsdom test suite, ESLint/Prettier gate, benchmarks, permanent local install, docs under `docs/`                                                                                                                                                                                                                                                                                                                                                                      |
-| OGame version  | v13+ only, v12 support dropped                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Area           | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture   | Monolithic `ogCore.js` split into modules (`ctxpage/`, `game/`, `store/`, `ui/`, `format/`, `platform/`); one file per module, bundled at build time                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Performance    | Removed a permanent 100ms DOM poll, killed redundant re-parsing on every cargo calc, faster startup draw order                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| New features   | [Upgrade plans](#upgrade-plans) (plan builds, edit them level by level, see what each planet is short of, set up the transport), [planned-upgrade highlights](#planned-upgrade-highlights), [trade calculator](#trade-calculator), [points per build](#points-per-build), raid list (best profit/hour targets), debris tooltip that says when the current planet has no recycler, spy-report cache with resource-now estimate + stale warning, harvest planner, expedition slot balancing, alliance target claims in galaxy view, active-planet counter |
+| Notifications  | Rewritten fleet-arrival/browser notification system: scheduling, dedup, sync across tabs                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Galaxy data    | Dedicated galaxy storage with per-(galaxy,system) diff snapshots, instead of piggybacking the general data blob                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Fleet dispatch | Fixed cargo-capacity math (per-ship capacity is taken from the game verbatim instead of re-applying bonuses it already contains, and the count is corrected against the game's own cargo total), donut-system distance fix, empty/inactive system display                                                                                                                                                                                                                                                                                               |
+| Dev tooling    | Makefile, `node:test` + jsdom test suite, ESLint/Prettier gate, benchmarks, permanent local install, docs under `docs/`                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| OGame version  | v13+ only, v12 support dropped                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 Fast-moving fork — expect this list to lag behind `master`.
 
@@ -55,9 +55,12 @@ amounts at the top stay the full requirement.
 **Changing the plan.** Every planned row carries three buttons: `−` and `+` move the
 target by one level, `✖` drops the row. The steppers work off what the row shows, so on a
 technology the game is already part way through, one level less means one level off what is
-still open — and the row goes when nothing is left to plan. The trash button next to the
-panel heading clears every plan on every planet and moon at once; it asks first, because
-there is no undo.
+still open — and the row goes when nothing is left to plan.
+
+Three buttons next to the panel heading clear plans in bulk, each asking first because
+there is no undo: **clear unfunded** drops every goal still short of something, **clear
+funded** drops the ones already covered — the usual tidy-up after a delivery round — and
+the trash icon clears every plan on every planet and moon at once.
 
 **Sending it.** Each row has one button. It opens OGame's own fleet dispatch page with the
 target, the transport mission and the amounts filled in, starting from your RSS moon —
@@ -66,8 +69,28 @@ against the game's own cargo capacity, so it accounts for bonuses the extension 
 know about.
 
 The button stops there. It never sends a fleet, and there is deliberately no "send to all":
-one row, one click, one fleet, with OGame's own send button doing the sending. The planet
-bar keeps showing the same shortfall as a lock icon, as it always has.
+one row, one click, one fleet, with OGame's own send button doing the sending.
+
+**In the planet bar**, each side with a goal carries a coin-stack icon that fills from the
+bottom with how much of it is covered — red for nothing yet, amber part way, green once it
+is fully funded. Hovering gives the amounts and the exact percentage. Upstream's padlock
+was two colours and could only say "done" or "not done"; moon goals never drew at all.
+
+## Planned-upgrade highlights
+
+Once an empire is large enough, a plan made last week is invisible: nothing on the supplies
+page says this planet is the one the metal was shipped to.
+
+So the left menu marks every build page that has something planned for the planet or moon
+you are looking at — yellow, with the number of upgrades waiting there. On that page the
+technology itself gets a gently pulsing frame, and when more than one level is planned, a
+badge with the level it is heading for. One level ahead gets no badge: OGame's own tile
+already names the next one.
+
+Shipyard and defences never light up. Ships have no level, so they cannot be a plan entry —
+they go on the free-hand pile instead.
+
+The animation respects `prefers-reduced-motion`: the mark stays, the movement goes.
 
 ## Trade calculator
 
@@ -104,6 +127,15 @@ This extension uses 3 external js libraries:
 - https://github.com/emn178/chartjs-plugin-labels/blob/v1.1.0/build/chartjs-plugin-labels.min.js
 - https://github.com/cure53/DOMPurify/releases/tag/2.4.1
 - https://github.com/pieroxy/lz-string/releases/tag/1.5.0
+
+## Support
+
+If OGBI is useful to you: https://ko-fi.com/nerzal
+
+Entirely optional. OGBI is free and stays free — every feature is there for everyone, and
+nothing is or will be behind a payment. The button sits in the settings dialog and in the
+welcome panel, on OGBI's own surfaces only, never in OGame's UI. It is a plain link with a
+drawn icon, not Ko-fi's widget script, so no third party is contacted until you click it.
 
 ## Contributing
 

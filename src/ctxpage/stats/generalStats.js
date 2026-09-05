@@ -3,6 +3,7 @@ import { createDOM } from "../../ui/dom.js";
 import { toFormattedNumber } from "../../format/numbers.js";
 import Translator from "../../format/i18n/translate.js";
 import OGBIData from "../../store/OGBIData.js";
+import { cargoCapacityOf } from "../../game/shipsData.js";
 import PlayerClass from "../../game/playerClass.js";
 import shipEnum from "../../game/ship.js";
 import AllianceClass from "../../game/allianceClass.js";
@@ -320,7 +321,7 @@ function generalStats(player) {
         if (planet) sum += Number(planet[id]);
         if (planet.moon) sum += Number(planet.moon[id]);
       });
-      transport += sum * OGBIData.json.ships[id].cargoCapacity;
+      transport += sum * cargoCapacityOf(id);
       totalSum += sum;
       let shipDiv = fleet.appendChild(createDOM("div"));
       shipDiv.appendChild(createDOM("a", { class: "ogl-option ogl-fleet-ship ogl-fleet-" + id }));
@@ -353,7 +354,7 @@ function generalStats(player) {
       `${Translator.translate(47)}: <strong>${toFormattedNumber(transport, null, transport >= 1e6)}</strong>`
     )
   );
-  const rcpower = OGBIData.json.ships[shipEnum.Recycler].cargoCapacity * cyclos;
+  const rcpower = cargoCapacityOf(shipEnum.Recycler) * cyclos;
   fleetInfo.appendChild(
     DOM.createDOMSanitized(
       "span",

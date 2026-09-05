@@ -10,6 +10,8 @@
  * through. So the cheap questions live here and the expensive ones stay in the chunk.
  */
 
+import { FACILITIES_TECHID, SUPPLIES_TECHID } from "./gameConstants.js";
+
 /**
  * OGame's classic research - the only technologies whose level is bought once for the
  * whole account. Everything else (buildings, lifeform buildings and, despite the name,
@@ -50,4 +52,43 @@ export function isAccountWideResearch(technoId) {
  */
 export function isPlanetScoped(technoId) {
   return !isAccountWideResearch(technoId);
+}
+
+/**
+ * Which build page a technology is bought on, decided from id ranges alone.
+ *
+ * `categoryOf()` in `game/upgradeCost.js` answers the same question and is the
+ * authority: it looks the id up in `BUIDLING_INFO` / `RESEARCH_INFO`, so it also
+ * rejects ids that are in neither, and it keeps answering correctly if a future
+ * lifeform ever breaks the numbering pattern. It costs 93 KB to import.
+ *
+ * This one is for the page entry, which cannot pay that and only ever asks about ids
+ * that came out of the plan store - i.e. ids `categoryOf()` already accepted once, on
+ * the chunk side, when the plan was written. `test/util/upgradeCost.test.js` walks both
+ * cost tables and asserts the two agree on every id in them, so a divergence fails
+ * there rather than showing up as a highlight on the wrong menu entry.
+ *
+ * Unlike `categoryOf()` this does **not** validate: an id in neither table gets sorted
+ * by its range rather than rejected. That is the trade for leaving the tables behind.
+ *
+ * @param {number|string} technoId
+ * @returns {"supplies"|"facilities"|"research"|"lfbuildings"|"lfresearch"|null}
+ */
+export function buildPageOf(technoId) {
+  const id = Number(technoId);
+
+  if (!Number.isFinite(id)) return null;
+
+  if (SUPPLIES_TECHID.includes(id)) return "supplies";
+  if (FACILITIES_TECHID.includes(id)) return "facilities";
+
+  // Lifeform ids are `1X101`-`1X112` for buildings and `1X201`-`1X218` for research,
+  // one block per lifeform - so the lifeform digit has to be divided out before the
+  // two can be told apart. `id >= LIFEFORM_RESEARCH_FLOOR` is the tempting one-liner
+  // and it is wrong: 12101, a Rock'tal building, clears 11201 comfortably.
+  if (id >= LIFEFORM_BUILDING_FLOOR) return id % 1000 >= LIFEFORM_RESEARCH_FLOOR % 1000 ? "lfresearch" : "lfbuildings";
+
+  if (isAccountWideResearch(id)) return "research";
+
+  return null;
 }

@@ -3,6 +3,7 @@ import { getLogger } from "../../../platform/logger.js";
 import { createDOM } from "../../../ui/dom.js";
 import { SpyReport } from "./Object/SpyReport.js";
 import ship from "../../../game/ship.js";
+import { cargoCapacityOf } from "../../../game/shipsData.js";
 import { tooltip } from "../../../ui/tooltip.js";
 import { popup } from "../../../ui/popup.js";
 import DateTime from "../../../format/dateTime.js";
@@ -282,7 +283,7 @@ class SpyMessagesAnalyzer {
   }
 
   #cargoChoice(cargoSpan) {
-    const gridCol = OGBIData.ships[ship.EspionageProbe].cargoCapacity ? 4 : 3;
+    const gridCol = cargoCapacityOf(ship.EspionageProbe) ? 4 : 3;
 
     const cargoChoice = createDOM("div", {
       style: `display: grid; grid-template-columns: repeat(${gridCol}, minmax(0, 1fr))`,
@@ -343,7 +344,7 @@ class SpyMessagesAnalyzer {
     largeCargo.addEventListener("click", saveDefaultCargo);
     pathFinder.addEventListener("click", saveDefaultCargo);
 
-    if (OGBIData.ships[ship.EspionageProbe].cargoCapacity) {
+    if (cargoCapacityOf(ship.EspionageProbe)) {
       cargoChoice.classList.add("spio");
 
       const probe = cargoChoice.appendChild(
@@ -622,7 +623,7 @@ class SpyMessagesAnalyzer {
           },
         };
 
-        if (OGBIData.ships[ship.EspionageProbe].cargoCapacity) {
+        if (cargoCapacityOf(ship.EspionageProbe)) {
           ships.probe = {
             id: ship.EspionageProbe,
             count: report.pb,

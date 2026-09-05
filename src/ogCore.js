@@ -51,6 +51,7 @@ import Translator from "./format/i18n/translate.js";
 import * as loadingUtil from "./ui/loading.js";
 import ogiMode from "./ogame/ogiMode.js";
 import { isBuildPage } from "./ogame/pages.js";
+import { hasPlansOnCurrentSide } from "./ctxpage/planHighlight/plans.js";
 import { loadChunk } from "./platform/loadChunk.js";
 import AllianceClass from "./game/allianceClass.js";
 import { PLASMATECH_BONUS } from "./game/gameConstants.js";
@@ -382,6 +383,7 @@ class OGBeyondInfinity {
     betterHighscore(this.pageContext());
     this.overviewDates();
     topBarUtilities(this.pageContext());
+    this.#planHighlight();
     // The building and research detail panel is a seventh of the page bundle and is
     // reachable from seven of ~twenty pages. Fetched there, nowhere else.
     if (isBuildPage(this.page)) {
@@ -662,20 +664,34 @@ class OGBeyondInfinity {
    * Unchecking the box in the event-box header is meant to halve the clutter: ten
    * expeditions otherwise fill the list twice, once flying out and once coming back.
    *
-   * What it must never hide is a **recall link**. It lives on the outbound row, it is
-   * the only way back for a fleet sent by accident, and it disappears by itself the
-   * moment the expedition arrives - so a row that still has one is left alone. A tidier
-   * event box is not worth a fleet that cannot be called home.
+   * **"Otherwise fill the list twice" is the whole precondition, and it was never
+   * checked.** The event box mostly carries one row per fleet - the next thing that
+   * fleet will do - so hiding its outbound row does not remove a duplicate, it removes
+   * the fleet. Reported from a live account: nine expeditions in the air, the header
+   * counting an arrival in 8m26s, and no row for it anywhere in the list.
+   *
+   * So a row is only hidden when the box really does hold the same flight twice: a
+   * return row whose origin and destination are this row's, swapped. When there is no
+   * such row - which is the common case - the outbound row is all the player has and it
+   * stays.
+   *
+   * The second guard is the **recall link**. It lives on the outbound row, it is the
+   * only way back for a fleet sent by accident, and it disappears by itself once the
+   * expedition arrives - so a row that still has one is left alone. A tidier event box
+   * is not worth a fleet that cannot be called home. That guard alone used to carry the
+   * whole method, which is why the damage was limited to the rows past their recall
+   * window rather than being obvious on every one of them.
    *
    * @param {boolean} show whether outbound expedition rows are visible
    */
   expeditionImpact(show) {
-    const outbound = document.querySelectorAll(".eventFleet[data-mission-type='15'][data-return-flight='false']");
+    const rows = [...document.querySelectorAll(".eventFleet[data-mission-type='15']")];
+    const outbound = rows.filter((row) => row.getAttribute("data-return-flight") === "false");
 
     if (show) {
-      // The same rows the hide below picks, and deliberately so. This used to un-hide
-      // `#eventRow-(N - 1)` for every *returning* expedition, guessing that the row
-      // before a return is its outbound half. An expedition that has only just
+      // The same rows the hide below picks from, and deliberately so. This used to
+      // un-hide `#eventRow-(N - 1)` for every *returning* expedition, guessing that the
+      // row before a return is its outbound half. An expedition that has only just
       // launched has no return row to guess from, so its outbound row - the one
       // carrying the recall link - could never be brought back: hiding it once cost
       // the recall until the next page load, and re-ticking the box did not undo it.
@@ -683,8 +699,21 @@ class OGBeyondInfinity {
       return;
     }
 
+    const coords = (row, selector) => row.querySelector(selector)?.textContent.trim().slice(1, -1) || "";
+    // Keyed origin-first in both directions, so a return row keys as the flight out.
+    const legOf = (row, swapped) =>
+      swapped
+        ? `${coords(row, ".destCoords a")}>${coords(row, ".coordsOrigin a")}`
+        : `${coords(row, ".coordsOrigin a")}>${coords(row, ".destCoords a")}`;
+
+    const alsoComingBack = new Set(
+      rows.filter((row) => row.getAttribute("data-return-flight") === "true").map((row) => legOf(row, true))
+    );
+
     outbound.forEach((row) => {
       if (row.querySelector(".reversal a")) return;
+      if (!alsoComingBack.has(legOf(row, false))) return;
+
       row.style.display = "none";
     });
   }
@@ -1064,6 +1093,19 @@ class OGBeyondInfinity {
    *
    * @returns {Promise<void>}
    */
+  /**
+   * Marks the build pages and tiles that have an upgrade planned for this planet.
+   *
+   * Gated in the entry and drawn in a chunk: the gate is a store read, the drawing
+   * needs the technology-id tables. A player with no plans here fetches nothing.
+   */
+  async #planHighlight() {
+    if (!hasPlansOnCurrentSide()) return;
+
+    const module = await loadChunk("planHighlight", () => import("./ctxpage/planHighlight/index.js"));
+    module?.planHighlight();
+  }
+
   async #startFleetDispatchPage() {
     if (this.page !== "fleetdispatch") return;
 

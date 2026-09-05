@@ -22,6 +22,7 @@ import { setupBrowser } from "../helpers/globals.js";
 const bootstrap = setupBrowser();
 const OGBIData = (await import("../../src/store/OGBIData.js")).default;
 const { cacheShipData, mapShipsData } = await import("../../src/ctxpage/fleetdispatch/shipData.js");
+const { cargoCapacityOf } = await import("../../src/game/shipsData.js");
 bootstrap.cleanup();
 
 /**
@@ -330,5 +331,29 @@ test("an unexpected apiTechData shape is caught and logged instead of leaking an
 
     assert.equal(found, false, "a throw inside storeShipData must not look like success");
     assert.deepEqual(OGBIData.ships, CACHED.ships, "the previous visit's table is kept, not wiped");
+  });
+});
+
+/**
+ * Reading the cached table from a page that never fills it in.
+ *
+ * `OGBIData.ships` is written here and nowhere else, and this module only runs on the
+ * fleet-dispatch page - so on every other page it is whatever the last visit left, and
+ * `{}` until there has been one. Three analyzers read
+ * `OGBIData.ships[ship.EspionageProbe].cargoCapacity` straight to find out whether
+ * probes carry cargo, which is a TypeError on `{}`; the whole spy table stopped
+ * rendering on the messages page of a fresh install.
+ */
+test("an unknown ship reports no capacity instead of throwing", async () => {
+  await withPage(async () => {
+    OGBIData.json = { ships: {} };
+
+    assert.equal(cargoCapacityOf(210), 0, "an empty table - a page that has never seen a dispatcher");
+
+    OGBIData.json = { ships: { 210: { name: "Espionage Probe" } } };
+    assert.equal(cargoCapacityOf(210), 0, "a row with no capacity field at all");
+
+    OGBIData.json = { ships: { 210: { name: "Espionage Probe", cargoCapacity: 5 } } };
+    assert.equal(cargoCapacityOf(210), 5, "and the real number when there is one");
   });
 });

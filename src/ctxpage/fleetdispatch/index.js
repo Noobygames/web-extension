@@ -9,7 +9,7 @@ export { collect, customMissions } from "./customMissions.js";
 export { cacheShipData } from "./shipData.js";
 import { getLogger } from "../../platform/logger.js";
 import { waitFor } from "../../platform/wait.js";
-import { getShipsData } from "../../game/shipsData.js";
+import { cargoCapacityOf, getShipsData } from "../../game/shipsData.js";
 import { createDOM, createSVG } from "../../ui/dom.js";
 import { toFormattedNumber, fromFormattedNumber } from "../../format/numbers.js";
 import Translator from "../../format/i18n/translate.js";
@@ -557,7 +557,7 @@ function calcNeededShips(context, options) {
   resources = resources.reduce((a, b) => parseInt(a) + parseInt(b));
   if (options.resources || options.resources == 0) resources = options.resources;
   let type = options.fret || OGBIData.json.options.fret;
-  let fret = OGBIData.json.ships[type].cargoCapacity;
+  let fret = cargoCapacityOf(type);
   let total = resources / fret;
   if (options.moreFret) total *= 107 / 100;
   return Math.ceil(total);
@@ -636,7 +636,7 @@ function selectBestCargoShip(context, preferredShipId = null) {
     [202, 203, 219].forEach((id) => {
       if (!cargoIds.includes(id)) cargoIds.push(id);
     });
-    if (OGBIData.json.ships[210].cargoCapacity != 0 && !cargoIds.includes(210)) cargoIds.push(210);
+    if (cargoCapacityOf(210) != 0 && !cargoIds.includes(210)) cargoIds.push(210);
     fleetDispatcher.shipsOnPlanet.forEach((ship) => {
       if (cargoIds.includes(ship.id)) cargoShipsOnPlanet[ship.id] = ship.number || 0;
     });

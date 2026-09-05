@@ -1,6 +1,7 @@
 import OGBIData from "../../store/OGBIData.js";
 import { setNeeds } from "../planetbar/needs.js";
 import { clearSide, migrateFromNeeds, reconcile, totalsFor } from "../../store/upgradePlans.js";
+import { refreshPlanHighlight } from "../planHighlight/index.js";
 
 /**
  * The seam between the upgrade plans and the lock icons in the planet bar.
@@ -36,7 +37,20 @@ function bareCoords(planet) {
  */
 export function syncNeeds(coords, isMoon) {
   setNeeds(coords, isMoon, totalsFor(coords, isMoon));
+  // The menu and tile marks come off the same plans and would otherwise stay as they
+  // were until the next page load - so planning an upgrade in the panel, or clearing
+  // one, would leave the wrong menu entry lit.
+  if (!syncingAll) refreshPlanHighlight();
 }
+
+/**
+ * Set while `syncAllNeeds()` is looping.
+ *
+ * The loop calls `syncNeeds()` once per planet and once per moon, and the marks it
+ * redraws are the same on every pass - so without this the panel opening on a 40-planet
+ * account walked the menu and the whole technology grid eighty times for one result.
+ */
+let syncingAll = false;
 
 /**
  * The same for every planet and moon in the empire.
@@ -46,13 +60,21 @@ export function syncNeeds(coords, isMoon) {
  * panel shows all of them side by side.
  */
 export function syncAllNeeds() {
-  for (const planet of OGBIData.empire || []) {
-    const coords = bareCoords(planet);
-    if (!coords) continue;
+  syncingAll = true;
 
-    syncNeeds(coords, false);
-    if (planet.moon) syncNeeds(coords, true);
+  try {
+    for (const planet of OGBIData.empire || []) {
+      const coords = bareCoords(planet);
+      if (!coords) continue;
+
+      syncNeeds(coords, false);
+      if (planet.moon) syncNeeds(coords, true);
+    }
+  } finally {
+    syncingAll = false;
   }
+
+  refreshPlanHighlight();
 }
 
 /**

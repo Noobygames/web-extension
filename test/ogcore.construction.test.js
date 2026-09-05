@@ -318,28 +318,55 @@ test("a page whose game has no chat API still gets a working toggle", () => {
 // --------------------------------------------------------------------------
 
 /**
- * `expeditionImpact()` hides the outbound half of every expedition so the event box is
- * not filled twice over. The recall link lives on exactly those rows, and it is the
- * only way back for a fleet sent by accident - so the rule is that a row carrying one
- * is never hidden, and that re-ticking the box brings back what un-ticking removed.
+ * `expeditionImpact()` hides the outbound half of an expedition so the event box is not
+ * filled twice over. Two things must survive it, and each has cost a real player once.
  *
- * The old version failed both: it hid by selector and un-hid by guessing that the row
- * before a *return* row is its outbound half, so an expedition that had only just
- * launched - the one you actually want to recall - had no way back onto the screen.
+ * The **recall link** lives on exactly those rows and is the only way back for a fleet
+ * sent by accident, so a row carrying one is never hidden - and re-ticking the box has
+ * to bring back what un-ticking removed. The old version failed both: it hid by
+ * selector and un-hid by guessing that the row before a *return* row is its outbound
+ * half, so an expedition that had only just launched had no way back onto the screen.
+ *
+ * The **fleet itself** must stay represented. "Filled twice over" is a precondition,
+ * not a given: the event box usually carries one row per fleet, and hiding that row
+ * deletes the flight from the list rather than de-duplicating it. Reported from a live
+ * account - nine expeditions up, the header counting an arrival in 8m26s, and no row
+ * for it. So the hide now needs a matching return row to have been drawn as well.
+ *
+ * The rows below therefore carry coordinates: without them every row pairs with every
+ * other and the pairing cannot be tested at all.
  */
 const EVENT_BOX = `
   <table>
     <tr class="eventFleet" id="eventRow-1" data-mission-type="15" data-return-flight="false">
+      <td class="coordsOrigin"><a>[1:181:6]</a></td>
+      <td class="destCoords"><a>[1:181:16]</a></td>
       <td class="reversal"><a href="?page=ingame&component=movement&return=1">back</a></td>
     </tr>
     <tr class="eventFleet" id="eventRow-2" data-mission-type="15" data-return-flight="false">
+      <td class="coordsOrigin"><a>[1:182:6]</a></td>
+      <td class="destCoords"><a>[1:182:16]</a></td>
       <td class="reversal"></td>
     </tr>
     <tr class="eventFleet" id="eventRow-3" data-mission-type="15" data-return-flight="true">
+      <td class="coordsOrigin"><a>[1:182:16]</a></td>
+      <td class="destCoords"><a>[1:182:6]</a></td>
       <td class="reversal"></td>
     </tr>
     <tr class="eventFleet" id="eventRow-4" data-mission-type="3" data-return-flight="false">
+      <td class="coordsOrigin"><a>[1:181:6]</a></td>
+      <td class="destCoords"><a>[3:383:8]</a></td>
       <td class="reversal"><a href="?page=ingame&component=movement&return=4">back</a></td>
+    </tr>
+    <tr class="eventFleet" id="eventRow-5" data-mission-type="15" data-return-flight="true">
+      <td class="coordsOrigin"><a>[1:181:16]</a></td>
+      <td class="destCoords"><a>[1:181:6]</a></td>
+      <td class="reversal"></td>
+    </tr>
+    <tr class="eventFleet" id="eventRow-6" data-mission-type="15" data-return-flight="false">
+      <td class="coordsOrigin"><a>[1:183:6]</a></td>
+      <td class="destCoords"><a>[1:183:16]</a></td>
+      <td class="reversal"></td>
     </tr>
   </table>
 `;
@@ -382,6 +409,17 @@ test("nothing but outbound expeditions is touched", () => {
   });
 });
 
+test("an outbound row with no return row of its own is the fleet's only one, so it stays", () => {
+  onEventBox((instance, displayOf) => {
+    instance.expeditionImpact(false);
+
+    // 1:183:6 -> 1:183:16 has no matching return row in the box. Hiding it would not
+    // remove a duplicate, it would remove the flight - which is what a player saw as
+    // an arrival counted in the header with no row anywhere in the list.
+    assert.notEqual(displayOf(6), "none");
+  });
+});
+
 test("re-ticking the box brings back exactly what un-ticking hid", () => {
   onEventBox((instance, displayOf) => {
     instance.expeditionImpact(false);
@@ -395,11 +433,15 @@ test("re-ticking the box brings back exactly what un-ticking hid", () => {
 
 test("a just-launched expedition survives the toggle even with no return row on screen", () => {
   // The reported case: send one by accident, and the row with the recall link on it is
-  // gone. There is no return row yet, which is what the old id-arithmetic needed.
+  // gone. There is no return row yet, which is what the old id-arithmetic needed - and
+  // is also why there is nothing here to de-duplicate, so the row is left alone in the
+  // first place rather than hidden and restored.
   const page = setupBrowser({
     html: `${overviewPage()}
       <table>
         <tr class="eventFleet" id="eventRow-7" data-mission-type="15" data-return-flight="false">
+          <td class="coordsOrigin"><a>[1:181:6]</a></td>
+          <td class="destCoords"><a>[1:181:16]</a></td>
           <td class="reversal"></td>
         </tr>
       </table>`,
@@ -410,7 +452,7 @@ test("a just-launched expedition survives the toggle even with no return row on 
     const instance = new OGBeyondInfinity();
 
     instance.expeditionImpact(false);
-    assert.equal(document.querySelector("#eventRow-7").style.display, "none");
+    assert.notEqual(document.querySelector("#eventRow-7").style.display, "none");
 
     instance.expeditionImpact(true);
     assert.notEqual(document.querySelector("#eventRow-7").style.display, "none");

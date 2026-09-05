@@ -3,6 +3,7 @@ import { messagesTabs } from "../index.js";
 import OGBIData from "../../../store/OGBIData.js";
 import PlanetType from "../../../game/planetType.js";
 import ship from "../../../game/ship.js";
+import { cargoCapacityOf } from "../../../game/shipsData.js";
 import * as standardUnit from "../../../game/standardUnit.js";
 import { createDOM } from "../../../ui/dom.js";
 import { fleetCost } from "../../../game/fleetCost.js";
@@ -30,7 +31,7 @@ class FightMessagesAnalyzer {
 
   #addStandardUnit(combat, message) {
     /* @todo remove the cargoCapacity check when GF provide the good number for data-raw-fleets>combatTechnologies.amount */
-    if ((combat.isProbes && !OGBIData.ships[ship.EspionageProbe].cargoCapacity) || !combat.loot) return;
+    if ((combat.isProbes && !cargoCapacityOf(ship.EspionageProbe)) || !combat.loot) return;
 
     const msgTitle = message.querySelector(".msgHeadItem .msgTitle");
     const standardUnitSum =

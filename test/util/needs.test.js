@@ -206,7 +206,7 @@ test("a fully met need is marked filled", () => {
   }
 });
 
-test("hovering the icon shows the missing amounts, and its delete button clears just that need", () => {
+test("hovering the icon shows the missing amounts, and its delete button clears just that need", async () => {
   const browser = setupBrowser({
     html: `<div id="norm"><div id="planetList"><div id="planet-104"></div></div></div>`,
   });
@@ -232,6 +232,13 @@ test("hovering the icon shows the missing amounts, and its delete button clears 
       null,
       "the icon is removed once its only resource type is cleared"
     );
+
+    // The delete button deletes the *plan* behind the icon too, and that half is
+    // fire-and-forget: `clearPlan()` reaches the plan store through `loadChunk`, which
+    // resolves after this test body. Left unawaited it landed after `cleanup()` had
+    // taken `document` away, and node reported the resulting ReferenceError against
+    // whichever test happened to be running by then.
+    await new Promise((resolve) => setTimeout(resolve, 0));
   } finally {
     browser.cleanup();
   }

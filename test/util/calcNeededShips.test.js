@@ -110,3 +110,19 @@ test("an explicit amount does not require the resource bar to exist", async () =
     assert.equal(calcNeededShips({ fret: 203, resources: 50000 }), 2);
   });
 });
+
+/**
+ * The empty ship table.
+ *
+ * `OGBIData.ships` is only ever written on a fleet-dispatch page - that is the only
+ * page that builds the dispatcher the table comes off - and `init()` seeds it as `{}`.
+ * Every other page therefore reads `{}` until the player has opened the dispatcher
+ * once, which a fresh install or a settings reset makes the normal case rather than an
+ * edge one. Reading `ships[id].cargoCapacity` straight is a TypeError there, and it
+ * took the whole spy table down on the messages page.
+ */
+test("an empty ship table answers 0 rather than throwing", async () => {
+  await withPage({ json: { options: { fret: 203 }, ships: {} } }, (calcNeededShips) => {
+    assert.equal(calcNeededShips({ fret: 203, resources: 50000 }), 0, "no capacity, no answer - but no crash");
+  });
+});

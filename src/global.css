@@ -1539,6 +1539,74 @@ input[type="password"]::selection {
   color: #daa520 !important;
 }
 
+/* Ko-fi link (settings dialog + welcome panel). An outline pill rather than a filled
+   one: it has to be findable without competing with the buttons that actually do
+   something.
+
+   The colour rules are written as `.ogl-kofi-row a.ogl-kofi` on purpose. Both host
+   panels paint every link inside them - `.ogk-welcome a` and `.ogi-checkbox a`, both
+   `!important` - and `!important` alone does not settle a tie between two important
+   declarations; specificity does, and a bare `.ogl-kofi` loses to `.ogk-welcome a`. */
+.ogl-kofi-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 8px;
+}
+
+.ogl-kofi-row a.ogl-kofi {
+  align-items: center;
+  background: transparent;
+  border: 1px solid #ff5e5b;
+  border-radius: 999px;
+  color: #ff8b89 !important;
+  display: inline-flex;
+  font-size: 12px;
+  font-style: normal !important;
+  gap: 6px;
+  line-height: 1.4;
+  padding: 3px 11px;
+  text-decoration: none !important;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+  white-space: nowrap;
+}
+
+.ogl-kofi-row a.ogl-kofi:hover {
+  background: #ff5e5b;
+  color: #fff !important;
+}
+
+.ogl-kofi-cup {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.ogl-kofi-cupBody {
+  fill: #ff5e5b;
+}
+
+.ogl-kofi-heart {
+  fill: #fff;
+}
+
+.ogl-kofi:hover .ogl-kofi-cupBody {
+  fill: #fff;
+}
+
+.ogl-kofi:hover .ogl-kofi-heart {
+  fill: #ff5e5b;
+}
+
+/* The sentence that keeps the button honest: nothing here is paywalled (AGENTS.md 1.8). */
+.ogl-kofi-note {
+  color: #7c8894;
+  font-size: 11px;
+  font-style: italic;
+}
+
 input[type="file"] {
   width: 0.1px;
   height: 0.1px;
@@ -10607,4 +10675,90 @@ body.no-commander .contentBoxBody {
   margin-top: 3px;
   opacity: 0.6;
   font-size: 10px;
+}
+
+/* ===========================================================================
+   Planned-upgrade marks
+   ---------------------------------------------------------------------------
+   Set by ctxpage/planHighlight: the left-menu entries whose build page has an
+   upgrade planned for the planet being viewed, and the tiles on that page.
+
+   Purely a marker on OGBI's own terms - it colours the game's menu text and
+   draws a frame, and touches nothing the tool is not allowed to touch: no ad,
+   no banner, no footer, and none of the Merchant / Officers / Shop items
+   (AGENTS.md 1.7).
+   =========================================================================== */
+
+.ogl-planned-menu {
+  color: #f0c040 !important;
+  position: relative;
+}
+
+/* The count, so the menu says how much is waiting there and not merely that
+   something is. Absolutely positioned: the menu rows are a fixed height and an
+   inline badge pushed the label onto a second line at some font sizes. */
+.ogl-planned-menu:after {
+  background: #f0c040;
+  border-radius: 8px;
+  color: #1b2129;
+  content: attr(data-ogl-planned);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 12px;
+  min-width: 12px;
+  padding: 0 3px;
+  position: absolute;
+  right: 4px;
+  text-align: center;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.technology.ogl-planned-tile {
+  animation: ogl-planned-pulse 2.6s ease-in-out infinite;
+  border-radius: 4px;
+  outline: 1px solid rgba(240, 192, 64, 0.75);
+  outline-offset: -1px;
+  position: relative;
+}
+
+/* Deliberately gentle and slow: this sits on a page the player reads, and a
+   fast or high-contrast pulse there is the kind of thing that gets a tool
+   called intrusive. Only the glow moves - the outline stays put, so nothing
+   reflows and the tile never shifts under the cursor. */
+@keyframes ogl-planned-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(240, 192, 64, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 7px rgba(240, 192, 64, 0.55);
+  }
+}
+
+/* An animation nobody asked for is exactly what this setting is for. The mark
+   stays; only the movement goes. */
+@media (prefers-reduced-motion: reduce) {
+  .technology.ogl-planned-tile {
+    animation: none;
+    box-shadow: 0 0 6px rgba(240, 192, 64, 0.45);
+  }
+}
+
+/* The level the plan is heading for, shown only when more than one level is
+   planned - OGame's own tile already names the next one. */
+.ogl-planned-target {
+  background: #f0c040;
+  border-radius: 3px;
+  color: #1b2129;
+  font-size: 10px;
+  font-weight: 700;
+  left: 2px;
+  line-height: 13px;
+  padding: 0 4px;
+  pointer-events: auto;
+  position: absolute;
+  top: 2px;
+  z-index: 2;
 }

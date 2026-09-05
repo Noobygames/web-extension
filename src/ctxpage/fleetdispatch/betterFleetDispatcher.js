@@ -1,5 +1,6 @@
 import * as DOM from "../../ui/dom.js";
 import debounce from "../../platform/debounce.js";
+import { cargoCapacityOf } from "../../game/shipsData.js";
 import { fleetState } from "./state.js";
 import { getLogger } from "../../platform/logger.js";
 import { createDOM, createSVG } from "../../ui/dom.js";
@@ -1397,7 +1398,7 @@ function betterFleetDispatcher(context) {
     let cyNum = transport.appendChild(createDOM("span", { class: "tooltip" }, "-"));
     let pbBtn;
     let pbNum;
-    if (OGBIData.json.ships[210].cargoCapacity != 0) {
+    if (cargoCapacityOf(210) != 0) {
       pbBtn = transport.appendChild(
         createDOM("a", { "tech-id": 210, class: "ogl-option ogl-fleet-ship ogl-fleet-210" })
       );
