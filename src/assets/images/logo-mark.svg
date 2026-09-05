@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    OGBI's emblem. Same geometry as scripts/make-logo.mjs, which rasterises it for the
+    manifest icons - Chrome's `icons` key will not take an SVG. Edit both together.
+
+    Two touching rings make the infinity symbol and a chevron breaks out past the right
+    one: "beyond infinity". The star field is omitted here on purpose - this file is
+    used at 16px in the page footer, where the dots are noise.
+  -->
+  <defs>
+    <radialGradient id="ogbi-disc" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0d1420" />
+      <stop offset="100%" stop-color="#16273f" />
+    </radialGradient>
+  </defs>
+
+  <circle cx="256" cy="256" r="238" fill="url(#ogbi-disc)" />
+  <circle cx="256" cy="256" r="245" fill="none" stroke="#4aa8dd" stroke-width="13" />
+
+  <g fill="none" stroke="#f2f7fb" stroke-width="22">
+    <circle cx="160" cy="256" r="64" />
+    <circle cx="288" cy="256" r="64" />
+  </g>
+
+  <path
+    d="M382 196 L434 256 L382 316"
+    fill="none"
+    stroke="#63cfff"
+    stroke-width="22"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

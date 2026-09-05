@@ -350,11 +350,15 @@ input[type="password"]::selection {
   top: 44px !important;
 }
 
+/* SVG, not a bitmap: this is drawn at 175px, at 0.75 of that in the settings dialog,
+   and on whatever the reader's device pixel ratio is. The geometry is shared with
+   scripts/make-logo.mjs, which rasterises the same emblem for the manifest icons. */
 .ogk-logo {
   width: 175px;
   height: 71px;
-  background: url("chrome-extension://__MSG_@@extension_id__/assets/images/logo-text.png");
+  background: url("chrome-extension://__MSG_@@extension_id__/assets/images/logo-text.svg");
   background-size: 175px;
+  background-repeat: no-repeat;
 }
 
 /* Version */
@@ -366,8 +370,10 @@ input[type="password"]::selection {
   width: 16px;
   height: 16px;
   margin-bottom: -5px;
-  background: url("chrome-extension://__MSG_@@extension_id__/assets/images/logo128.png");
+  /* The star-free variant: at 16px the dots are noise, not sky. */
+  background: url("chrome-extension://__MSG_@@extension_id__/assets/images/logo-mark.svg");
   background-size: 16px;
+  background-repeat: no-repeat;
   display: inline-block;
 }
 

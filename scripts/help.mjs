@@ -20,6 +20,7 @@ console.log(`Ogame Beyond Infinity - make targets
   make test-watch     Re-run the suite on every change
   make coverage       Run the suite and print a coverage report
   make bench          Micro-benchmark the hot paths
+  make logo           Re-render the manifest icons from the emblem geometry
 
   make install-brave  Build a PERMANENT local install into local-extension/
                       (load once via brave://extensions -> Load unpacked)

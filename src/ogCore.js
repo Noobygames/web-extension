@@ -1785,7 +1785,9 @@ function versionInStatusBar() {
 
   const version = DOM.createDOM("a", {
     class: "ogk-button-version",
-    href: `https://github.com/ogame-infinity/web-extension/releases/tag/v${VERSION}`,
+    // This fork's releases, not upstream's - the version next to it is ours, and the
+    // tag it names does not exist over there.
+    href: `https://github.com/Noobygames/web-extension/releases/tag/v${VERSION}`,
     target: "_blank",
   });
   const icon = DOM.createDOM("div", { class: "ogk-icon" });

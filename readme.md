@@ -1,5 +1,8 @@
 # Ogame Beyond Infinity
 
+[![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20OGBI-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/nerzal)
+[![Tests](https://github.com/Noobygames/web-extension/actions/workflows/test.yml/badge.svg)](https://github.com/Noobygames/web-extension/actions/workflows/test.yml)
+
 This is a fork of the original Ogame Infinity Extension, but extended and reworked to my own needs.
 All credits go to [Ogame Infinity](https://github.com/ogame-infinity/web-extension)
 
@@ -163,6 +166,7 @@ A `Makefile` wraps the common tasks. It needs `node`/`npm` on your PATH and work
     make test             # run the unit test suite
     make coverage         # run the suite and print a coverage report
     make bench            # micro-benchmark the hot paths
+    make logo             # re-render the manifest icons from the emblem geometry
     make format           # prettier
     make check            # eslint
     make build            # release zips via packaging.sh
@@ -192,6 +196,12 @@ If the profile you load it into already has OGBI from the store, disable the sto
 Firefox cannot do this: unsigned add-ons are always temporary there and are dropped on restart. A permanent Firefox install has to be signed through AMO.
 
 [docs/local-install.md](docs/local-install.md) has the details and troubleshooting.
+
+### The logo
+
+The emblem — two touching rings for infinity, a chevron breaking out past the right one — is defined once as geometry in `scripts/make-logo.mjs` and drawn twice: that script rasterises `logo128.png` and `logo512.png` for the manifests, and `src/assets/images/logo-mark.svg` / `logo-text.svg` draw the same shapes as vectors for everything inside the page. Chrome's `icons` manifest key will not take an SVG, which is the only reason the bitmaps exist.
+
+Change the emblem in all three, then run `make logo`. The PNGs are committed, so a normal build never needs the script. `test/assets.test.js` checks that nothing references a file that is gone.
 
 ### Benchmarks
 

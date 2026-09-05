@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 284" width="700" height="284">
+  <!--
+    The wordmark: the emblem from logo-mark.svg plus the name.
+
+    It replaces logo-text.png, which read "OGAME INFINITY" - upstream's name and
+    upstream's artwork, on a fork's settings dialog (AGENTS.md 0: a tool must not
+    present another project's identity as its own).
+
+    The 700x284 box is 175:71, the size .ogk-logo has always reserved, so the CSS did
+    not have to move.
+
+    Every line carries `textLength` with `lengthAdjust="spacingAndGlyphs"`. An SVG used
+    as a CSS background renders with whatever the system resolves `sans-serif` to, so
+    without a fixed advance the mark would be a different width on every machine. The
+    lengths are one advance per character rather than one width for all three lines:
+    stretching "OGAME" to the width of "INFINITY" would space it out to nothing.
+  -->
+  <defs>
+    <radialGradient id="ogbi-word-disc" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0d1420" />
+      <stop offset="100%" stop-color="#16273f" />
+    </radialGradient>
+  </defs>
+
+  <g transform="translate(8 42) scale(0.39)">
+    <circle cx="256" cy="256" r="238" fill="url(#ogbi-word-disc)" />
+    <circle cx="256" cy="256" r="245" fill="none" stroke="#4aa8dd" stroke-width="13" />
+    <g fill="none" stroke="#f2f7fb" stroke-width="22">
+      <circle cx="160" cy="256" r="64" />
+      <circle cx="288" cy="256" r="64" />
+    </g>
+    <path
+      d="M382 196 L434 256 L382 316"
+      fill="none"
+      stroke="#63cfff"
+      stroke-width="22"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
+
+  <g font-family="Verdana, DejaVu Sans, sans-serif" font-size="62" font-weight="700">
+    <text x="222" y="80" fill="#f2f7fb" textLength="280" lengthAdjust="spacingAndGlyphs">OGAME</text>
+    <text x="222" y="150" fill="#63cfff" textLength="336" lengthAdjust="spacingAndGlyphs">BEYOND</text>
+    <text x="222" y="220" fill="#f2f7fb" textLength="448" lengthAdjust="spacingAndGlyphs">INFINITY</text>
+  </g>
+</svg>

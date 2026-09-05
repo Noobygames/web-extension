@@ -22,7 +22,7 @@ export OGBI_VERSION := $(VERSION)
 export OGBI_CHROME_DIR := $(CHROME_DIR)
 export OGBI_FIREFOX_DIR := $(FIREFOX_DIR)
 
-.PHONY: help install install-brave install-brave-id format check globals test test-watch coverage bench build dev dev-firefox brave brave-main brave-open clean clean-profile
+.PHONY: help install install-brave install-brave-id format check globals logo test test-watch coverage bench build dev dev-firefox brave brave-main brave-open clean clean-profile
 
 help:
 	@node scripts/help.mjs
@@ -35,6 +35,11 @@ format:
 
 check:
 	npm run check
+
+# Re-render the manifest icons from scripts/make-logo.mjs. Only needed after the
+# emblem changes - the PNGs are committed.
+logo:
+	node scripts/make-logo.mjs
 
 # Every OGame page global src/ reads, and whether config/ogame-globals.cjs knows it.
 # See docs/ogame-globals.md.
