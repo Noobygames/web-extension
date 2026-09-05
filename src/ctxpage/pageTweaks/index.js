@@ -16,7 +16,7 @@ import { getShipsData } from "../../game/shipsData.js";
 import ship from "../../game/ship.js";
 
 /**
- * The small changes OGI makes to pages it does not otherwise own: the extra top-bar
+ * The small changes OGBI makes to pages it does not otherwise own: the extra top-bar
  * links, the mobile navigation arrows, the quick planet list, the debris shortcut and
  * the message cleanup.
  *
@@ -461,7 +461,7 @@ function utilities(context) {
         lastFleetBtn = fleet.querySelector(".reversal a");
       }
 
-      // The game prints .absTime / .nextabsTime in the server timezone. When the OGI timezone
+      // The game prints .absTime / .nextabsTime in the server timezone. When the OGBI timezone
       // option is on the user wants their own local timezone, so re-render both from the epoch
       // attributes -- getFormatedDate() formats a unix timestamp in the browser's local timezone.
       // No timezoneDiff is added here on purpose: data-arrival-time / data-end-time are unix
@@ -525,41 +525,50 @@ function utilities(context) {
       const backButton = fleet.querySelector(".reversal a");
       let isBack = false;
       if (backButton) {
-        let back = backButton.title || backButton.getAttribute("data-tooltip-title");
-        let splitted = back.split("|")[1].replace("<br>", "/").replace(/:|\./g, "/").split("/");
-        let backDate = {
-          year: splitted[2],
-          month: splitted[1],
-          day: splitted[0],
-          h: splitted[3],
-          m: splitted[4],
-          s: splitted[5],
-        };
+        // The reversal tooltip reads "<something>|dd.mm.yyyy<br>HH:MM:SS". A row whose tooltip is
+        // missing, empty or shaped differently used to throw right here - `back.split("|")[1]` is
+        // undefined and `.replace` on it is a TypeError. That happens inside a `forEach` over every
+        // fleet on the page, so one row the parser did not recognise cancelled the loop and every
+        // step of `start()` that comes after `utilities()`. The return ETA is a nice-to-have; it is
+        // not worth taking the rest of the page down for, so an unreadable tooltip is skipped.
+        const back = backButton.title || backButton.getAttribute("data-tooltip-title") || "";
+        const backText = back.split("|")[1];
+        if (backText) {
+          let splitted = backText.replace("<br>", "/").replace(/:|\./g, "/").split("/");
+          let backDate = {
+            year: splitted[2],
+            month: splitted[1],
+            day: splitted[0],
+            h: splitted[3],
+            m: splitted[4],
+            s: splitted[5],
+          };
 
-        // Unlike the .absTime attributes above, these components come from the reversal tooltip as
-        // wall-clock text in the *server* timezone. new Date(y, m, d, ...) reads them as browser-local,
-        // so the resulting instant is off by timezoneDiff whenever the two zones differ. With the OGI
-        // timezone option on the user wants local time, so the diff has to be added back here.
-        const timeZoneChangeReverse = OGBIData.json.options.timeZone ? OGBIData.json.timezoneDiff : 0;
-        const baseTime =
-          new Date(backDate.year, backDate.month - 1, backDate.day, backDate.h, backDate.m, backDate.s).getTime() +
-          timeZoneChangeReverse * 1e3;
+          // Unlike the .absTime attributes above, these components come from the reversal tooltip as
+          // wall-clock text in the *server* timezone. new Date(y, m, d, ...) reads them as browser-local,
+          // so the resulting instant is off by timezoneDiff whenever the two zones differ. With the OGBI
+          // timezone option on the user wants local time, so the diff has to be added back here.
+          const timeZoneChangeReverse = OGBIData.json.options.timeZone ? OGBIData.json.timezoneDiff : 0;
+          const baseTime =
+            new Date(backDate.year, backDate.month - 1, backDate.day, backDate.h, backDate.m, backDate.s).getTime() +
+            timeZoneChangeReverse * 1e3;
 
-        let content = details.appendChild(createDOM("div", { class: "ogl-date" }));
+          let content = details.appendChild(createDOM("div", { class: "ogl-date" }));
 
-        // The tooltip states when the fleet would be home if it reversed *now*. Every second spent
-        // flying outbound adds one more second of flight back, so the reversal ETA moves 2s per 1s of
-        // real time. Recomputed from wall-clock rather than incremented per tick, so a throttled
-        // background tab (which drops setInterval firings) no longer makes the display drift behind.
-        const realStart = Date.now();
+          // The tooltip states when the fleet would be home if it reversed *now*. Every second spent
+          // flying outbound adds one more second of flight back, so the reversal ETA moves 2s per 1s of
+          // real time. Recomputed from wall-clock rather than incremented per tick, so a throttled
+          // background tab (which drops setInterval firings) no longer makes the display drift behind.
+          const realStart = Date.now();
 
-        const updateTimer = () => {
-          const virtualElapsed = (Date.now() - realStart) * 2;
-          content.textContent = getFormatedDate(baseTime + virtualElapsed, "[d].[m].[y] - [G]:[i]:[s] ");
-        };
+          const updateTimer = () => {
+            const virtualElapsed = (Date.now() - realStart) * 2;
+            content.textContent = getFormatedDate(baseTime + virtualElapsed, "[d].[m].[y] - [G]:[i]:[s] ");
+          };
 
-        updateTimer();
-        setInterval(updateTimer, 500);
+          updateTimer();
+          setInterval(updateTimer, 500);
+        }
       } else {
         isBack = true;
       }

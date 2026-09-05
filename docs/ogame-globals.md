@@ -24,8 +24,8 @@ and a name could pass one check while failing the other.
 
 `writable` is the smaller half — globals the extension *assigns* to, not just reads.
 Every one is an OGame hook being wrapped (`displayContentGalaxy`, `openJumpgate`,
-`doExpedition`, …): keep the old value, call it, then do OGI's part. `galaxy`, `system`
-and `planet` are the exception — the game's own scripts read those as state, and OGI
+`doExpedition`, …): keep the old value, call it, then do OGBI's part. `galaxy`, `system`
+and `planet` are the exception — the game's own scripts read those as state, and OGBI
 sets them the same way the game does.
 
 ## The list is deliberately not "every global on the page"
@@ -94,7 +94,7 @@ Two real bugs surfaced the moment `no-undef` could be read:
   `planet` that only existed in its caller's scope. Every call threw: swallowed by
   `MakePrettierOverview`'s `catch` on the initial call, uncaught on the toggle click.
 - `src/ctxpage/planetbar/index.js` — `planet` genuinely *is* an OGame global there
-  (OGI's copy of the game's `jumpgateDone`), it was simply missing from the list.
+  (OGBI's copy of the game's `jumpgateDone`), it was simply missing from the list.
 
 `test/src-references.test.js` cannot find the first one and never will: it treats a
 binding anywhere in a file as declared, so the caller's `planet` covers the callee. That

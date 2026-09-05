@@ -64,7 +64,14 @@ function processData() {
   });
 }
 
+// Once per page, like the LZString injection below. Re-injecting `chart.min.js`
+// re-evaluates it and replaces the `Chart` global, taking every plugin already
+// registered on the old one with it - so two quick clicks on the statistics icon
+// used to be able to leave the labels plugin registered on a Chart nothing uses.
+let chartInjected = false;
 document.addEventListener("ogi-chart", function (e) {
+  if (chartInjected) return;
+  chartInjected = true;
   injectScript("libs/chart.min.js", () => {
     injectScript("libs/chartjs-plugin-labels.js");
   });

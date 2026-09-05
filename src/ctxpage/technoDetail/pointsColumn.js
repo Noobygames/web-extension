@@ -13,51 +13,77 @@ import { toFormattedNumber } from "../../format/numbers.js";
 import Translator from "../../format/i18n/translate.js";
 import { pointsFor } from "../../game/points.js";
 
-/** Points are small for a first-level mine and huge for a fleet, so both are spelled out. */
+/**
+ * One figure, rounded to what is worth reading.
+ *
+ * The range is enormous - a level-1 mine is worth 0.075 points, a mine at 26 is worth
+ * 1893.84, a fleet order runs into six figures - so a fixed precision is wrong at one
+ * end or the other. Two decimals only below 100, where they are the whole number;
+ * above it they are noise on a column that is 60px wide. The exact value stays on the
+ * tooltip either way.
+ */
 function pointsCell(className, points) {
   return createDOM(
     "div",
     { class: `${className} tooltip`, "data-title": toFormattedNumber(points, 2) },
-    toFormattedNumber(points)
+    toFormattedNumber(points, points < 100 ? null : 0)
   );
 }
 
 /**
- * Adds the column next to the resource cells, built the way they are built.
+ * Adds the column to OGame's cost row, built exactly like the cells already in it.
  *
- * The first version appended a plain `<div>` and styled it `inline-block`. OGame's cost
- * row is a list, so a `<div>` among its `<li>`s is a block box between inline ones: the
- * column broke onto its own line and landed on top of "Produktionsdauer".
+ * The row is not what the class name suggests. `.costs` is a `<div>` that holds a
+ * hidden `<p>`, a nested `<ul class="ipiHintable">` with the cost cells in it, and
+ * OGBI's own `.ogk-titles`. So the cells are grandchildren, not children, and the
+ * column has to go inside that `<ul>` - two earlier attempts got this wrong in
+ * opposite directions: a `<div>` appended to `.costs` broke onto its own line and
+ * landed on "Produktionsdauer", and restricting the search to direct children of
+ * `.costs` then matched nothing at all and drew no column.
  *
- * Rather than guess at the game's layout, the neighbour is measured. The column copies
- * the last resource cell's tag and the two properties that decide whether a box sits
- * beside another one or below it, so it flows with them whatever OGame changes the row
- * to. Without a neighbour to copy there is no row to join, and nothing is drawn.
+ * One cell looks like this, and the column mirrors it line for line:
  *
- * @param {HTMLElement} costs the `.costs` row
+ *     <li class="resource metal icon ..." data-value="30000">
+ *       30K                                   <- cost of one, the row with no label
+ *       <div class="ogk-sum">600K</div>       <- "Gesamt"
+ *       <div>0</div>                          <- "Fehlend"
+ *     </li>
+ *
+ * The row labels live in `.ogk-titles`, positioned to the left of the whole row, so a
+ * column cannot carry a heading in the flow without pushing its figures onto the wrong
+ * lines. The star therefore sits absolutely in the space the resource sprite occupies.
+ *
+ * @param {HTMLElement} costs the `.costs` block
  * @returns {HTMLElement|null}
  */
 function buildColumn(costs) {
-  // The last cost cell of the row - deuterium, energy or population, depending on what
-  // is being built. Named rather than "the last child": `.costs` also holds a `<p>` the
-  // stylesheet hides and OGI's own `.ogk-titles`, and copying either lays the column out
-  // as something that is not a cost cell. Direct children only, so a nested span cannot
-  // be mistaken for one.
-  const sample = [...costs.querySelectorAll(".resource.icon, .metal, .crystal, .deuterium, .energy, .population")]
-    .filter((cell) => cell.parentElement === costs && !cell.classList.contains("ogl-pointsCost"))
+  const sample = [...costs.querySelectorAll("li.resource.icon")]
+    .filter((cell) => !cell.classList.contains("ogl-pointsCost"))
     .pop();
 
   if (!sample) return null;
 
-  const column = createDOM(sample.tagName.toLowerCase(), { class: "ogl-pointsCost" });
-  const measured = window.getComputedStyle?.(sample);
+  // `resource icon` and nothing else off the sample: those two carry the box the cells
+  // share. Copying its full class list would bring `metal`/`deuterium` (a sprite),
+  // `sufficient` (a colour that means "you can afford this") and OGame's own tooltip
+  // hooks along with it, none of which mean anything for a score.
+  const column = createDOM("li", { class: "resource icon ogl-pointsCost" });
 
-  if (measured) {
-    column.style.display = measured.display;
-    column.style.cssFloat = measured.cssFloat;
-  }
+  // A mark, not a word. Every other cell in this row is an icon with its name on
+  // hover, and a bare caption spelled out between them read as something that had
+  // fallen into the panel rather than a column of it. The glyph is drawn by the
+  // stylesheet; the name stays on the tooltip and on `aria-label`, exactly the way
+  // OGame labels its own resource cells.
+  column.appendChild(
+    createDOM("span", {
+      class: "ogl-pointsCost-label tooltip",
+      "data-title": `${Translator.translate(413)} - ${Translator.translate(414)}`,
+      "aria-label": Translator.translate(413),
+    })
+  );
 
-  // After the last resource, which is where the row ends and the button begins.
+  // Into the list, beside the last cost cell - not into `.costs`, which is the block
+  // around it.
   sample.after(column);
 
   return column;
@@ -82,17 +108,14 @@ export function renderPointsColumn(each, total = null) {
   const eachPoints = pointsFor(each);
   const totalPoints = total ? pointsFor(total) : null;
 
-  column.replaceChildren(
-    createDOM(
-      "div",
-      { class: "ogl-pointsCost-label tooltip", "data-title": Translator.translate(414) },
-      Translator.translate(413)
-    ),
-    pointsCell("ogl-pointsCost-each", eachPoints)
-  );
+  // The heading is kept and everything after it redrawn: it is positioned out of the
+  // flow, so rebuilding it on every keystroke would only make it flicker.
+  const label = column.querySelector(".ogl-pointsCost-label");
+  column.replaceChildren(label, pointsCell("ogl-pointsCost-each", eachPoints));
 
+  // Same line as the game's own "Gesamt", and `ogk-sum` so it is the same yellow.
   if (totalPoints !== null && totalPoints !== eachPoints) {
-    column.appendChild(pointsCell("ogl-pointsCost-sum", totalPoints));
+    column.appendChild(pointsCell("ogk-sum ogl-pointsCost-sum", totalPoints));
   }
 
   return column;

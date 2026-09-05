@@ -97,10 +97,10 @@ const gameFunctions = [
  * Globals the extension assigns to, not just reads.
  *
  * Every one of these is OGame's own hook being wrapped: the old value is kept and
- * called, then OGI does its part (see galaxy/index.js, planetbar/index.js,
+ * called, then OGBI does its part (see galaxy/index.js, planetbar/index.js,
  * stalk/index.js). `galaxy` and `system` are the exception - the game's `submitForm`
  * reads them as the two coordinate inputs, so stalk.js sets them to those elements.
- * `planet` is the same story: OGI's copy of the game's `jumpgateDone` assigns the
+ * `planet` is the same story: OGBI's copy of the game's `jumpgateDone` assigns the
  * target moon id to it, exactly as the game's own handler does.
  */
 const writable = [

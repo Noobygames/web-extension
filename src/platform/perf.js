@@ -146,7 +146,7 @@ export function accumulate(name, ms, bytes = 0) {
  * call prints.
  * @param {string} [label]
  */
-export function report(label = "OGI start-up") {
+export function report(label = "OGBI start-up") {
   if (!enabled || reported || entries.length === 0) return;
   reported = true;
 

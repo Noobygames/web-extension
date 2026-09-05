@@ -115,7 +115,7 @@ test("every file under src/ is reachable from an entry point", () => {
 test("platform/ imports nothing outside itself", () => {
   // The one folder this phase can honestly call pure: it is infrastructure
   // (logging, timers, the content/page bridge, the DOM-ready guard) with no
-  // OGame or OGI domain knowledge, and importing back into game/store/ctxpage
+  // OGame or OGBI domain knowledge, and importing back into game/store/ctxpage
   // would be a dependency the wrong way round.
   const offenders = [];
   const platformDir = path.join(srcRoot, "platform");

@@ -2262,30 +2262,39 @@ button.build-it_premium:hover {
    never what it puts on the highscore, which is the number builds get compared by.
    Sized like a resource column so it lines up with them. */
 #technologydetails .ogl-pointsCost {
-  /* `display` and `float` are copied off the neighbouring cost cell at runtime, so the
-     column sits in the row whatever OGame lays it out with; inline-block is only the
-     fallback for a browser with no getComputedStyle. */
-  display: inline-block;
-  height: 75px;
-  list-style: none;
-  margin: 0 2px;
-  text-align: center;
-  vertical-align: top;
-  width: 60px;
+  /* It is one of OGame's own cost cells - `resource icon` carries the box - minus the
+     resource sprite, which would otherwise be whatever `.resource.icon` alone paints. */
+  background: none !important;
+  position: relative;
 }
 
+/* The star stands where the resource sprites stand, so the column reads as one of the
+   row rather than as a caption that fell into it. Out of the flow, or it would push the
+   two figures onto the "Gesamt" and "Fehlend" lines and misalign the whole row. */
 #technologydetails .ogl-pointsCost-label {
-  color: #5d7fa4;
-  font-size: 11px;
-  line-height: 30px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
 }
 
+#technologydetails .ogl-pointsCost-label:before {
+  color: #cec452;
+  content: "\2605";
+  display: block;
+  font-size: 24px;
+  line-height: 40px;
+  text-align: center;
+  text-shadow: 0 0 6px rgba(206, 196, 82, 0.35);
+}
+
+/* Deliberately neutral, not gold. Each resource figure beside it carries its own
+   colour and the total below is the game's `.ogk-sum` yellow, so a third gold here
+   would be the loudest thing in the row for the least important line. The star does
+   the identifying; the figure just has to read. */
 #technologydetails .ogl-pointsCost-each {
   color: #cbd3db;
-}
-
-#technologydetails .ogl-pointsCost-sum {
-  color: #9099a3;
+  font-weight: 700;
 }
 
 #technologydetails .information > ul:first-of-type {
@@ -4226,8 +4235,40 @@ div[data-raw-depletion="4"] + .msgHead a.txt_link {
 }
 
 .ogl-upgradePlans-actions {
+  align-items: center;
   display: flex;
-  gap: 3px;
+  gap: 5px;
+}
+
+.ogl-upgradePlans-bulk {
+  background: #1b2129;
+  border: 1px solid #3d4854;
+  border-radius: 3px;
+  color: #9099a3;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
+.ogl-upgradePlans-bulk:hover {
+  color: #e5e8eb;
+}
+
+.ogl-upgradePlans-bulkShort {
+  border-color: #7a3a36;
+}
+
+.ogl-upgradePlans-bulkShort:hover {
+  background: #3a1f1d;
+}
+
+.ogl-upgradePlans-bulkDone {
+  border-color: #2f6b3c;
+}
+
+.ogl-upgradePlans-bulkDone:hover {
+  background: #1c3a24;
 }
 
 .ogl-upgradePlans-source {
@@ -7319,44 +7360,51 @@ div[data-marker]:hover {
   white-space: nowrap;
 }
 
+/* Savings goal marker: a coin stack that fills from the bottom with how much of the
+   goal is already covered. --ogl-lock-color is the state, set by the classes below. */
 .ogl-sideLock {
-  background: url("https://gf1.geo.gfsrv.net/cdn6f/91ad13c8f9a7e9390085d12adde508.png");
-  background-position: 0 -272px;
-  background-repeat: no-repeat;
-  filter: sepia(100%) hue-rotate(-50deg) saturate(10);
+  --ogl-lock-color: #e8544c;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.85));
   height: 16px;
-  position: absolute;
-  top: 0;
   left: calc(100% + 7px);
+  line-height: 0;
+  padding: 0;
+  position: absolute;
+  top: 2px;
   width: 16px;
   z-index: 1;
-  top: 2px;
 }
 
-.ogl-moonLock {
-  top: 22px;
-  border-radius: 20px;
+.ogl-sideLock-glyph {
+  display: block;
+}
+
+.ogl-sideLock-empty {
+  fill: #3d4854;
+}
+
+.ogl-sideLock-fill {
+  fill: var(--ogl-lock-color);
+}
+
+.ogl-sideLock-outline {
+  fill: none;
+  stroke: var(--ogl-lock-color);
+  stroke-width: 1;
+}
+
+.ogl-sideLockPartial {
+  --ogl-lock-color: #f0b429;
 }
 
 .ogl-sideLockFilled {
-  filter: sepia(100%) hue-rotate(80deg) saturate(3);
+  --ogl-lock-color: #4fbf67;
 }
 
-.ogl-sideLockRemove {
-  background: url("https://gf1.geo.gfsrv.net/cdn6f/91ad13c8f9a7e9390085d12adde508.png");
-  background-position: 0 -80px;
-  background-repeat: no-repeat;
-  filter: sepia(100%) hue-rotate(-50deg) saturate(10);
-  height: 16px;
-  position: absolute;
-  left: 100%;
-  width: 16px;
-  z-index: 1;
-  top: 2px;
-}
-
-.ogl-sideLockRemoveFilled {
-  filter: sepia(100%) hue-rotate(80deg) saturate(3);
+.ogl-moonLock {
   top: 22px;
 }
 
@@ -10203,7 +10251,7 @@ body.no-commander .contentBoxBody {
    Wide-screen layout and zoom
    ---------------------------------------------------------------------------
    OGame ships a fixed 996px page (#middle is a hard 670px, inner content a hard
-   654px). OGI already widens the shell to 1145px, but on 1600px+ monitors the
+   654px). OGBI already widens the shell to 1145px, but on 1600px+ monitors the
    remaining space stays empty. This block spends that space in two stages:
    first width, then — once the column hits its cap — scale.
 
@@ -10215,6 +10263,17 @@ body.no-commander .contentBoxBody {
 
    With neither class present not one declaration below matches, so the feature
    is genuinely off rather than merely neutralised.
+
+   THE SECOND STAGE DEPENDS ON THE FIRST, though the settings dialog offers the two
+   as if they were independent. `zoom` is a *layout* zoom: the column it scales takes
+   up that much more room, and OGame's content column cannot go below its ~670px
+   intrinsic width - at zoom 1.25 it wants 838 real pixels the vanilla layout has
+   nowhere to put. Measured on a saved page at 1920px with the zoom on and the width
+   stretching off: #middle had a 536px box holding 667px of content, and the event box
+   hung 164px past the start of #right, straight over the planet bar - which is what
+   hid the fleet-recall column at the end of every event row. Narrowing the column
+   does not help; 670px is what the content needs. `ctxpage/wide-layout.js` therefore
+   refuses to set .ogl-wide-zoom unless .ogl-wide-layout is set too.
 
    --ogl-wide-zoom is set by the stepped media queries at the bottom. A manual
    value from the settings dialog is written as an inline style on <html>, which
@@ -10267,18 +10326,30 @@ body.no-commander .contentBoxBody {
        past #right's fixed 300px has to fit in the margin the centring leaves.
        Zooming the planet bar pushes that slot further right, so the reserve has
        to grow with the zoom or a manual factor produces a horizontal scrollbar
-       at 1600-2000px. Derived from
-         gap >= overhang  =>  reserve >= 198px + 384px * zoom
-       with the constant rounded up for slack. */
-    --ogl-wide-reserve: calc(260px + 384px * var(--ogl-wide-zoom));
+       at 1600-2000px.
 
-    /* Floor divides by the zoom so the column never renders *narrower* than
-       vanilla's 670px; at zoom 2 a 335px spec column still paints 670px. */
-    --ogl-wide-column: clamp(
-      calc(670px / var(--ogl-wide-zoom)),
-      calc((100vw - var(--ogl-wide-reserve)) / var(--ogl-wide-zoom)),
-      1400px
-    );
+       All three terms are measured, on a saved account page at 1600/1920/2560px:
+
+       - 400px, not the 198px the old derivation gave (rounded to 260). #pageContent
+         is centred, so shrinking the column by n only pulls the right edge in by
+         n/2 - the derivation assumed 1:1 and came out half short. At 1920px with the
+         width stretching on and no zoom the document was 51px wider than the
+         viewport; 380px was the first value that reached zero, 400 keeps some slack.
+       - 384px * zoom, unchanged: the ad slot's overhang past #right.
+       - 300px * (zoom - 1): #right's own growth. It is zoomed too (see below), so it
+         takes exactly that much more room than the other two terms assume. Without
+         this term the document was another 32px too wide at 1920px / zoom 1.25. */
+    --ogl-wide-reserve: calc(400px + 384px * var(--ogl-wide-zoom) + 300px * (var(--ogl-wide-zoom) - 1));
+
+    /* Floor: 670px flat, and NOT divided by the zoom. It used to be, on the theory
+       that the column only has to *paint* 670px wide - but the content inside is
+       laid out in CSS pixels and OGame's is ~667 of them, which zoom scales up
+       rather than making smaller. Measured at 1600px with zoom 1.25: the divided
+       floor let the column shrink to 628px, so the content overflowed 39px and the
+       event box hung 49px over the planet bar - the same symptom as the zoom with
+       no width stretching at all. A manual factor bigger than the window can carry
+       now costs a horizontal scrollbar instead of hidden content. */
+    --ogl-wide-column: clamp(670px, calc((100vw - var(--ogl-wide-reserve)) / var(--ogl-wide-zoom)), 1400px);
   }
 
   /* The column chain: #middle and every wrapper the game pins to 670px. */
@@ -10347,7 +10418,7 @@ body.no-commander .contentBoxBody {
     content: none !important;
   }
 
-  /* OGI's own panels follow the column instead of keeping their own caps. */
+  /* OGBI's own panels follow the column instead of keeping their own caps. */
   .ogl-wide-layout .ogl-settings {
     max-width: var(--ogl-wide-column) !important;
   }
@@ -10387,6 +10458,15 @@ body.no-commander .contentBoxBody {
     .ogl-wide-zoom #middle,
     .ogl-wide-zoom #pageContent > #right > #planetbarcomponent {
       zoom: var(--ogl-wide-zoom);
+    }
+
+    /* #right is pinned to 300px; the planet bar inside it is zoomed. Measured at
+       1920px / zoom 1.25: the bar came out 343px in that 300px box and hung 43px
+       past it, over the ad slot - and at a narrower window, over the page. Growing
+       the box by the same factor puts it back inside (43px over becomes 32px to
+       spare). The reserve above pays for the extra width. */
+    .ogl-wide-zoom #pageContent > #right {
+      width: calc(300px * var(--ogl-wide-zoom)) !important;
     }
   }
 }
@@ -10473,7 +10553,7 @@ body.no-commander .contentBoxBody {
 /* ===========================================================================
    Bashing-rule counter (galaxy view)
    ---------------------------------------------------------------------------
-   Badge on the planet / moon cell showing how many attacks OGI recorded against
+   Badge on the planet / moon cell showing how many attacks OGBI recorded against
    that position in the last 24h. Colour follows game/bashing.js's level:
    ok (below limit-1), warn (one attack left), limit (limit reached).
    =========================================================================== */

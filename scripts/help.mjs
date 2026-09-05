@@ -35,7 +35,7 @@ console.log(`Ogame Beyond Infinity - make targets
   make brave-open     Build + launch Brave straight to brave://extensions
 
 All three switch every other extension off for that browser session, so the Web Store
-build of OGI cannot run next to your local one. Nothing is uninstalled - a normal
+build of OGBI cannot run next to your local one. Nothing is uninstalled - a normal
 Brave start has everything back.
 
   make build          Full release packaging via packaging.sh (needs bash + zip)

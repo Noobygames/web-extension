@@ -1,5 +1,5 @@
 import OGBIData from "../../store/OGBIData.js";
-import { createDOM } from "../../ui/dom.js";
+import { createDOM, createSVG } from "../../ui/dom.js";
 import { toFormattedNumber } from "../../format/numbers.js";
 import planetType from "../../game/planetType.js";
 import { tooltip } from "../../ui/tooltip.js";
@@ -30,7 +30,26 @@ const obs = new OGBIObserver();
  * always found no difference, and an own fleet arriving stopped crediting its
  * cargo. Phase 6 of refactoring.md.
  */
-let currentFlying = {};
+let currentFlying = null;
+
+/**
+ * The same snapshot, read on demand.
+ *
+ * `display()` is not the only entry point: `setNeeds()` redraws an icon straight from
+ * the upgrade-plan sync, which happens on build pages where the event box may not have
+ * been observed yet. That path used to see an empty `currentFlying` and colour the icon
+ * as if nothing was in flight, so the same planet showed red or green depending on
+ * which of the two ran first. Reading it here keeps one answer for both.
+ */
+function flyingNow() {
+  if (currentFlying) return currentFlying;
+  // No event box yet means no answer, not "nothing flying" - don't memoize that.
+  if (!document.getElementById("eventContent")) return {};
+
+  currentFlying = flying();
+
+  return currentFlying;
+}
 
 export function display() {
   if (document.getElementById("eventboxLoading").style.display === "block") return;
@@ -49,7 +68,7 @@ export function display() {
 
 // Deferred instead of registered at module evaluation: `ogCore.js` is injected at
 // `document_start` so its module graph loads in parallel with the game's page parse,
-// and `#eventboxContent` does not exist yet at that point. OGIObserver silently
+// and `#eventboxContent` does not exist yet at that point. OGBIObserver silently
 // ignores a null element, so an eager call would just drop the observer.
 function observeEventBox() {
   obs(document.getElementById("eventboxContent"), display, { subtree: false });
@@ -89,7 +108,8 @@ export function getNeedsByCoords(coords, isMoon) {
 
   if (needsTarget === undefined) return;
 
-  const flyingTarget = isMoon ? currentFlying.planets?.[coords]?.moon : currentFlying.planets?.[coords]?.planet;
+  const inFlight = flyingNow();
+  const flyingTarget = isMoon ? inFlight.planets?.[coords]?.moon : inFlight.planets?.[coords]?.planet;
 
   const metal = Math.max((needsTarget?.metal || 0) - (planet?.metal || 0) - (flyingTarget?.metal || 0), 0);
   const crystal = Math.max((needsTarget?.crystal || 0) - (planet?.crystal || 0) - (flyingTarget?.crystal || 0), 0);
@@ -157,7 +177,7 @@ export function setNeeds(coords, isMoon, resources) {
 
   OGBIData.needs = needs;
 
-  displayLocks(isMoon ? planetFound.moon : planetFound, isMoon);
+  displayLocks(planetFound, isMoon);
 }
 
 /**
@@ -179,15 +199,30 @@ export function displayLocksByCoords(coords, isMoon) {
 
   if (planetFound === null) return;
 
-  const planet = isMoon ? planetFound.moon : planetFound;
-
-  displayLocks(planet, isMoon);
+  displayLocks(planetFound, isMoon);
 }
 
-function displayLocks(planet, isMoon) {
-  const planetId = planet?.planetID || planet.id;
+/**
+ * Draws (or removes) one side's icon on the planet row.
+ *
+ * Takes the **parent planet**, never the moon object, for both halves of the lookup.
+ * It used to take whichever object the side stood for and derive the id from
+ * `planet?.planetID || planet.id`, but the moons in `OGBIData.empire` come out of the
+ * empire endpoint's own moon list and carry only their own `id` - so a moon resolved to
+ * the moon's id, `#planet-<moonId>` matched nothing and `needs[moonId]` was undefined
+ * (the cache is keyed by the planet). Moon locks simply never appeared.
+ *
+ * @param {object} planetFound entry from `OGBIData.empire`
+ * @param {boolean} isMoon which side of it to draw
+ */
+function displayLocks(planetFound, isMoon) {
+  const planetId = planetFound?.id;
 
   if (!planetId) return;
+
+  const target = isMoon ? planetFound.moon : planetFound;
+
+  if (!target) return;
 
   const element = document.querySelector(`#planetList #planet-${planetId}`);
 
@@ -206,80 +241,95 @@ function displayLocks(planet, isMoon) {
     return;
   }
 
-  const icon = createLockIcon(planet, isMoon);
+  const icon = createLockIcon(planetFound, isMoon);
   if (icon) element.appendChild(icon);
-
-  const sidePlanetDiv = document.querySelector("div#cutty") || document.querySelector("div#norm");
-
-  sidePlanetDiv.querySelectorAll(".ogl-sideLockRemove").forEach((e) => e.remove());
-
-  if (sidePlanetDiv.querySelector(".ogl-sideLock")) {
-    const deleteAllEmpty = createDOM("button", {
-      class: "ogl-sideLockRemove tooltip",
-      title: Translator.translate(338),
-    });
-    const deleteAllFilled = createDOM("button", {
-      class: "ogl-sideLockRemove ogl-sideLockRemoveFilled tooltip",
-      title: Translator.translate(339),
-    });
-    sidePlanetDiv.append(deleteAllEmpty, deleteAllFilled);
-    const deleteAll = (condition) => {
-      for (const key in needs) {
-        const need = needs[key];
-        const needPlanet = getNeedsByCoords(needs[key].coords, false);
-        const needMoon = getNeedsByCoords(needs[key].coords, true);
-
-        if (needMoon && condition(needMoon)) {
-          needs[key].moon = {};
-          clearPlan(need.coords, true);
-          displayLocks(getPlanetByCoords(need.coords).moon, true);
-        }
-
-        if (needPlanet && condition(needPlanet)) {
-          needs[key].planet = {};
-          clearPlan(need.coords, false);
-          displayLocks(getPlanetByCoords(need.coords), false);
-        }
-
-        if (typeof needs[key]?.moon?.metal === "undefined" && typeof needs[key]?.planet?.metal === "undefined") {
-          delete needs[key];
-        }
-      }
-
-      if (!document.querySelector("#planetList .ogl-sideLock")) {
-        sidePlanetDiv.querySelectorAll("button.ogl-sideLockRemove").forEach((button) => button.remove());
-      }
-
-      OGBIData.needs = needs;
-    };
-
-    deleteAllEmpty.addEventListener("click", () => {
-      deleteAll((missing) => Object.values(missing).reduce((total, resource) => total + resource, 0) !== 0);
-    });
-    deleteAllFilled.addEventListener("click", () => {
-      deleteAll((missing) => Object.values(missing).reduce((total, resource) => total + resource, 0) === 0);
-    });
-  }
 }
 
-function createLockIcon(planet, isMoon) {
-  const planetId = planet?.planetID || planet.id;
+/**
+ * How far along one side's savings goal is, 0..1.
+ *
+ * Summed across all three resources rather than per resource: the icon is 16px and has
+ * one bar, and "80% of the way there" is the question it answers. A side with nothing
+ * planned counts as done, so it never draws a permanently empty bar.
+ */
+function fundedShare(coords, isMoon) {
+  const planned = getNeedsResourceByCoords(coords, isMoon);
+  const total = sumOf(planned);
+
+  if (total <= 0) return 1;
+
+  const missing = sumOf(getNeedsByCoords(coords, isMoon));
+
+  return Math.min(1, Math.max(0, 1 - missing / total));
+}
+
+/**
+ * A stack of three coins, as one path with three subpaths. The old icon was OGame's own
+ * padlock sprite recoloured with `hue-rotate`, which read as "locked" rather than
+ * "saving up for something" and could only ever be two colours.
+ */
+const COIN_STACK =
+  "M8 1.2c3.31 0 6 1.07 6 2.4S11.31 6 8 6 2 4.93 2 3.6 4.69 1.2 8 1.2z " +
+  "M2 5.5v2.3c0 1.33 2.69 2.4 6 2.4s6-1.07 6-2.4V5.5c-1.24 1.05-3.5 1.6-6 1.6S3.24 6.55 2 5.5z " +
+  "M2 9.7v2.3c0 1.33 2.69 2.4 6 2.4s6-1.07 6-2.4V9.7c-1.24 1.05-3.5 1.6-6 1.6S3.24 10.75 2 9.7z";
+
+/**
+ * The glyph, filled from the bottom to `share` of its height.
+ *
+ * Inline SVG rather than a `mask-image`/`background-image` data URI on purpose: OGame's
+ * CSP governs images the stylesheet pulls in, and inline SVG is markup, so nothing here
+ * depends on `data:` being allowed. It also lets the fill level be a real clip instead
+ * of three hard-coded steps.
+ *
+ * @param {number} share 0..1
+ * @param {string} uid unique per planet and side - the clip path needs an id
+ */
+function createLockGlyph(share, uid) {
+  const svg = createSVG("svg", { viewBox: "0 0 16 16", width: "16", height: "16", class: "ogl-sideLock-glyph" });
+  const clipId = `ogl-lockFill-${uid}`;
+  const height = Math.max(0, Math.min(16, 16 * share));
+
+  const clip = svg.appendChild(createSVG("defs")).appendChild(createSVG("clipPath", { id: clipId }));
+  clip.appendChild(createSVG("rect", { x: "0", y: String(16 - height), width: "16", height: String(height) }));
+
+  svg.appendChild(createSVG("path", { class: "ogl-sideLock-empty", d: COIN_STACK }));
+  svg
+    .appendChild(createSVG("g", { "clip-path": `url(#${clipId})` }))
+    .appendChild(createSVG("path", { class: "ogl-sideLock-fill", d: COIN_STACK }));
+  // Drawn last and stroke-only: at 0% the shape would otherwise be flat grey and the
+  // state colour - the thing the player is meant to read - would not be on screen.
+  svg.appendChild(createSVG("path", { class: "ogl-sideLock-outline", d: COIN_STACK }));
+
+  return svg;
+}
+
+function createLockIcon(planetFound, isMoon) {
+  const planetId = planetFound.id;
+  const target = isMoon ? planetFound.moon : planetFound;
   const btn = createDOM("button", { class: "ogl-sideLock tooltip tooltipClose tooltipLeft" });
 
   if (isMoon) {
     btn.classList.add("ogl-moonLock");
   }
 
-  const coords = planet.coordinates.replace(/(\[|\])/g, "");
+  const coords = String(target.coordinates || planetFound.coordinates).replace(/(\[|\])/g, "");
   const needsTarget = getNeedsByCoords(coords, isMoon);
 
   if (typeof needsTarget?.metal === "undefined") return;
 
   const filled = needsTarget.metal === 0 && needsTarget.crystal === 0 && needsTarget.deuterium === 0;
+  const share = filled ? 1 : fundedShare(coords, isMoon);
+  const percent = Math.round(share * 100);
 
+  // Three states, not two. Red against amber against green is what makes the bar
+  // readable at 16px; the exact share drives how high the coin stack is filled.
   if (filled) {
     btn.classList.add("ogl-sideLockFilled");
+  } else if (percent > 0) {
+    btn.classList.add("ogl-sideLockPartial");
   }
+
+  btn.appendChild(createLockGlyph(share, `${planetId}-${isMoon ? "moon" : "planet"}`));
 
   const tooltipContent = createDOM("div");
   tooltipContent.appendChild(createDOM("div", { style: "width: 75px" }, Translator.translate(39)));
@@ -292,6 +342,9 @@ function createLockIcon(planet, isMoon) {
   );
   tooltipContent.appendChild(
     createDOM("div", { class: "ogl-deut" }, toFormattedNumber(Math.max(0, needsTarget.deuterium), null, true))
+  );
+  tooltipContent.appendChild(
+    createDOM("div", { class: "ogl-sideLock-progress" }, `${Translator.translate(417)}: ${percent}%`)
   );
   tooltipContent.appendChild(createDOM("hr"));
 
@@ -307,12 +360,7 @@ function createLockIcon(planet, isMoon) {
     OGBIData.needs = needs;
     OGBIData.needSync = true;
     document.querySelector(".ogl-tooltip .close-tooltip").click();
-    displayLocks(planet, isMoon);
-
-    const sidePlanetDiv = document.querySelector("div#cutty") || document.querySelector("div#norm");
-    if (!document.querySelector("#planetList .ogl-sideLock")) {
-      sidePlanetDiv.querySelectorAll("button.ogl-sideLockRemove").forEach((button) => button.remove());
-    }
+    displayLocks(planetFound, isMoon);
   });
 
   btn.addEventListener("mouseover", () => {
@@ -320,13 +368,13 @@ function createLockIcon(planet, isMoon) {
   });
 
   btn.addEventListener("click", () => {
-    const coords = planet.coordinates.replace(/(\[|\])/g, "").split(":");
+    const parts = coords.split(":");
     const fleetLink = new URLSearchParams({
       page: "ingame",
       component: "fleetdispatch",
-      galaxy: coords[0],
-      system: coords[1],
-      position: coords[2],
+      galaxy: parts[0],
+      system: parts[1],
+      position: parts[2],
       type: isMoon ? planetType.moon : planetType.planet,
       // Transport. Was a literal 1, OGame's attack - not a mission you can fly to your
       // own planet. A number, like `oglMode`: the entry has no room for another import.

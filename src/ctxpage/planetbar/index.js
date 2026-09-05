@@ -7,7 +7,7 @@ import Translator from "../../format/i18n/translate.js";
 import OGBIData from "../../store/OGBIData.js";
 import missionType from "../../game/missionType.js";
 import { getOption } from "../conf-options.js";
-import OGIObserver from "../../platform/observer.js";
+import OGBIObserver from "../../platform/observer.js";
 import { tooltip } from "../../ui/tooltip.js";
 import RecyclingYieldCalculator from "../../game/recyclingYieldCalculator.js";
 import * as iconVisibility from "../../ui/icons.js";
@@ -135,7 +135,7 @@ function jumpGate(context) {
   const oj = openJumpgate;
   openJumpgate = () => {
     oj();
-    const jumpGateObserver = new OGIObserver();
+    const jumpGateObserver = new OGBIObserver();
     const myObs = jumpGateObserver(
       document.getElementById("ingamepage"),
       () => {

@@ -71,7 +71,13 @@ export const BOOT_CACHE_KEY = "ogi-layout";
  */
 function applyTo(root) {
   const layoutOn = getOption("wideLayoutEnable") !== false;
-  const zoomOn = getOption("wideZoomEnable") !== false;
+  // The zoom needs the width stretching under it. `zoom` is a *layout* zoom, so the
+  // column it scales takes up that much more room, and OGame's content column cannot
+  // go below its ~670px intrinsic width - at zoom 1.25 it wants 838 real pixels the
+  // vanilla layout has nowhere to put. Measured: #middle ended up with a 536px box
+  // holding 667px of content, and the event box hung 164px over the planet bar, which
+  // is what hid the fleet-recall column. So the switch is honoured only in company.
+  const zoomOn = getOption("wideZoomEnable") !== false && layoutOn;
 
   root.classList.toggle("ogl-wide-layout", layoutOn);
   root.classList.toggle("ogl-wide-zoom", zoomOn);

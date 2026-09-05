@@ -2,7 +2,7 @@
  * How much of the browser's localStorage quota this origin is using, and a way to
  * reclaim the part that is not ours.
  *
- * OGame and OGI share one 5 MB origin quota. When it fills up, `ogk-data` stops being
+ * OGame and OGBI share one 5 MB origin quota. When it fills up, `ogk-data` stops being
  * writable and the extension loses everything it has not persisted yet - which is why
  * `start()` checks the total on every page load and clears the other keys past 4.5 MB.
  *

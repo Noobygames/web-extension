@@ -38,7 +38,10 @@ function welcome(context) {
     DOM.createDOMSanitized(
       "p",
       {},
-      "<strong class='friendly'>Note</strong>: Ogame Infinity is now officially tolarated by Ogame! (<a href='https://board.en.ogame.gameforge.com/index.php?thread/819842-ogame-infinity-extension/' target='_blank'>Origin board</a>)."
+      // Two claims, both accurate on purpose (AGENTS.md 5): the toleration in the linked
+      // thread was granted to the upstream extension and does not transfer to a fork by
+      // itself, so it is named as upstream's. Ours is stated as what it is - a goal.
+      "<strong class='friendly'>Note</strong>: Ogame Beyond Infinity is a fork of Ogame Infinity, which is officially tolerated by Ogame (<a href='https://board.en.ogame.gameforge.com/index.php?thread/819842-ogame-infinity-extension/' target='_blank'>Origin board</a>). We are working towards our own toleration: every feature here is built against the Origin team's rules, so we are confident of getting there."
     )
   );
   if (!context.commander) {
@@ -983,7 +986,7 @@ function settings(context) {
       ptreStorageSizeRow.textContent = `${Translator.translate(351)}: ${sizeStr}`;
     })
     .catch((err) => {
-      console.warn("[OGI][PTRE] galaxyInfo failed", err);
+      console.warn("[OGBI][PTRE] galaxyInfo failed", err);
       ptreSystemCountRow.textContent = `${Translator.translate(350)}: ${Translator.translate(353)}`;
       ptreLastApiUpdateRow.textContent = `${Translator.translate(349)}: ${Translator.translate(353)}`;
       ptreStorageSizeRow.textContent = `${Translator.translate(351)}: ${Translator.translate(353)}`;
@@ -1041,7 +1044,7 @@ function settings(context) {
       }
     }
     pageContextRequest("ptre", "setTeamKey", OGBIData.json.options.ptreTK || "").catch((err) =>
-      console.warn("[OGI][PTRE] setTeamKey failed", err)
+      console.warn("[OGBI][PTRE] setTeamKey failed", err)
     );
     OGBIData.json.options.pantryKey = pantryInput.value.trim();
     OGBIData.json.options.simulator = simulatorInput.value;

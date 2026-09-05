@@ -270,7 +270,7 @@ class OGBeyondInfinity {
     // but it must never read it from OGBIData - that singleton belongs to the page context.
     // pageContextRequest rejects on a failed bridge call, so the rejection is handled here.
     pageContextRequest("ptre", "setTeamKey", OGBIData.json.options.ptreTK || "").catch((err) =>
-      console.warn("[OGI][PTRE] setTeamKey failed", err)
+      console.warn("[OGBI][PTRE] setTeamKey failed", err)
     );
   }
 
@@ -328,7 +328,7 @@ class OGBeyondInfinity {
     // below used to run ahead of most of it.
     this.renderPlanetBar();
     // Registered before the yield below: the game may re-render the bar while we
-    // are off the stack, and a missed re-render leaves the bar without OGI data
+    // are off the stack, and a missed re-render leaves the bar without OGBI data
     // until the next page change.
     this.observePlanetBar();
 
@@ -438,7 +438,7 @@ class OGBeyondInfinity {
   }
 
   /**
-   * Everything OGI draws into the right planet bar, in one place.
+   * Everything OGBI draws into the right planet bar, in one place.
    *
    * Two reasons it is a method and not a run of calls inside `start()`:
    *  - the boot path and the planet-bar observer used to keep two hand-kept
@@ -1821,12 +1821,12 @@ function nextPaint() {
     // fallback table and is in this bundle already.
     const languageReady = Translator.load();
 
-    // OGI targets OGame 13 and later. The v12 selector branches were removed, so on
+    // OGBI targets OGame 13 and later. The v12 selector branches were removed, so on
     // an older server the extension does not misbehave subtly - it simply finds
     // nothing. Say so once instead of leaving the user with a silently empty UI.
     if (!OgamePageData.isAtLeast_13_0_0) {
       logger.error(
-        `OGame ${OgamePageData.version} is older than 13.0.0. OGI dropped v12 support and will not work here.`
+        `OGame ${OgamePageData.version} is older than 13.0.0. OGBI dropped v12 support and will not work here.`
       );
     }
 

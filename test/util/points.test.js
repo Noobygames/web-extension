@@ -20,18 +20,23 @@ const { toFormattedNumber } = await import("../../src/format/numbers.js");
 bootstrap.cleanup();
 
 /**
- * OGame's own cost row, the way the panel leaves it: a list of cost cells plus the
- * `<p>` the stylesheet hides. The column has to join that row, not break out of it -
- * the first version appended a `<div>` among the `<li>`s and it landed a line below,
- * on top of "Produktionsdauer".
+ * OGame's cost block, copied from a live battlecruiser panel.
+ *
+ * The nesting is the whole point: `.costs` is a `<div>` holding a hidden `<p>`, a
+ * nested `<ul>` with the cells in it, and OGBI's `.ogk-titles`. Two earlier fixtures
+ * were invented rather than captured - one had the cells as direct children of
+ * `.costs`, which is why a filter that required exactly that shipped and drew nothing.
  */
 const COSTS = `
-  <ul class="costs">
-    <li class="metal resource icon"></li>
-    <li class="crystal resource icon"></li>
-    <li class="deuterium resource icon"></li>
-    <p>hidden by the stylesheet</p>
-  </ul>
+  <div class="costs">
+    <p>Kosten pro Stück:</p>
+    <ul class="ipiHintable" data-ipi-hint="">
+      <li class="resource metal icon sufficient tooltip js_hideTipOnMobile" data-value="30000">30K<div class="ogk-sum tooltip" data-title="600.000">600K</div><div class="tooltip" data-title="0">0</div></li>
+      <li class="resource crystal icon sufficient tooltip js_hideTipOnMobile" data-value="40000">40K<div class="ogk-sum tooltip" data-title="800.000">800K</div><div class="tooltip" data-title="0">0</div></li>
+      <li class="resource deuterium icon sufficient tooltip js_hideTipOnMobile" data-value="15000">15K<div class="ogk-sum tooltip" data-title="300.000">300K</div><div class="tooltip" data-title="0">0</div></li>
+    </ul>
+    <div class="ogk-titles"><div>&zwj;</div><div>Gesamt</div><div>Fehlend</div></div>
+  </div>
 `;
 
 test("a battlecruiser is worth what it costs, divided by a thousand", () => {
@@ -139,34 +144,106 @@ test("without a cost row on the page nothing is drawn and nothing throws", () =>
 // where the column lands
 // --------------------------------------------------------------------------
 
-test("the column is built as the same kind of element as the cells it sits beside", () => {
+test("the column joins the list the cost cells are in, not the block around it", () => {
   const browser = setupBrowser({ html: COSTS });
 
   try {
-    // A <div> among <li>s is a block box between inline ones: it breaks the row.
-    assert.equal(renderPointsColumn([1000, 0, 0]).tagName, "LI");
+    const column = renderPointsColumn([1000, 0, 0]);
+
+    // The cells are grandchildren of `.costs`. A column appended to `.costs` itself is
+    // a block box among inline ones and breaks onto its own line.
+    assert.equal(column.tagName, "LI");
+    assert.equal(column.parentElement.tagName, "UL");
+    assert.equal(column.parentElement, document.querySelector(".costs ul"));
   } finally {
     browser.cleanup();
   }
 });
 
-test("the column goes after the last cost cell, not after the hidden paragraph", () => {
+test("the column is the last cell of the row", () => {
   const browser = setupBrowser({ html: COSTS });
 
   try {
     const column = renderPointsColumn([1000, 0, 0]);
 
     assert.ok(column.previousElementSibling.classList.contains("deuterium"));
+    assert.equal(column.nextElementSibling, null);
   } finally {
     browser.cleanup();
   }
 });
 
-test("a cost row with nothing to sit beside draws nothing rather than a stray box", () => {
-  const browser = setupBrowser({ html: `<ul class="costs"></ul>` });
+test("the column carries the cells' box and none of their meaning", () => {
+  const browser = setupBrowser({ html: COSTS });
+
+  try {
+    const column = renderPointsColumn([1000, 0, 0]);
+
+    // `resource icon` is the shared box, and it is all that is copied: `sufficient`
+    // means "you can afford this" and `metal` paints a sprite, neither of which says
+    // anything about a score.
+    assert.ok(column.classList.contains("resource"));
+    assert.ok(column.classList.contains("icon"));
+    for (const borrowed of ["metal", "crystal", "deuterium", "sufficient"]) {
+      assert.ok(!column.classList.contains(borrowed), `${borrowed} was copied off the sample`);
+    }
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("the total sits on the game's own Gesamt line and in its colour", () => {
+  const browser = setupBrowser({ html: COSTS });
+
+  try {
+    const column = renderPointsColumn([30000, 40000, 15000], [600000, 800000, 300000]);
+    const rows = [...column.children].filter((child) => !child.classList.contains("ogl-pointsCost-label"));
+
+    assert.equal(rows.length, 2, "one line for each, one for the total");
+    assert.ok(rows[1].classList.contains("ogk-sum"), "the total must match the costs above it");
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("the heading stays put while the figures are redrawn", () => {
+  const browser = setupBrowser({ html: COSTS });
+
+  try {
+    const first = renderPointsColumn([30000, 40000, 15000]).querySelector(".ogl-pointsCost-label");
+    renderPointsColumn([30000, 40000, 15000], [3000000, 4000000, 1500000]);
+
+    // It is positioned out of the flow; rebuilding it on every keystroke only flickers.
+    assert.equal(document.querySelector(".ogl-pointsCost-label"), first);
+    assert.equal(document.querySelectorAll(".ogl-pointsCost-label").length, 1);
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("a cost block with no cells draws nothing rather than a stray box", () => {
+  const browser = setupBrowser({ html: `<div class="costs"><p>Kosten pro Stück:</p></div>` });
 
   try {
     assert.equal(renderPointsColumn([1000, 0, 0]), null);
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("a big figure is rounded, a small one keeps the decimals that are the number", () => {
+  const browser = setupBrowser({ html: COSTS });
+
+  try {
+    // A metal mine at 26 came out as "1.893,84" in a 60px column - two decimals of
+    // noise. A level-1 mine is worth 0.075, where the decimals are all there is.
+    const big = renderPointsColumn([1520000, 379000, 0]).querySelector(".ogl-pointsCost-each");
+    assert.equal(big.textContent, toFormattedNumber(1899, 0));
+    assert.equal(big.getAttribute("data-title"), toFormattedNumber(1899, 2), "the exact value stays on hover");
+
+    document.querySelector(".ogl-pointsCost").remove();
+    const small = renderPointsColumn([60, 15, 0]).querySelector(".ogl-pointsCost-each");
+    assert.equal(small.textContent, toFormattedNumber(0.075));
   } finally {
     browser.cleanup();
   }

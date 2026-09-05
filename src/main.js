@@ -99,6 +99,9 @@ function applyCachedLayout() {
 
   const root = document.documentElement;
   root.classList.toggle("ogl-wide-layout", layout);
+  // `zoom` is already stored as "zoom AND layout" by ctxpage/wide-layout.js - the
+  // scaling cannot stand without the width stretching, see the comment on its
+  // `applyTo()`. Nothing to re-derive here; the mirror carries the answer.
   root.classList.toggle("ogl-wide-zoom", zoom);
   if (zoom && factor) root.style.setProperty("--ogl-wide-zoom", String(factor));
 }
@@ -116,4 +119,4 @@ injectScript("ogCore.js", true);
 
 import(chrome.runtime.getURL("./ctxcontent/index.js"))
   .then((contentScript) => contentScript.main(callbackToken))
-  .catch((error) => console.error("OGI: content context failed to start", error));
+  .catch((error) => console.error("OGBI: content context failed to start", error));

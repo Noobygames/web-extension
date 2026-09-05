@@ -6,8 +6,9 @@ import { overviewTable } from "./overviewTable.js";
 import { planetTable } from "./planetTable.js";
 import { filterChips, isFiltering } from "./filter.js";
 import { addForm } from "./addForm.js";
-import { refreshPlans, syncAllNeeds } from "./sync.js";
+import { clearPlanFor, refreshPlans, syncAllNeeds } from "./sync.js";
 import { clearAllPlans } from "../../store/upgradePlans.js";
+import { getNeedsByCoords } from "../planetbar/needs.js";
 
 /**
  * The upgrade plans panel, opened from the sidebar.
@@ -23,6 +24,31 @@ import { clearAllPlans } from "../../store/upgradePlans.js";
  * path already loaded (AGENTS.md 1.3, 4).
  */
 
+/**
+ * Drops every plan whose side matches, both the plan and the planet-bar cache behind it.
+ *
+ * Lives here rather than in the planet bar: these two used to be a pair of unlabelled
+ * 16px sprites floating under the planet list, next to nothing that explained what they
+ * would delete. This is the view that shows what is about to go.
+ *
+ * @param {(missing: {metal: number, crystal: number, deuterium: number}) => boolean} matches
+ */
+function clearWhere(matches) {
+  for (const planet of OGBIData.empire || []) {
+    const coords = String(planet.coordinates || "").replace(/[[\]]/g, "");
+    if (!coords) continue;
+
+    for (const isMoon of [false, true]) {
+      if (isMoon && !planet.moon) continue;
+
+      const missing = getNeedsByCoords(coords, isMoon);
+      if (!missing || !matches(missing)) continue;
+
+      clearPlanFor(coords, isMoon);
+    }
+  }
+}
+
 /** @returns {HTMLElement} */
 function build(render, current) {
   const container = createDOM("div", { class: "ogl-dialogContainer ogl-upgradePlans" });
@@ -30,8 +56,32 @@ function build(render, current) {
   const head = container.appendChild(createDOM("div", { class: "ogl-upgradePlans-head" }));
   head.appendChild(createDOM("h2", {}, Translator.translate(378)));
 
+  const actions = head.appendChild(createDOM("div", { class: "ogl-upgradePlans-actions" }));
+
+  const bulk = (variant, labelKey, tooltipKey, matches) => {
+    const button = actions.appendChild(
+      createDOM(
+        "button",
+        { class: `ogl-upgradePlans-bulk ${variant} tooltip`, title: Translator.translate(tooltipKey) },
+        Translator.translate(labelKey)
+      )
+    );
+
+    button.addEventListener("click", () => {
+      if (!confirm(Translator.translate(420))) return;
+
+      clearWhere(matches);
+      render();
+    });
+  };
+
+  const short = (missing) => missing.metal + missing.crystal + missing.deuterium !== 0;
+
+  bulk("ogl-upgradePlans-bulkShort", 418, 338, short);
+  bulk("ogl-upgradePlans-bulkDone", 419, 339, (missing) => !short(missing));
+
   // Asked first: there is no undo in the store, and this drops every planet at once.
-  const clearAllBtn = head.appendChild(
+  const clearAllBtn = actions.appendChild(
     createDOM("a", { class: "icon icon_trash tooltip", title: Translator.translate(409) })
   );
   clearAllBtn.addEventListener("click", () => {

@@ -7,9 +7,9 @@
  * to an already-running profile). Pass --profile=default to use your normal
  * profile instead - close Brave first in that case.
  *
- * Every other extension - most importantly the Web Store build of OGI itself -
+ * Every other extension - most importantly the Web Store build of OGBI itself -
  * is switched off for the launched session via --disable-extensions-except, so
- * you never end up with two OGI instances on the same page. Opt out with
+ * you never end up with two OGBI instances on the same page. Opt out with
  * --keep-extensions.
  *
  * Usage:
@@ -81,7 +81,7 @@ const braveArgs = [
   "--no-default-browser-check",
 ];
 
-// Without this, the Web Store build of OGI stays active next to the local one:
+// Without this, the Web Store build of OGBI stays active next to the local one:
 // both match the same OGame hosts, both inject ogCore.js, and both write the
 // same localStorage["ogk-data"] key. This flag switches every other extension
 // off for this browser session only - nothing is uninstalled or unchecked, so
@@ -118,7 +118,7 @@ function braveIsRunning() {
 if (!useDedicatedProfile && !args["dry-run"] && braveIsRunning()) {
   console.warn("WARNING: Brave is already running.");
   console.warn("If that instance owns your default profile it will ignore --load-extension and");
-  console.warn("--disable-extensions-except and just open a tab, leaving the Web Store build of OGI");
+  console.warn("--disable-extensions-except and just open a tab, leaving the Web Store build of OGBI");
   console.warn('active next to nothing. Close Brave completely and retry, or use "make brave"');
   console.warn("(throwaway profile, works alongside a running Brave).");
   console.warn("");

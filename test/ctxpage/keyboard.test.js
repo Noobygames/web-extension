@@ -22,7 +22,7 @@ const OGBIData = (await import("../../src/store/OGBIData.js")).default;
 const { keyboardActions } = await import("../../src/ctxpage/keyboard/index.js");
 bootstrap.cleanup();
 
-/** An open OGI dialog plus the things a player might be typing into. */
+/** An open OGBI dialog plus the things a player might be typing into. */
 const PAGE = `
   <div class="ogl-dialogOverlay ogl-active">
     <div class="ogl-dialog"><div class="close-tooltip"></div></div>

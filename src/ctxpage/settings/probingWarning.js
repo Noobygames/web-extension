@@ -2,7 +2,7 @@
  * The notice explaining why the direct-probe icons do nothing.
  *
  * Compliance, not a setting (AGENTS.md 1.5.1): direct probing is allowed only from
- * galaxy view and from spy reports already in the inbox. The icons OGI used to
+ * galaxy view and from spy reports already in the inbox. The icons OGBI used to
  * attach to stalks, player profiles, target lists and the highscore were exactly
  * the forbidden case, so they stay in place but inert, and this explains that
  * rather than leaving the player clicking a dead icon.

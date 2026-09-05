@@ -8,7 +8,7 @@ import { ensureLZString } from "../../platform/lzstring.js";
  *
  * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md.
  *
- * Compliance note (AGENTS.md 1.9): this sends the player's own OGI data to a service
+ * Compliance note (AGENTS.md 1.9): this sends the player's own OGBI data to a service
  * the player configured themselves, from a button they pressed. It is not automatic
  * and it collects nothing about anybody else.
  */

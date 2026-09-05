@@ -10,7 +10,7 @@ import { getLogger } from "../../platform/logger.js";
 const logger = getLogger("eventBox");
 
 /**
- * The fleet-movement panel OGame drops in over the top bar, with OGI's own totals.
+ * The fleet-movement panel OGame drops in over the top bar, with OGBI's own totals.
  *
  * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md.
  */

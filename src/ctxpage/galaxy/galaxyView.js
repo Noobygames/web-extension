@@ -24,7 +24,7 @@ import { formatBashCountdown } from "../../game/bashing.js";
 const logger = getLogger("galaxyView");
 
 /**
- * Everything OGI draws into OGame's galaxy view: the per-row tooltips and markers,
+ * Everything OGBI draws into OGame's galaxy view: the per-row tooltips and markers,
  * the activity read-out, the stalk refresh and the target claims shared through PTRE.
  *
  * Split off `galaxy/index.js` in Phase 5 of refactoring.md. `onGalaxyUpdate()` began
@@ -176,7 +176,7 @@ function applyTargetClaims(context, galaxy, system) {
     })
     .catch((error) => {
       // A PTRE outage must never break galaxy view - the rows simply stay uncoloured.
-      console.warn("[OGI][PTRE] target claims unavailable", error);
+      console.warn("[OGBI][PTRE] target claims unavailable", error);
     })
     .finally(() => {
       if (pendingClaimRequest === requestId) pendingClaimRequest = null;
@@ -607,7 +607,7 @@ function scan(context) {
   }
 
   // PTRE gala snapshot state - positions 1..15 only (see PTRE_MAX_POS below).
-  // Non-PTRE OGI DOM features (marker/tooltip/activity refresh) run on ALL rows the
+  // Non-PTRE OGBI DOM features (marker/tooltip/activity refresh) run on ALL rows the
   // DOM exposes, including the expedition slot at position 16 if present, so any
   // future feature can safely enhance them.
   const PTRE_MIN_POS = 1;
@@ -752,7 +752,7 @@ function scan(context) {
     ptreActivityUpdate(context, ptreJSON, systemCoords);
   }
 
-  // Galaxy scan dispatch. Runs unconditionally so the OGI-internal maps
+  // Galaxy scan dispatch. Runs unconditionally so the OGBI-internal maps
   // (scannedPlanets/scannedPlayers -> stalking sidebar, tooltips, search box) are
   // refreshed even when no PTRE team key is set. PTRE work is gated inside scan(context).
   // Any failure here must NOT propagate to the OGame galaxy render path.
@@ -775,12 +775,12 @@ function scan(context) {
             ptreService.updateGalaxy(OgamePageData.gameLang, context.universe, value.response);
           }
         } catch (err) {
-          console.error("[OGI][PTRE] updateGalaxy failed", err);
+          console.error("[OGBI][PTRE] updateGalaxy failed", err);
         }
       })
-      .catch((err) => console.error("[OGI][PTRE] galaxy request failed", err));
+      .catch((err) => console.error("[OGBI][PTRE] galaxy request failed", err));
   } catch (err) {
-    console.error("[OGI][PTRE] galaxy dispatch failed", err);
+    console.error("[OGBI][PTRE] galaxy dispatch failed", err);
   }
 
   document.querySelectorAll("div:not(.ogl-target-list) .ogl-stalkPlanets").forEach((reset) => {

@@ -1,5 +1,5 @@
 /**
- * The planet/moon grid OGI opens as a target picker.
+ * The planet/moon grid OGBI opens as a target picker.
  *
  * Its own file since Phase 5 of refactoring.md. `pageTweaks/index.js` is core code
  * and imported this from the fleetdispatch barrel, so one 57-line grid was holding

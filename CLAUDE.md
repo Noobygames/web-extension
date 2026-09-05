@@ -4,7 +4,7 @@ Guidance for Claude Code (claude.ai/code) in this repo.
 
 ## What this is
 
-Ogame Infinity (OGBI) — Manifest V3 browser extension (Chrome/Edge/Firefox) injecting features into `https://*.ogame.gameforge.com/game/*`. Plain ES modules, no framework. Sources stay per-file ES modules; the **build** bundles them (rollup, no minification — `scripts/bundle.mjs`) into one entry per context plus on-demand chunks, so nothing in `src/` may assume a bundler and nothing may assume its absence either.
+Ogame Beyond Infinity (OGBI) — Manifest V3 browser extension (Chrome/Edge/Firefox) injecting features into `https://*.ogame.gameforge.com/game/*`. Plain ES modules, no framework. Sources stay per-file ES modules; the **build** bundles them (rollup, no minification — `scripts/bundle.mjs`) into one entry per context plus on-demand chunks, so nothing in `src/` may assume a bundler and nothing may assume its absence either.
 
 ## Commands
 

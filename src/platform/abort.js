@@ -44,7 +44,7 @@ function abortPage() {
   aborted = true;
   // An explicit reason gives a message worth reading if one of these ever does
   // surface; the default is the bare "signal is aborted without reason".
-  controller.abort(new DOMException("OGI: the page was left", "AbortError"));
+  controller.abort(new DOMException("OGBI: the page was left", "AbortError"));
 }
 
 if (typeof window !== "undefined") {

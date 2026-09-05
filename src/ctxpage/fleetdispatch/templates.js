@@ -1,7 +1,7 @@
 import { getOption, setOption } from "../conf-options.js";
 import * as DOM from "../../ui/dom.js";
 import OGBIData from "../../store/OGBIData.js";
-import OGIObserver from "../../platform/observer.js";
+import OGBIObserver from "../../platform/observer.js";
 import Translator from "../../format/i18n/translate.js";
 
 export function addTemplateSelector(templateDivId, templateType, updateCallback) {
@@ -42,7 +42,7 @@ export function addTemplateSelector(templateDivId, templateType, updateCallback)
       if (typeof updateCallback === "function") updateCallback();
     };
   };
-  const templateObserver = new OGIObserver();
+  const templateObserver = new OGBIObserver();
   const myObs = templateObserver(
     document.querySelector(templateDivId),
     () => {

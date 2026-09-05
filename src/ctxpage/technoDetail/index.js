@@ -35,7 +35,7 @@ import { renderPointsColumn } from "./pointsColumn.js";
 const logger = getLogger("technoDetail");
 
 /**
- * The detail panel OGame opens for a building or a technology, with OGI's additions:
+ * The detail panel OGame opens for a building or a technology, with OGBI's additions:
  * what the next levels cost, what they produce, and how long each pays for itself.
  *
  * Lifted out of `OGBeyondInfinity` in Phase 3 of refactoring.md. Not in that plan's module
@@ -612,7 +612,7 @@ function technoDetail(context) {
       xhrAbortSignal = $.ajax({
         // `this` here is OGame`s own `technologyDetails` object, not the page
         // controller - this function is assigned onto it two lines above. The
-        // endpoint is its property and must not be read off any OGI context.
+        // endpoint is its property and must not be read off any OGBI context.
         url: this.technologyDetailsEndpoint,
         data: { technology: technologyId },
       }).done(function (data) {

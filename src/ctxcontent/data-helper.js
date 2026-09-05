@@ -281,7 +281,7 @@ export class DataHelper {
             ")"
         );
 
-        // ---- Non-PTRE side effects: refresh OGI's internal maps used by getPlayer/filter.
+        // ---- Non-PTRE side effects: refresh OGBI's internal maps used by getPlayer/filter.
         // Runs regardless of whether a PTRE team key is set (matches master behavior).
         if (cur.playerId !== -1) {
           if (!this.scannedPlanets[cur.playerId]) {

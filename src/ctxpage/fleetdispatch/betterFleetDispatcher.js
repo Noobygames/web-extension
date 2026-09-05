@@ -48,7 +48,7 @@ import RecyclingYieldCalculator from "../../game/recyclingYieldCalculator.js";
 const logger = getLogger("fleetdispatch");
 
 /**
- * OGI's rebuild of the dispatch UI: the ship rows, the resource fillers, the target
+ * OGBI's rebuild of the dispatch UI: the ship rows, the resource fillers, the target
  * picker and the speed selector.
  *
  * The single largest function in the extension, and the reason this module is split by

@@ -493,6 +493,81 @@ test("cancelling the trash button leaves every plan standing", () => {
   }
 });
 
+/**
+ * The two bulk buttons, moved here out of the planet bar.
+ *
+ * They were a pair of unlabelled 16px sprites appended to the sidebar wrapper under the
+ * planet list, with nothing on screen saying what they would delete - so they read as
+ * decoration and the player could not tell whether a click had done anything. Here the
+ * list of goals is right underneath them and the panel redraws.
+ */
+
+/** A funded side and an unfunded one, so the two buttons have one target each. */
+function seedFundedAndShort() {
+  seed();
+  // The moon has more than its goal asks for; the planet has nothing towards its own.
+  OGBIData.json.empire[1].moon.metal = 1000;
+  setManual("1:234:8", true, { metal: 100, crystal: 0, deuterium: 0 });
+  addEntry("1:234:5", false, { technoId: 1, from: 20, to: 24 });
+  syncAllNeeds();
+}
+
+test("the funded button clears only the goals that are already covered", () => {
+  const browser = setupBrowser({ html: `<div id="norm"><div id="planetList"></div></div>` });
+
+  try {
+    seedFundedAndShort();
+
+    const panel = openPanel(true);
+    panel.querySelector(".ogl-upgradePlans-bulkDone").dispatchEvent(new Event("click", { bubbles: true }));
+
+    assert.deepEqual(planFor("1:234:8", true).manual, {}, "the covered goal is gone");
+    assert.equal(planFor("1:234:5", false).entries.length, 1, "the one still short is untouched");
+  } finally {
+    delete globalThis.confirm;
+    browser.cleanup();
+  }
+});
+
+test("the unfunded button clears only the goals still short of something", () => {
+  const browser = setupBrowser({ html: `<div id="norm"><div id="planetList"></div></div>` });
+
+  try {
+    seedFundedAndShort();
+
+    const panel = openPanel(true);
+    panel.querySelector(".ogl-upgradePlans-bulkShort").dispatchEvent(new Event("click", { bubbles: true }));
+
+    assert.equal(planFor("1:234:5", false).entries.length, 0, "the one still short is gone");
+    assert.deepEqual(
+      planFor("1:234:8", true).manual,
+      { metal: 100, crystal: 0, deuterium: 0 },
+      "the covered one stays"
+    );
+  } finally {
+    delete globalThis.confirm;
+    browser.cleanup();
+  }
+});
+
+test("cancelling a bulk button leaves every goal standing", () => {
+  const browser = setupBrowser({ html: `<div id="norm"><div id="planetList"></div></div>` });
+
+  try {
+    seedFundedAndShort();
+
+    const panel = openPanel(false);
+    panel.querySelector(".ogl-upgradePlans-bulkShort").dispatchEvent(new Event("click", { bubbles: true }));
+    panel.querySelector(".ogl-upgradePlans-bulkDone").dispatchEvent(new Event("click", { bubbles: true }));
+
+    assert.equal(planFor("1:234:5", false).entries.length, 1);
+    assert.ok(planFor("1:234:8", true).manual);
+  } finally {
+    delete globalThis.confirm;
+    browser.cleanup();
+  }
+});
+
 test("removing a row drops it from the plan and redraws", () => {
   const browser = setupBrowser({ html: `<div id="norm"><div id="planetList"></div></div>` });
 

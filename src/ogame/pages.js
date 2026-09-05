@@ -1,5 +1,5 @@
 /**
- * The `component=` values OGI branches on, as one list per group.
+ * The `component=` values OGBI branches on, as one list per group.
  *
  * These used to be spelled out wherever they were needed - seven page names in
  * `technoDetail()`, the same seven nowhere else, `"fleetdispatch"` in eight

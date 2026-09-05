@@ -106,14 +106,14 @@ test("getNeedsByCoords still nets the fresh flying cargo, just not off the persi
  * test's leftover state - the same reason `planetByCoords()` and `getNeedsByCoords()`
  * guard every lookup with a null check instead of assuming the coordinate exists.
  *
- * `#planetList` is nested inside `#norm` in every fixture below because
- * `displayLocks()` looks for the bulk "remove all" buttons' anchor
- * (`div#cutty`/`div#norm`) as an ancestor of the icons it just appended to
- * `#planetList` - real OGame markup nests the planet list inside that sidebar
- * wrapper the same way.
+ * `#planetList` is nested inside `#norm` in every fixture below only because real
+ * OGame markup nests it in that sidebar wrapper. Nothing here reads the wrapper any
+ * more: the two bulk "remove all" buttons used to be appended to it from `displayLocks`
+ * and now live in the upgrade-plans panel, where the list of what they delete is on
+ * screen next to them (`test/ctxpage/upgradePlans.test.js`).
  */
 
-test("a pencilled-in need adds an unfilled planet-level lock icon and the bulk-delete buttons", () => {
+test("a pencilled-in need adds an unfilled planet-level lock icon", () => {
   const browser = setupBrowser({
     html: `<div id="norm"><div id="planetList"><div id="planet-101"></div></div></div>`,
   });
@@ -128,7 +128,28 @@ test("a pencilled-in need adds an unfilled planet-level lock icon and the bulk-d
     assert.ok(icon, "a lock icon is added to the planet row");
     assert.equal(icon.classList.contains("ogl-moonLock"), false);
     assert.equal(icon.classList.contains("ogl-sideLockFilled"), false, "800 metal is still missing");
-    assert.ok(document.querySelector("#norm .ogl-sideLockRemove"), "the bulk-delete buttons appear once a lock exists");
+    // 200 of 1000 is on the planet, so it is neither empty nor done.
+    assert.ok(icon.classList.contains("ogl-sideLockPartial"), "20% funded reads as partial, not as untouched");
+    assert.equal(document.querySelector("#norm .ogl-sideLockRemove"), null, "no bulk buttons in the planet bar");
+  } finally {
+    browser.cleanup();
+  }
+});
+
+test("nothing saved up yet is neither partial nor filled", () => {
+  const browser = setupBrowser({
+    html: `<div id="norm"><div id="planetList"><div id="planet-401"></div></div></div>`,
+  });
+
+  try {
+    OGBIData.empire = [{ id: 401, coordinates: "[19:29:39]", metal: 0, crystal: 0, deuterium: 0 }];
+
+    setManual("19:29:39", false, { metal: 1000, crystal: 0, deuterium: 0 });
+    syncNeeds("19:29:39", false);
+
+    const icon = document.querySelector("#planet-401 .ogl-sideLock");
+    assert.equal(icon.classList.contains("ogl-sideLockPartial"), false);
+    assert.equal(icon.classList.contains("ogl-sideLockFilled"), false);
   } finally {
     browser.cleanup();
   }
@@ -140,8 +161,11 @@ test("a moon need adds the moon variant of the icon, keyed by the parent planet 
   });
 
   try {
-    // OGame's own moon objects carry `planetID` pointing back at the parent planet,
-    // not a distinct id of their own - that is the key append()/displayLocks() share.
+    // The shape `getEmpireInfo()` really builds: the moon comes out of the empire
+    // endpoint's own moon list and carries its own `id`, with nothing pointing back at
+    // the parent. `displayLocks()` used to derive the id from the object it was handed,
+    // so a moon resolved to 1021 - `#planet-1021` matched nothing and `needs[1021]` was
+    // undefined, because the cache is keyed by the planet. Moon locks never appeared.
     OGBIData.empire = [
       {
         id: 102,
@@ -149,7 +173,7 @@ test("a moon need adds the moon variant of the icon, keyed by the parent planet 
         metal: 0,
         crystal: 0,
         deuterium: 0,
-        moon: { planetID: 102, coordinates: "[11:21:31]", metal: 50, crystal: 0, deuterium: 0 },
+        moon: { id: 1021, coordinates: "[11:21:31]", metal: 50, crystal: 0, deuterium: 0 },
       },
     ];
 
@@ -213,7 +237,16 @@ test("hovering the icon shows the missing amounts, and its delete button clears 
   }
 });
 
-test("the bulk buttons remove filled or unfilled locks separately, and disappear once none are left", () => {
+/**
+ * The planet bar draws one icon per side and nothing else.
+ *
+ * It used to also append two unlabelled 16px sprites to the sidebar wrapper - "delete
+ * every unfunded goal" and "delete every funded one" - with nothing next to them saying
+ * what they would take away. They are buttons in the upgrade-plans panel now, where the
+ * list of goals is on screen; the behaviour is pinned in
+ * `test/ctxpage/upgradePlans.test.js`.
+ */
+test("the planet bar no longer grows bulk-delete buttons of its own", () => {
   const browser = setupBrowser({
     html: `<div id="norm"><div id="planetList"><div id="planet-205"></div><div id="planet-206"></div></div></div>`,
   });
@@ -229,22 +262,16 @@ test("the bulk buttons remove filled or unfilled locks separately, and disappear
     setManual("15:25:35", false, { metal: 500, crystal: 0, deuterium: 0 }); // still missing 500
     syncNeeds("15:25:35", false);
 
-    document.querySelector("#norm .ogl-sideLockRemoveFilled").dispatchEvent(new Event("click", { bubbles: true }));
-
-    assert.equal(document.querySelector("#planet-205 .ogl-sideLock"), null, "the filled lock was removed");
-    assert.ok(document.querySelector("#planet-206 .ogl-sideLock"), "the unfilled lock is untouched");
-
-    document
-      .querySelector("#norm .ogl-sideLockRemove:not(.ogl-sideLockRemoveFilled)")
-      .dispatchEvent(new Event("click", { bubbles: true }));
-
-    assert.equal(document.querySelector("#planet-206 .ogl-sideLock"), null, "the unfilled lock was removed");
+    assert.ok(document.querySelector("#planet-205 .ogl-sideLockFilled"), "the covered goal is green");
     assert.equal(
-      document.querySelector("#norm .ogl-sideLockRemove"),
-      null,
-      "the bulk buttons themselves go away once no lock is left"
+      document.querySelector("#planet-206 .ogl-sideLock").classList.contains("ogl-sideLockFilled"),
+      false,
+      "the uncovered one is not"
     );
+    assert.equal(document.querySelectorAll("#norm button:not(.ogl-sideLock)").length, 0);
   } finally {
+    clearSide("14:24:34", false);
+    clearSide("15:25:35", false);
     browser.cleanup();
   }
 });

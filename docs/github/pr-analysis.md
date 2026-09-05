@@ -48,7 +48,7 @@ Companion document: [issues-analysis.md](./issues-analysis.md).
 
 _Bishop341-B · opened 2026-08-20 · +162/−73 across 6 files · MERGEABLE / BLOCKED · no reviews yet_
 
-**What it does:** carries expedition fleet-template preselection from the fleetdispatch page over to the galaxy page. The template must be flagged "use for expedition" via the OGI mx selectors, must be of _admiral_ type, and requires the "use standard fleet" option to be enabled.
+**What it does:** carries expedition fleet-template preselection from the fleetdispatch page over to the galaxy page. The template must be flagged "use for expedition" via the OGBI mx selectors, must be of _admiral_ type, and requires the "use standard fleet" option to be enabled.
 
 **Files:** new `src/ctxpage/fleetdispatch/templates.js` (+54), `src/ogCore.js` (+50/−66 — net shrink, so logic moved out of the monolith), `src/util/OgamePageData.js` (+37/−7), `src/util/dom.js` (+14, a helper for OGame's custom `<select>` elements), `src/ctxpage/conf-options.js` (+1), `src/global.css` (+6).
 
@@ -186,13 +186,13 @@ Same permission change in `manifest-firefox.json`.
 
 _edgardmessias · opened 2025-07-25, updated 2025-08-14 · +36/−7 in 1 file · MERGEABLE / BLOCKED · 3× COMMENTED (Bishop341-B, 2025-08-14), unaddressed since_
 
-**What it does:** applies `json.timezoneDiff` to the absolute arrival/return times on the fleet-movement page when the OGI timezone option is enabled.
+**What it does:** applies `json.timezoneDiff` to the absolute arrival/return times on the fleet-movement page when the OGBI timezone option is enabled.
 
 **Assessment:** smallest PR in the queue and the closest to mergeable — but the review found a real correctness problem, and the author has not responded in over a year.
 
 **Outstanding review items (Bishop341-B):**
 
-1. **Correctness (the blocker).** The reviewer compared three OGI versions side by side and reports that `data-end-time` and `data-arrival-time` _already_ carry the corrected time when the OGI timezone option is on. Applying `timezoneDiff` again in this hunk double-corrects and re-breaks the display. Their proposed workaround is to read the attributes without re-applying the diff, until someone finds where that correction actually happens. Screenshots in the PR thread show the published version has the movement page off by −1h, and this PR overshoots.
+1. **Correctness (the blocker).** The reviewer compared three OGBI versions side by side and reports that `data-end-time` and `data-arrival-time` _already_ carry the corrected time when the OGBI timezone option is on. Applying `timezoneDiff` again in this hunk double-corrects and re-breaks the display. Their proposed workaround is to read the attributes without re-applying the diff, until someone finds where that correction actually happens. Screenshots in the PR thread show the published version has the movement page off by −1h, and this PR overshoots.
 2. **Style — double quotes.** The PR uses single quotes (`fleet.querySelector('.absTime')`); the repo enforces double quotes via ESLint (`quotes: ["error", "double"]` in `.eslintrc.js`). `npm run format` fixes this.
 3. **Style — line length.** One comment should move to its own preceding line; the repo's `printWidth` is 120 (`.prettierrc`).
 4. `parseInt()` on the attributes is considered unnecessary by the reviewer.

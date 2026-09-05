@@ -101,9 +101,9 @@ _opened 2025-04-09 by Nightmaster · no linked PR · no comments_
 
 **Status: PLAUSIBLE, not reproduced.** The reporter themselves could not reproduce it reliably.
 
-The stack trace is entirely inside OGame's own bundle (`calcConsumption` → `getConsumption` → `hasEnoughFuel` → `refreshNavigationFleet2` → `fetchTargetPlayerData`), failing on `shipData is null`. Nothing in the trace is OGI code, so this is not proof of an OGI defect on its own.
+The stack trace is entirely inside OGame's own bundle (`calcConsumption` → `getConsumption` → `hasEnoughFuel` → `refreshNavigationFleet2` → `fetchTargetPlayerData`), failing on `shipData is null`. Nothing in the trace is OGBI code, so this is not proof of an OGBI defect on its own.
 
-What makes OGI a credible contributor: it calls into the same dispatcher imperatively, and does so during page setup rather than in response to user input.
+What makes OGBI a credible contributor: it calls into the same dispatcher imperatively, and does so during page setup rather than in response to user input.
 
 - `src/ogCore.js:13322-13333` — `selectShips()` calls `fleetDispatcher.selectShip(...)` then `fleetDispatcher.refresh()`.
 - `src/ogCore.js:13335-13345` — `preselectShips()` loops `shipsOnPlanet` and calls `selectShips()` **and** `fleetDispatcher.refresh()` again per ship, so a planet with N ship types triggers up to 2N refreshes back to back.
