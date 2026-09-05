@@ -1,7 +1,19 @@
-# Ogame Beyond Infinity
+<!--
+  The emblem the extension ships, rather than a copy made for this page: it comes out of
+  scripts/make-logo.mjs like the manifest icons do, so it can never drift from what a
+  player sees. GitHub strips inline <svg>, so this is the PNG.
+-->
+<p align="center">
+  <img src="src/assets/images/logo512.png" width="132" height="132" alt="" />
+</p>
 
-[![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20OGBI-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/nerzal)
-[![Tests](https://github.com/Noobygames/web-extension/actions/workflows/test.yml/badge.svg)](https://github.com/Noobygames/web-extension/actions/workflows/test.yml)
+<h1 align="center">Ogame Beyond Infinity</h1>
+
+<p align="center">
+  <a href="https://ko-fi.com/nerzal"><img src="https://img.shields.io/badge/Ko--fi-Support%20OGBI-FF5E5B?logo=kofi&logoColor=white" alt="Support on Ko-fi" /></a>
+  <a href="https://github.com/Noobygames/web-extension/actions/workflows/test.yml"><img src="https://github.com/Noobygames/web-extension/actions/workflows/test.yml/badge.svg" alt="Tests" /></a>
+  <a href="https://github.com/Noobygames/web-extension/actions/workflows/build.yml"><img src="https://github.com/Noobygames/web-extension/actions/workflows/build.yml/badge.svg" alt="Build extensions" /></a>
+</p>
 
 This is a fork of the original Ogame Infinity Extension, but extended and reworked to my own needs.
 All credits go to [Ogame Infinity](https://github.com/ogame-infinity/web-extension)

@@ -13,7 +13,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const srcRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src");
+const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const srcRoot = path.join(repoRoot, "src");
 
 /** Every extension-relative URL in the stylesheet, as a repo path. */
 function stylesheetAssets() {
@@ -71,10 +72,33 @@ test("the generated icons are real PNGs", () => {
 });
 
 test("the wordmark carries this fork's name, not upstream's", () => {
-  const svg = fs.readFileSync(path.join(srcRoot, "assets", "images", "logo-text.svg"), "utf8");
-  const words = [...svg.matchAll(/<text[^>]*>([^<]+)<\/text>/g)].map((match) => match[1]);
-
   // A fork must not present another project's identity as its own (AGENTS.md 0), and
-  // the settings dialog is the most visible place it could.
+  // the settings dialog is the most visible place it could. The mark is inline SVG
+  // built by ui/wordmark.js, so the words live in the source, not in an asset file.
+  const source = fs.readFileSync(path.join(srcRoot, "ui", "wordmark.js"), "utf8");
+  // Anchored on the row shape, not the bare word - the docblock above it quotes two of
+  // them while explaining why the three lines are measured separately.
+  const words = [...source.matchAll(/\["(OGAME|BEYOND|INFINITY)",/g)].map((match) => match[1]);
+
   assert.deepEqual(words, ["OGAME", "BEYOND", "INFINITY"]);
+});
+
+/**
+ * The readme shows the emblem the extension actually ships, by repo path. A rename in
+ * `src/assets/images/` would leave a broken image on the project's front page, which is
+ * the one place nobody on the team looks with fresh eyes.
+ */
+test("every local image the readme shows exists", () => {
+  const readme = fs.readFileSync(path.join(repoRoot, "readme.md"), "utf8");
+  const missing = [];
+
+  for (const match of readme.matchAll(/<img[^>]*\ssrc="([^"]+)"/g)) {
+    const src = match[1];
+    // Shields.io badges and anything else remote is not this test's business.
+    if (/^https?:/.test(src)) continue;
+
+    if (!fs.existsSync(path.join(repoRoot, src))) missing.push(src);
+  }
+
+  assert.deepEqual(missing, []);
 });

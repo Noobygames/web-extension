@@ -52,6 +52,7 @@ import * as loadingUtil from "./ui/loading.js";
 import ogiMode from "./ogame/ogiMode.js";
 import { isBuildPage } from "./ogame/pages.js";
 import { hasPlansOnCurrentSide } from "./ctxpage/planHighlight/plans.js";
+import { emblem } from "./ui/logo.js";
 import { loadChunk } from "./platform/loadChunk.js";
 import AllianceClass from "./game/allianceClass.js";
 import { PLASMATECH_BONUS } from "./game/gameConstants.js";
@@ -1789,7 +1790,7 @@ function versionInStatusBar() {
     href: `https://github.com/Noobygames/web-extension/releases/tag/v${VERSION}`,
     target: "_blank",
   });
-  const icon = DOM.createDOM("div", { class: "ogk-icon" });
+  const icon = emblem(16);
   version.append(icon, ` ${VERSION}`);
 
   siteFooterTextRight.append(" | ", version);

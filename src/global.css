@@ -350,15 +350,24 @@ input[type="password"]::selection {
   top: 44px !important;
 }
 
-/* SVG, not a bitmap: this is drawn at 175px, at 0.75 of that in the settings dialog,
-   and on whatever the reader's device pixel ratio is. The geometry is shared with
-   scripts/make-logo.mjs, which rasterises the same emblem for the manifest icons. */
+/* The logo is inline SVG built by ui/logo.js, not a background image - see the header
+   of that file for why. Nothing here loads it; this only lays it out. */
 .ogk-logo {
-  width: 175px;
+  align-items: center;
+  display: flex;
+  gap: 8px;
   height: 71px;
-  background: url("chrome-extension://__MSG_@@extension_id__/assets/images/logo-text.svg");
-  background-size: 175px;
-  background-repeat: no-repeat;
+  width: 175px;
+}
+
+.ogl-logo-wordmark {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.ogk-logo-label {
+  color: #9099a3;
+  font-size: 11px;
 }
 
 /* Version */
@@ -366,15 +375,9 @@ input[type="password"]::selection {
   color: #ffffff;
 }
 
-.ogk-button-version .ogk-icon {
-  width: 16px;
-  height: 16px;
-  margin-bottom: -5px;
-  /* The star-free variant: at 16px the dots are noise, not sky. */
-  background: url("chrome-extension://__MSG_@@extension_id__/assets/images/logo-mark.svg");
-  background-size: 16px;
-  background-repeat: no-repeat;
+.ogk-button-version .ogl-logo-emblem {
   display: inline-block;
+  margin-bottom: -3px;
 }
 
 .ogl-notification {
@@ -460,11 +463,18 @@ input[type="password"]::selection {
   justify-content: space-between;
 }
 
+/* The settings column is narrower than the welcome header, so the mark shrinks and the
+   version sits after it. `width: inherit` and `text-align: right` were positioning a
+   background image that is no longer there. */
 .ogl-settings .ogk-logo {
-  width: inherit;
-  text-align: right;
-  background-repeat: no-repeat;
-  transform: scale(0.75);
+  height: 56px;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.ogl-settings .ogl-logo-wordmark {
+  height: 56px;
+  width: 138px;
 }
 
 .ogl-settings h1,

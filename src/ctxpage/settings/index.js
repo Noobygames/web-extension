@@ -12,6 +12,7 @@ import { keepOnPlanetDialog } from "../fleetdispatch/keepOnPlanet.js";
 import { getLocalStorageSize, purgeLocalStorage } from "../../store/usage.js";
 import { pageContextRequest } from "../../platform/bridge.js";
 import { supportButton } from "../../ui/supportButton.js";
+import { logoBlock } from "../../ui/wordmark.js";
 
 /**
  * The settings dialog, the first-run welcome popup, and the notice explaining why the
@@ -33,7 +34,7 @@ function welcome(context) {
   let container = createDOM("div", { class: "ogk-welcome" });
   let head = container.appendChild(createDOM("div", { class: "ogk-header" }));
   head.appendChild(createDOM("h1", {}, "Welcome "));
-  head.appendChild(createDOM("div", { class: "ogk-logo" }));
+  head.appendChild(logoBlock());
   container.appendChild(createDOM("p", {}, "Ogame Beyond Infinity will hopefully bring some new joy playing OGame!"));
   container.appendChild(
     DOM.createDOMSanitized(
@@ -159,7 +160,7 @@ function settings(context) {
   let scrollBody = container.appendChild(createDOM("div", { class: "ogk-settings-body" }));
   let dataDiv = scrollBody.appendChild(createDOM("div"));
   let ogameInfinity = dataDiv.appendChild(createDOM("div"));
-  ogameInfinity.appendChild(createDOM("div", { class: "ogk-logo" }, `v${VERSION}`));
+  ogameInfinity.appendChild(logoBlock(`v${VERSION}`));
   ogameInfinity.appendChild(
     DOM.createDOMSanitized(
       "div",
