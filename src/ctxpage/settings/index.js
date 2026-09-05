@@ -59,7 +59,7 @@ function welcome(context) {
     DOM.createDOMSanitized(
       "p",
       {},
-      "If you see a bug or have a feature request please report to discord 🙏 <a href='https://discord.gg/Z7MDHmk' target='_blank'>Link</a> also in the setting page. <span class='overmark'> Be advised that using multiple addons/script might generate conflicts. </span>"
+      "<span class='overmark'>Be advised that using multiple addons/script might generate conflicts.</span>"
     )
   );
   // Said once, on first run, and then only in the settings dialog. OGBI is free and
@@ -161,16 +161,7 @@ function settings(context) {
   let dataDiv = scrollBody.appendChild(createDOM("div"));
   let ogameInfinity = dataDiv.appendChild(createDOM("div"));
   ogameInfinity.appendChild(logoBlock(`v${VERSION}`));
-  ogameInfinity.appendChild(
-    DOM.createDOMSanitized(
-      "div",
-      { class: "ogi-checkbox" },
-      `<strong class="undermark">${Translator.translate(
-        133
-      )}</strong><a target="_blank" href="https://discord.gg/9aMdQgk">Discord</span>`
-    )
-  );
-  // Beside the version and the Discord link, on the panel the player opened themselves.
+  // Beside the version, on the panel the player opened themselves.
   // Deliberately not on the game page: see the header of `ui/supportButton.js`.
   const support = ogameInfinity.appendChild(createDOM("div", { class: "ogl-kofi-row" }));
   support.appendChild(supportButton());

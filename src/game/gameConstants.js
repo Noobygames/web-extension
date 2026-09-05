@@ -45,9 +45,6 @@ export const METAL_POS_BONUS = [1, 1, 1, 1, 1, 1.17, 1.23, 1.35, 1.23, 1.17, 1, 
 export const CRYSTAL_POS_BONUS = [1.4, 1.3, 1.2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 export const MAX_CRAWLERS_PER_MINE = 8;
 
-/** Where the in-game help points people who want to talk to the tool's authors. */
-export const DISCORD_INVITATION_URL = "https://discord.gg/8Y4SWup";
-
 /**
  * Expedition tiers. All three are indexed by the same tier number, which is derived
  * from the player's total points, so they have to stay the same length and in the same

@@ -26,12 +26,11 @@
  *
  * Do not add features here. Fixes that cannot wait go in the new analyzers.
  */
-import { createDOM, createDOMSanitized } from "../../ui/dom.js";
+import { createDOM } from "../../ui/dom.js";
 import OGBIData from "../../store/OGBIData.js";
 import { getLogger } from "../../platform/logger.js";
 import DateTime from "../../format/dateTime.js";
 import Translator from "../../format/i18n/translate.js";
-import { DISCORD_INVITATION_URL } from "../../game/gameConstants.js";
 import { fromFormattedNumber } from "../../format/numbers.js";
 import { pageContextRequest } from "../../platform/bridge.js";
 
@@ -209,14 +208,7 @@ function analyzer() {
           msg.querySelector(".ogl-unknown-warning") ||
             msg
               .querySelector(".msg_actions")
-              .appendChild(
-                createDOMSanitized(
-                  "div",
-                  { class: "ogl-unknown-warning" },
-                  `${Translator.translate(112)}` +
-                    `<a href="${DISCORD_INVITATION_URL}"> ${Translator.translate(113)}</a>`
-                )
-              );
+              .appendChild(createDOM("div", { class: "ogl-unknown-warning" }, Translator.translate(112)));
         } else if (expeditionData.busy) {
           msg.querySelector(".ogl-warning") ||
             msg.querySelector(".msg_actions").appendChild(
