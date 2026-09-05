@@ -22,6 +22,8 @@ import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { crc32 } from "./crc32.mjs";
+
 const OUT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src", "assets", "images");
 
 /** The design, in a 512x512 space. Every size is rendered by scaling this. */
@@ -175,22 +177,6 @@ function discColor(fromCenter) {
   const { inner, outer } = DESIGN.disc;
 
   return [0, 1, 2].map((i) => Math.round(inner[i] + (outer[i] - inner[i]) * t));
-}
-
-const CRC_TABLE = (() => {
-  const table = new Int32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    table[n] = c;
-  }
-  return table;
-})();
-
-function crc32(buffer) {
-  let c = 0xffffffff;
-  for (const byte of buffer) c = CRC_TABLE[(c ^ byte) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
 }
 
 function chunk(type, data) {

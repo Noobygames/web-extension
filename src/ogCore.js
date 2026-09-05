@@ -62,7 +62,6 @@ import { productionBreakdown, effectiveCrawlers, crawlerBonus } from "./game/pro
 import * as perf from "./platform/perf.js";
 import { isAbortError, suppressAbortRejections } from "./platform/abort.js";
 
-//const VERSION = "__VERSION__";
 const logger = getLogger();
 perf.mark("ogCore.js module evaluation");
 // OGame navigates on every view change, which aborts whatever the extension had

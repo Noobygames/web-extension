@@ -21,6 +21,7 @@ console.log(`Ogame Beyond Infinity - make targets
   make coverage       Run the suite and print a coverage report
   make bench          Micro-benchmark the hot paths
   make logo           Re-render the manifest icons from the emblem geometry
+  make verify         Check the zips in dist/ before anything is uploaded
 
   make install-brave  Build a PERMANENT local install into local-extension/
                       (load once via brave://extensions -> Load unpacked)
@@ -39,7 +40,7 @@ All three switch every other extension off for that browser session, so the Web 
 build of OGBI cannot run next to your local one. Nothing is uninstalled - a normal
 Brave start has everything back.
 
-  make build          Full release packaging via packaging.sh (needs bash + zip)
+  make build          Full release packaging via packaging.sh (needs bash)
                       without VERSION= it uses packaging.sh's date-based version
   make clean          Remove dist/
   make clean-profile  Remove the throwaway Brave dev profile only

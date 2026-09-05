@@ -170,6 +170,7 @@ A `Makefile` wraps the common tasks. It needs `node`/`npm` on your PATH and work
     make format           # prettier
     make check            # eslint
     make build            # release zips via packaging.sh
+    make verify           # look inside the zips in dist/
     make clean            # remove dist/
 
 ### Tests
@@ -246,24 +247,21 @@ Then, make sure to format the code according to our rules before doing any new _
 
 `npm run format`
 
-## Automatic packaging and deployment
+## Packaging and deployment
 
-GitHub's actions are used to automatically package and deploy new updates.
+`./packaging.sh {version}` (or `make build`) produces the three store zips in `dist/` — `ogi-chrome.zip`, `ogi-edge.zip`, `ogi-firefox.zip`. The version is optional; without it you get a date-based one, which is what test builds want.
 
-### Manual packaging
+It needs bash and node, and nothing else — zipping goes through `scripts/zip.mjs` rather than the `zip` binary, so the script runs from Git Bash on Windows as well, and the output is byte-identical for the same source tree.
 
-#### Install dev dependencies
+**Every build is checked before it leaves the machine.** `scripts/verify-package.mjs` opens each zip and asserts what a store would otherwise find days later: the version placeholder was stamped, no `manifest-firefox.json` was left in, every icon the manifest names is actually in the package, the Firefox build has no `chrome-extension://` URLs and the Chromium ones have no `moz-extension://`, and the Edge build does not carry the Chrome Web Store `update_url`. `packaging.sh` runs it as its last step; `make verify` re-runs it against whatever is in `dist/`.
 
-    npm install -g terser
-    npm install -g clean-css
-    npm install -g clean-css-cli
+### CI
 
-#### Run the packer
+| Workflow         | When                       | What                                                                                                    |
+| ---------------- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `test.yml`       | push to master, PR, manual | unit tests, ESLint, a coverage report for the log                                                       |
+| `build.yml`      | push to master, PR, manual | builds all three zips, verifies them, uploads them as artifacts, runs `web-ext lint` on the Firefox one |
+| `main.yml`       | manual, with a version     | packages and publishes to Chrome and Edge via BPP                                                       |
+| `deploy_amo.yml` | manual, with a version     | packages and signs the Firefox add-on through AMO                                                       |
 
-    ./packaging.sh {version_number}
-
-Example:
-
-    ./packaging.sh 1.5.3
-
-Version number is optional and can be omitted, for example doing test builds, by default the version number will be built based on time and date.
+The artifacts on `build.yml` are loadable builds: download one, unzip it, and load it unpacked. That is the fastest way to try a pull request in a real browser without building it yourself.

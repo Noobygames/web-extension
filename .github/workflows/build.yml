@@ -1,0 +1,92 @@
+name: Build extensions
+
+# The store packages, built on every change rather than only when someone is about to
+# publish. Packaging is the part of this repo with the fewest eyes on it and the longest
+# feedback loop - a broken zip used to be found by a store reviewer, days later - so it
+# runs here and the artifacts are downloadable for a real browser to load.
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to stamp (defaults to a date-based one)
+        required: false
+        type: string
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # No `zip` and no version input needed: packaging.sh zips through
+      # scripts/zip.mjs, and falls back to a date-based version when given none.
+      - name: Package Chrome, Edge and Firefox
+        run: ./packaging.sh ${{ inputs.version }}
+
+      # packaging.sh already runs this as its last step; repeated here so the log shows
+      # which step failed when it does, rather than burying it in the build output.
+      - name: Verify packages
+        run: node scripts/verify-package.mjs
+
+      - name: Upload Chrome package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ogbi-chrome
+          path: dist/ogi-chrome.zip
+          if-no-files-found: error
+
+      - name: Upload Edge package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ogbi-edge
+          path: dist/ogi-edge.zip
+          if-no-files-found: error
+
+      - name: Upload Firefox package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ogbi-firefox
+          path: dist/ogi-firefox.zip
+          if-no-files-found: error
+
+  # web-ext's own linter, which is what AMO runs a submission through. It catches
+  # manifest and API problems the packaging check cannot know about, and a rejection
+  # here is one that would otherwise arrive as an AMO review days later.
+  firefox-lint:
+    runs-on: ubuntu-latest
+    needs: package
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Download Firefox package
+        uses: actions/download-artifact@v4
+        with:
+          name: ogbi-firefox
+          path: dist
+
+      - name: Unpack
+        run: |
+          mkdir -p dist/firefox-src
+          unzip -q dist/ogi-firefox.zip -d dist/firefox-src
+
+      - name: web-ext lint
+        run: npx --yes web-ext lint --source-dir dist/firefox-src --warnings-as-errors=false
